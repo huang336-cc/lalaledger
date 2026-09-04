@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<full-backup-content>
+    <!-- 数据库与图片全部本地保存，允许系统备份 -->
+    <include domain="database" path="." />
+    <include domain="file" path="Receipts/" />
+</full-backup-content>

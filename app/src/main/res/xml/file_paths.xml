@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!-- 拍照临时目录 -->
+    <files-path name="receipts" path="Receipts/" />
+    <cache-path name="exports" path="exports/" />
+    <cache-path name="photos" path="photos/" />
+</paths>

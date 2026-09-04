@@ -1,0 +1,256 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Common -->
+    <string name="app_name">lalaledger</string>
+    <string name="ok">OK</string>
+    <string name="cancel">Cancel</string>
+    <string name="save">Save</string>
+    <string name="delete">Delete</string>
+    <string name="confirm">Confirm</string>
+    <string name="done">OK</string>
+    <string name="got_it">Got it</string>
+    <string name="create">Create</string>
+    <string name="empty_hint">Nothing here</string>
+
+    <!-- Nav -->
+    <string name="nav_home">Home</string>
+    <string name="nav_record">Record</string>
+    <string name="nav_stats">Stats</string>
+    <string name="nav_me">Me</string>
+
+    <!-- Theme / Language -->
+    <string name="theme_light">Light</string>
+    <string name="theme_dark">Dark</string>
+    <string name="theme_system">System</string>
+    <string name="lang_zh">简体中文</string>
+    <string name="lang_en">English</string>
+
+    <!-- Home -->
+    <string name="home_add_bill">Add a bill</string>
+    <string name="home_add_bill_sub">Tap to capture this moment</string>
+    <string name="home_today">Today</string>
+    <string name="home_week">This week</string>
+    <string name="home_month">This month</string>
+    <string name="home_recent">Recent bills</string>
+    <string name="home_select">Select</string>
+    <string name="home_exit_select">Exit</string>
+    <string name="home_select_all">All</string>
+    <string name="home_clear_all">None</string>
+    <string name="home_empty">No bills yet — tap "Add a bill" above to start</string>
+    <string name="home_manage_books">Manage books</string>
+    <string name="home_manage_members">Manage members</string>
+    <string name="sel_count">Items</string>
+    <string name="sel_expense">Expense</string>
+    <string name="sel_income">Income</string>
+    <string name="sel_net">Net</string>
+    <string name="action_export_image">Export summary</string>
+    <string name="action_exporting">Exporting…</string>
+    <string name="action_batch_delete">Delete</string>
+    <string name="home_delete_bills_title">Delete %1$d selected bills?</string>
+    <string name="home_delete_bills_msg">This cannot be undone. Linked receipt photos will be removed too.</string>
+    <string name="home_deleted_n">%1$d bills deleted</string>
+    <string name="export_saved">Saved to Pictures/拉拉记账</string>
+    <string name="export_failed">Export failed, please retry</string>
+    <string name="guide_trip_title">How trip books work</string>
+    <string name="guide_trip_body">1. Add travel mates via "Manage members"; 2. When recording, pick "Who consumed" and "Who paid"; 3. Check personal spend &amp; advances in Stats, then settle up with one tap.</string>
+    <string name="guide_trip_action">Add members</string>
+    <string name="guide_multi_title">What multi-select does</string>
+    <string name="guide_multi_body">After selecting bills you can export a summary image (with member tags) or delete them in batch; select only one member\'s bills to settle that person separately.</string>
+
+    <!-- Record -->
+    <string name="record_edit_title">Edit bill</string>
+    <string name="record_tap_hint">Tap to enter</string>
+    <string name="record_expense">Expense</string>
+    <string name="record_income">Income</string>
+    <string name="record_owner_title">Who consumed</string>
+    <string name="record_payer_title">Who paid</string>
+    <string name="record_owner_hint">Consumer, default: me</string>
+    <string name="record_payer_hint">Who paid first, default: me</string>
+    <string name="record_self">Me</string>
+    <string name="record_add_member">+ Member</string>
+    <string name="record_add_member_title">Add member</string>
+    <string name="record_category">Category</string>
+    <string name="record_category_edit_hint">Long press to edit</string>
+    <string name="category_more">More</string>
+    <string name="icon_picker_title">All icons</string>
+    <string name="category_replace_title">Apply to category (tap to replace its icon)</string>
+    <string name="category_replace_done">Icon of %1$s replaced</string>
+    <string name="record_location">Location</string>
+    <string name="record_current_location">Current place</string>
+    <string name="record_manual_location">Manual</string>
+    <string name="record_clear_location">Clear location</string>
+    <string name="record_photo">Camera</string>
+    <string name="record_album">Album</string>
+    <string name="record_note_hint">Add a note…</string>
+    <string name="record_save">Save</string>
+    <string name="record_save_edit">Save changes</string>
+    <string name="record_saved">Saved ✓</string>
+    <string name="record_updated">Updated ✓</string>
+    <string name="record_err_amount">Enter a valid amount</string>
+    <string name="record_err_category">Pick a category</string>
+    <string name="record_err_book">Create or pick a book first</string>
+    <string name="record_err_member">Enter a member name</string>
+    <string name="record_time_title">Time</string>
+    <string name="record_pick_datetime">Pick date &amp; time</string>
+    <string name="record_msg_images_added">%1$d photos added</string>
+    <string name="record_msg_locate_failed">Location failed, enter manually</string>
+    <string name="record_msg_no_location_perm">Location permission denied</string>
+    <string name="record_msg_no_camera_perm">Camera permission denied, pick from album</string>
+    <string name="record_input_location">Enter location</string>
+
+    <!-- Stats -->
+    <string name="stats_title">Stats</string>
+    <string name="stats_total_expense">Expense</string>
+    <string name="stats_total_income">Income</string>
+    <string name="stats_net">Net</string>
+    <string name="stats_daily">Daily avg</string>
+    <string name="stats_pie_title">By category</string>
+    <string name="stats_rank_title">Ranking</string>
+    <string name="stats_rank_empty">No expense in this range</string>
+    <string name="stats_bills_count">%1$d · %2$d%%</string>
+    <string name="period_today">Today</string>
+    <string name="period_week">Week</string>
+    <string name="period_month">Month</string>
+    <string name="period_all">All</string>
+    <string name="period_custom">Custom</string>
+    <string name="stats_custom_title">Select period</string>
+    <string name="stats_all_members">All members</string>
+    <string name="stats_filter_owner">By owner</string>
+    <string name="stats_filter_payer">By payer</string>
+    <string name="stats_all_categories">All categories</string>
+    <string name="stats_aa_title">Settle up</string>
+    <string name="stats_aa_subtitle">Auto-computed for current filters</string>
+    <string name="stats_aa_advance">Paid</string>
+    <string name="stats_aa_net">Net</string>
+    <string name="stats_aa_receive">Receives</string>
+    <string name="stats_aa_pay">Owes</string>
+    <string name="stats_aa_settled">All settled, no transfers needed</string>
+    <string name="stats_aa_transfer_fmt">%1$s → %2$s　¥%3$s</string>
+    <string name="stats_aa_copy">Copy settlement</string>
+    <string name="stats_aa_copied">Settlement copied ✓</string>
+    <string name="stats_aa_empty">No expense to settle in this range</string>
+    <string name="stats_personal_title">Members</string>
+    <string name="stats_personal_consume">Spend</string>
+    <string name="stats_personal_paid">Paid</string>
+    <string name="stats_personal_note">Consumption includes the shared AA split</string>
+    <string name="stats_export">Export stats image</string>
+    <string name="stats_export_title">Spending Report</string>
+    <string name="member_public">Shared</string>
+    <string name="member_public_hint">Shared AA expense owner (built-in)</string>
+    <string name="stats_switch_book">Switch book</string>
+    <string name="stats_pie_center">%1$s expense</string>
+
+    <!-- Detail -->
+    <string name="detail_time">Time</string>
+    <string name="detail_location">Location</string>
+    <string name="detail_note">Note</string>
+    <string name="detail_owner">Owner</string>
+    <string name="detail_payer">Paid by</string>
+    <string name="detail_receipts">Receipts (%1$d)</string>
+    <string name="detail_delete_title">Delete this bill?</string>
+    <string name="detail_delete_msg">This cannot be undone. Linked receipt photos will be removed too.</string>
+    <string name="detail_export">Export bill image</string>
+
+    <!-- Books -->
+    <string name="books_title">Books</string>
+    <string name="books_new">New book</string>
+    <string name="books_current">Current</string>
+    <string name="books_switch_hint">Tap to switch</string>
+    <string name="books_empty">No books yet — create one to start</string>
+    <string name="books_rename">Rename</string>
+    <string name="books_rename_title">Rename book</string>
+    <string name="books_delete">Delete book</string>
+    <string name="books_delete_title">Delete "%1$s"?</string>
+    <string name="books_delete_msg">All bills and receipts in this book will be deleted permanently.</string>
+    <string name="books_trip">Trip</string>
+    <string name="books_trip_switch">Trip book</string>
+    <string name="books_trip_hint">Split bills with travel mates, recorded per person</string>
+    <string name="books_trip_on">Make trip book</string>
+    <string name="books_trip_off">Make normal book</string>
+    <string name="books_name_hint">Book name (max 12)</string>
+    <string name="label_icon">Icon</string>
+    <string name="label_color">Color</string>
+    <string name="books_manage_members">Manage members</string>
+
+    <!-- Members -->
+    <string name="members_title">Members</string>
+    <string name="members_add">Add</string>
+    <string name="members_empty">No members yet\nTap "Add" above to invite your travel mates</string>
+    <string name="members_item_hint">Bills can belong to this member · kept after removal</string>
+    <string name="members_edit">Edit member</string>
+    <string name="members_add_title">Add member</string>
+    <string name="members_name_hint">Member name (max 8)</string>
+    <string name="members_color">Tag color</string>
+    <string name="members_delete_title">Delete "%1$s"?</string>
+    <string name="members_delete_msg">Their bills are kept, only the tag falls back to "Me". The member itself cannot be restored.</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Me</string>
+    <string name="settings_book_hint">Tap to manage</string>
+    <string name="settings_no_book">No book selected</string>
+    <string name="settings_theme">Dark mode</string>
+    <string name="settings_language">Language</string>
+    <string name="settings_clear">Clear current book data</string>
+    <string name="settings_clear_title">Clear all bills in "%1$s"?</string>
+    <string name="settings_clear_msg">All bills and receipt photos in this book will be deleted. The book itself is kept. This cannot be undone.</string>
+    <string name="settings_clear_done">Book data cleared</string>
+    <string name="settings_changelog">Changelog</string>
+    <string name="settings_about">About</string>
+    <string name="settings_license">License</string>
+    <string name="settings_disclaimer">Disclaimer</string>
+    <string name="settings_privacy">Data stays on this device only · no ads, no login, no cloud</string>
+
+    <!-- About / License / Disclaimer -->
+    <string name="about_body">Version %1$s\n\nA clean, fast and beautiful expense tracker.\n\n· Fully offline (Room database)\n· No login, no ads, no cloud\n· Multi-book / trip splitting / receipts / image export</string>
+    <string name="license_body">This app is open source under the MIT License. Permission is granted, free of charge, to use, copy, modify, merge, publish, distribute, sublicense and/or sell copies of the software.\n\nTHE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY.\n\nThird-party dependencies: Jetpack Compose, Room, DataStore, Coil (Apache-2.0 / MIT compatible).</string>
+    <string name="disclaimer_body">1. This app is a personal expense tracker. Data is stored locally only — no network, no tracking, no upload.\n\n2. Amount calculations, settle-up suggestions and transfer plans are for reference only. The developer is not liable for any accounting disputes or financial loss arising from use of this app.\n\n3. Back up your important data. Uninstalling the app permanently deletes all bills and photos on this device.\n\n4. This app provides no investment, tax or legal advice. Consult professionals for such purposes.</string>
+    <string name="back">Back</string>
+    <string name="record_err_save">Save failed, please retry</string>
+    <string name="record_category_add">Add category</string>
+    <string name="record_category_edit">Edit category</string>
+    <string name="record_category_name_hint">Category name</string>
+    <string name="chlog_145_1">Stats page: export a long image with summary, ranking, member details and AA settle</string>
+    <string name="chlog_145_2">New "Shared" owner for all-member AA expenses, auto-split in stats and settlement</string>
+    <string name="chlog_145_3">Single "+ Member" button moved to the top-right of the owner row</string>
+    <string name="chlog_145_4">Recent bills no longer show owner/payer tags (still visible in bill detail)</string>
+    <string name="chlog_144_1">Fix: version number in Me/About now matches the actual build</string>
+    <string name="chlog_144_2">Category More: pick from all named icons and replace a pinned category icon</string>
+    <string name="chlog_144_3">Numeric keypad: swipe or tap the main area to dismiss</string>
+    <string name="select_book">Select a book</string>
+    <string name="uncategorized">Uncategorized</string>
+    <string name="default_book">Default book</string>
+    <string name="home_bills_n">%1$d items</string>
+    <string name="chlog_143_1">Fix: numeric keypad not opening when tapping amount card</string>
+    <string name="chlog_143_2">Remove page cross-fade for snappier navigation</string>
+    <string name="chlog_143_3">Expand icon library to 130+ icons in a grid</string>
+    <string name="chlog_142_1">English name unified to lowercase lalaledger (Chinese name unchanged)</string>
+    <string name="chlog_141_1">Fix: language switch now applies instantly (previously took two tries)</string>
+    <string name="chlog_141_2">App renamed to 拉拉记账 (lalaledger)</string>
+    <string name="chlog_140_1">Language: switch between Simplified Chinese and English in-app</string>
+    <string name="chlog_140_2">Pick date &amp; time when recording (defaults to now) for back-filling</string>
+    <string name="chlog_140_3">Choose owner (who consumed) and payer (who advanced the money)</string>
+    <string name="chlog_140_4">Owner/payer pill tags on bill cards and detail page</string>
+    <string name="chlog_140_5">Stats: switch book, filter by category / owner / payer</string>
+    <string name="chlog_140_6">AA settle-up: auto balances, simplified transfers, one-tap copy</string>
+    <string name="chlog_140_7">New guides for trip books and multi-select</string>
+    <string name="chlog_140_8">All categories laid out (long-press to edit); keyboard no longer closes on scroll</string>
+    <string name="chlog_140_9">Performance: high refresh rate support, smoother scrolling</string>
+    <string name="chlog_140_10">Slimmer APK; license &amp; disclaimer added</string>
+    <string name="chlog_130_1">Trip books: mark a book as trip book; member features only in trip books</string>
+    <string name="chlog_130_2">Members: add/edit/delete travel mates with 10-color tags</string>
+    <string name="chlog_130_3">Owner tagging: assign bills to a member, quick-add on record page</string>
+    <string name="chlog_130_4">Member pill tags in bill list and detail page</string>
+    <string name="chlog_130_5">Stats: filter by member to see personal spending</string>
+    <string name="chlog_130_6">Image export: member tags in summary; single-bill share image</string>
+    <string name="chlog_120_1">Keyboard: draw-layer slide animation, completely smooth</string>
+    <string name="chlog_120_2">Recent bills: friendlier dates (today/yesterday/M-d/year)</string>
+    <string name="chlog_110_1">Record: amount keypad opens on tap, auto-hides after picking category</string>
+    <string name="chlog_110_2">Edit bills from detail page, full field restore</string>
+    <string name="chlog_110_3">Receipt thumbnails in bill list with full-screen preview</string>
+    <string name="chlog_110_4">Export selected bills as a themed PNG summary to gallery</string>
+    <string name="chlog_110_5">Batch ops: select-all, live totals, delete confirmation</string>
+    <string name="chlog_110_6">New app icon; removed CSV export</string>
+    <string name="chlog_100_1">First release: multi-book / quick entry / categories / places</string>
+    <string name="chlog_100_2">Receipt photos, stats (pie chart + ranking + periods)</string>
+    <string name="chlog_100_3">Light/dark themes, fully offline storage</string>
+</resources>

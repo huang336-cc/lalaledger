@@ -1,0 +1,64 @@
+package com.lightledger.app.util
+
+import java.text.SimpleDateFormat
+import java.time.Instant
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.util.Date
+import java.util.Locale
+
+/**
+ * 日期工具：统一使用系统时区，格式化风格轻量简洁。
+ */
+object DateUtils {
+
+    private val zone: ZoneId get() = ZoneId.systemDefault()
+
+    private val fmtTime = SimpleDateFormat("HH:mm", Locale.CHINA)
+    private val fmtMonthDay = DateTimeFormatter.ofPattern("M月d日")
+    private val fmtFull = DateTimeFormatter.ofPattern("yyyy年M月d日 HH:mm")
+    private val fmtCsv = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+
+    fun startOfDayMillis(date: LocalDate = LocalDate.now()): Long =
+        date.atStartOfDay(zone).toInstant().toEpochMilli()
+
+    fun endOfDayMillis(date: LocalDate = LocalDate.now()): Long =
+        date.plusDays(1).atStartOfDay(zone).toInstant().toEpochMilli() - 1
+
+    fun startOfWeekMillis(): Long =
+        startOfDayMillis(LocalDate.now().with(java.time.DayOfWeek.MONDAY))
+
+    fun startOfMonthMillis(): Long =
+        startOfDayMillis(LocalDate.now().withDayOfMonth(1))
+
+    /** 账单时间 -> 显示文案：今天/昨天带日期词，今年显示 M月d日，往年带年份 */
+    fun formatBillTime(millis: Long): String {
+        val dt = LocalDateTime.ofInstant(Instant.ofEpochMilli(millis), zone)
+        val today = LocalDate.now()
+        val date = dt.toLocalDate()
+        val time = fmtTime.format(Date(millis))
+        return when {
+            date == today -> "今天 $time"
+            date == today.minusDays(1) -> "昨天 $time"
+            date.year == today.year -> "${date.format(fmtMonthDay)} $time"
+            else -> dt.format(fmtFull)
+        }
+    }
+
+    /** 详情页完整时间 */
+    fun formatFullTime(millis: Long): String =
+        LocalDateTime.ofInstant(Instant.ofEpochMilli(millis), zone).format(fmtFull)
+
+    /** CSV 导出格式 */
+    fun formatCsvTime(millis: Long): String =
+        LocalDateTime.ofInstant(Instant.ofEpochMilli(millis), zone).format(fmtCsv)
+
+    /** 日期 -> "yyyy-MM-dd" */
+    fun formatDate(date: LocalDate): String = date.toString()
+
+    /** "yyyy-MM-dd" -> LocalDate */
+    fun parseDate(text: String): LocalDate? =
+        runCatching { LocalDate.parse(text) }.getOrNull()
+}

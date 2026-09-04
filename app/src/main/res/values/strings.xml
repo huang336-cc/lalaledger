@@ -1,0 +1,256 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 通用 -->
+    <string name="app_name">拉拉记账</string>
+    <string name="ok">好的</string>
+    <string name="cancel">取消</string>
+    <string name="save">保存</string>
+    <string name="delete">删除</string>
+    <string name="confirm">确认</string>
+    <string name="done">确定</string>
+    <string name="got_it">知道了</string>
+    <string name="create">创建</string>
+    <string name="empty_hint">暂无数据</string>
+
+    <!-- 导航 -->
+    <string name="nav_home">首页</string>
+    <string name="nav_record">记账</string>
+    <string name="nav_stats">统计</string>
+    <string name="nav_me">我的</string>
+
+    <!-- 主题 / 语言 -->
+    <string name="theme_light">浅色</string>
+    <string name="theme_dark">深色</string>
+    <string name="theme_system">跟随系统</string>
+    <string name="lang_zh">简体中文</string>
+    <string name="lang_en">English</string>
+
+    <!-- 首页 -->
+    <string name="home_add_bill">记一笔</string>
+    <string name="home_add_bill_sub">轻点一下，记录此刻</string>
+    <string name="home_today">今日支出</string>
+    <string name="home_week">本周支出</string>
+    <string name="home_month">本月支出</string>
+    <string name="home_recent">最近账单</string>
+    <string name="home_select">选择</string>
+    <string name="home_exit_select">退出多选</string>
+    <string name="home_select_all">全选</string>
+    <string name="home_clear_all">取消全选</string>
+    <string name="home_empty">还没有账单，点上方"记一笔"开始吧</string>
+    <string name="home_manage_books">管理账本</string>
+    <string name="home_manage_members">管理成员</string>
+    <string name="sel_count">条目</string>
+    <string name="sel_expense">总支出</string>
+    <string name="sel_income">总收入</string>
+    <string name="sel_net">净花费</string>
+    <string name="action_export_image">生成汇总图片</string>
+    <string name="action_exporting">生成中…</string>
+    <string name="action_batch_delete">批量删除</string>
+    <string name="home_delete_bills_title">删除选中的 %1$d 笔账单？</string>
+    <string name="home_delete_bills_msg">删除后无法恢复，关联的小票图片也会一并清理。</string>
+    <string name="home_deleted_n">已删除 %1$d 笔账单</string>
+    <string name="export_saved">已保存到相册 Pictures/拉拉记账</string>
+    <string name="export_failed">生成失败，请重试</string>
+    <string name="guide_trip_title">旅行账本怎么用</string>
+    <string name="guide_trip_body">① 菜单「管理成员」添加同行人；② 记账时分别选「谁消费」「谁垫付」；③ 统计页查看个人消费与垫付，AA 结算一键算账。</string>
+    <string name="guide_trip_action">去添加成员</string>
+    <string name="guide_multi_title">多选能做什么</string>
+    <string name="guide_multi_body">勾选账单后可生成汇总长图（带成员标签）或批量删除；只勾选某位成员的账单，即可单独统计与结算。</string>
+
+    <!-- 记账页 -->
+    <string name="record_edit_title">编辑账单</string>
+    <string name="record_tap_hint">点此输入</string>
+    <string name="record_expense">支出</string>
+    <string name="record_income">收入</string>
+    <string name="record_owner_title">这笔归谁</string>
+    <string name="record_payer_title">谁垫付</string>
+    <string name="record_owner_hint">谁消费，默认本人</string>
+    <string name="record_payer_hint">谁先付的钱，默认本人</string>
+    <string name="record_self">本人</string>
+    <string name="record_add_member">+ 成员</string>
+    <string name="record_add_member_title">添加同行成员</string>
+    <string name="record_category">分类</string>
+    <string name="record_category_edit_hint">长按可编辑</string>
+    <string name="category_more">更多</string>
+    <string name="icon_picker_title">全部图标</string>
+    <string name="category_replace_title">替换到分类（点击即替换其图标）</string>
+    <string name="category_replace_done">已替换「%1$s」的图标</string>
+    <string name="record_location">地点</string>
+    <string name="record_current_location">当前地点</string>
+    <string name="record_manual_location">手动输入</string>
+    <string name="record_clear_location">清除地点</string>
+    <string name="record_photo">拍照</string>
+    <string name="record_album">相册</string>
+    <string name="record_note_hint">添加备注…</string>
+    <string name="record_save">保存</string>
+    <string name="record_save_edit">保存修改</string>
+    <string name="record_saved">已记一笔 ✓</string>
+    <string name="record_updated">已更新 ✓</string>
+    <string name="record_err_amount">请输入有效金额</string>
+    <string name="record_err_category">请选择分类</string>
+    <string name="record_err_book">请先选择或创建账本</string>
+    <string name="record_err_member">请输入成员称呼</string>
+    <string name="record_time_title">时间</string>
+    <string name="record_pick_datetime">选择日期时间</string>
+    <string name="record_msg_images_added">已添加 %1$d 张图片</string>
+    <string name="record_msg_locate_failed">定位失败，可手动输入地点</string>
+    <string name="record_msg_no_location_perm">未授予定位权限</string>
+    <string name="record_msg_no_camera_perm">未授予相机权限，可从相册选择图片</string>
+    <string name="record_input_location">输入地点</string>
+
+    <!-- 统计页 -->
+    <string name="stats_title">统计</string>
+    <string name="stats_total_expense">总支出</string>
+    <string name="stats_total_income">总收入</string>
+    <string name="stats_net">净花费</string>
+    <string name="stats_daily">日均消费</string>
+    <string name="stats_pie_title">分类占比</string>
+    <string name="stats_rank_title">分类排行</string>
+    <string name="stats_rank_empty">该时间段暂无支出</string>
+    <string name="stats_bills_count">%1$d 笔 · %2$d%%</string>
+    <string name="period_today">今日</string>
+    <string name="period_week">本周</string>
+    <string name="period_month">本月</string>
+    <string name="period_all">全部</string>
+    <string name="period_custom">自定义</string>
+    <string name="stats_custom_title">选择时间段</string>
+    <string name="stats_all_members">全部成员</string>
+    <string name="stats_filter_owner">按归属</string>
+    <string name="stats_filter_payer">按垫付</string>
+    <string name="stats_all_categories">全部分类</string>
+    <string name="stats_aa_title">AA 结算</string>
+    <string name="stats_aa_subtitle">按当前筛选范围自动计算</string>
+    <string name="stats_aa_advance">垫付</string>
+    <string name="stats_aa_net">净额</string>
+    <string name="stats_aa_receive">应收</string>
+    <string name="stats_aa_pay">应付</string>
+    <string name="stats_aa_settled">已平账，无需转账</string>
+    <string name="stats_aa_transfer_fmt">%1$s → %2$s　¥%3$s</string>
+    <string name="stats_aa_copy">复制结算文本</string>
+    <string name="stats_aa_copied">已复制结算清单 ✓</string>
+    <string name="stats_aa_empty">当前范围没有可结算的支出</string>
+    <string name="stats_personal_title">成员明细</string>
+    <string name="stats_personal_consume">消费</string>
+    <string name="stats_personal_paid">垫付</string>
+    <string name="stats_personal_note">消费已含公共消费均摊</string>
+    <string name="stats_export">导出统计图片</string>
+    <string name="stats_export_title">收支统计</string>
+    <string name="member_public">公共</string>
+    <string name="member_public_hint">全员 AA 消费归属（系统内置）</string>
+    <string name="stats_switch_book">切换账本</string>
+    <string name="stats_pie_center">%1$s支出</string>
+
+    <!-- 账单详情 -->
+    <string name="detail_time">时间</string>
+    <string name="detail_location">地点</string>
+    <string name="detail_note">备注</string>
+    <string name="detail_owner">归属</string>
+    <string name="detail_payer">垫付</string>
+    <string name="detail_receipts">小票照片（%1$d）</string>
+    <string name="detail_delete_title">删除这笔账单？</string>
+    <string name="detail_delete_msg">删除后无法恢复，关联的小票图片也会一并清理。</string>
+    <string name="detail_export">导出账单图片</string>
+
+    <!-- 账本 -->
+    <string name="books_title">账本管理</string>
+    <string name="books_new">新建账本</string>
+    <string name="books_current">当前账本</string>
+    <string name="books_switch_hint">点按切换到该账本</string>
+    <string name="books_empty">还没有账本，新建一个开始记账吧</string>
+    <string name="books_rename">重命名</string>
+    <string name="books_rename_title">重命名账本</string>
+    <string name="books_delete">删除账本</string>
+    <string name="books_delete_title">删除账本「%1$s」？</string>
+    <string name="books_delete_msg">账本下的所有账单和小票记录将被一并删除，且无法恢复。</string>
+    <string name="books_trip">旅行</string>
+    <string name="books_trip_switch">旅行账本</string>
+    <string name="books_trip_hint">可与同行人分账，账单记到各自名下</string>
+    <string name="books_trip_on">设为旅行账本</string>
+    <string name="books_trip_off">改为普通账本</string>
+    <string name="books_name_hint">账本名称（12 字以内）</string>
+    <string name="label_icon">图标</string>
+    <string name="label_color">颜色</string>
+    <string name="books_manage_members">管理成员</string>
+
+    <!-- 成员 -->
+    <string name="members_title">同行成员</string>
+    <string name="members_add">添加成员</string>
+    <string name="members_empty">还没有同行成员\n点右上角"添加成员"，一起旅行分账吧</string>
+    <string name="members_item_hint">消费归属该成员 · 删除后账单保留</string>
+    <string name="members_edit">编辑成员</string>
+    <string name="members_add_title">添加成员</string>
+    <string name="members_name_hint">成员称呼（8 字以内）</string>
+    <string name="members_color">标签颜色</string>
+    <string name="members_delete_title">删除成员「%1$s」？</string>
+    <string name="members_delete_msg">TA 名下的历史账单会保留，仅归属显示回"本人"，无法恢复成员本身。</string>
+
+    <!-- 设置 -->
+    <string name="settings_title">我的</string>
+    <string name="settings_book_hint">点击管理账本</string>
+    <string name="settings_no_book">未选择账本</string>
+    <string name="settings_theme">深色模式</string>
+    <string name="settings_language">语言</string>
+    <string name="settings_clear">清空当前账本数据</string>
+    <string name="settings_clear_title">清空「%1$s」的全部账单？</string>
+    <string name="settings_clear_msg">该账本下的所有账单记录与小票图片将被删除，账本本身保留。此操作无法撤销。</string>
+    <string name="settings_clear_done">已清空账本数据</string>
+    <string name="settings_changelog">变更履历</string>
+    <string name="settings_about">关于</string>
+    <string name="settings_license">开源许可</string>
+    <string name="settings_disclaimer">免责声明</string>
+    <string name="settings_privacy">数据仅保存在本机，无广告、无登录、无云端</string>
+
+    <!-- 关于 / 协议 / 免责 -->
+    <string name="about_body">版本 %1$s\n\n一款简洁、极速、好看的日常记账 App。\n\n· 纯本地离线存储（Room 数据库）\n· 无登录、无广告、无云端服务\n· 多账本 / 旅行分账 / 拍照小票 / 汇总图片导出</string>
+    <string name="license_body">本应用基于 MIT License 开源，可自由使用、复制、修改、合并、出版发行、散布、再授权及贩售软件及副本。\n\n软件按"原样"提供，不作任何明示或暗示的担保，包括但不限于适销性、特定用途适用性和非侵权性。作者或版权持有人不对任何索赔、损害或其他责任负责。\n\n第三方依赖：Jetpack Compose、Room、DataStore、Coil（Apache-2.0 / MIT 兼容协议）。</string>
+    <string name="disclaimer_body">1. 本应用为个人记账工具，仅在本机存储数据，不联网、不采集、不上传任何信息。\n\n2. 应用内的金额计算、AA 结算与转账方案仅供参考，请自行核对后使用；因使用本应用产生的任何账目争议或经济损失，开发者不承担责任。\n\n3. 请自行备份重要数据；卸载应用将彻底删除本机全部账单与图片，且无法恢复。\n\n4. 本应用不提供任何投资、税务、法律建议，相关用途请咨询专业人士。</string>
+    <string name="back">返回</string>
+    <string name="record_err_save">保存失败，请重试</string>
+    <string name="record_category_add">添加分类</string>
+    <string name="record_category_edit">编辑分类</string>
+    <string name="record_category_name_hint">分类名称</string>
+    <string name="chlog_145_1">统计页支持一键导出图片：汇总/分类排行/成员明细/AA 结算存入相册</string>
+    <string name="chlog_145_2">成员归属新增「公共」：全员 AA 消费，统计与结算自动均摊</string>
+    <string name="chlog_145_3">「+ 成员」合并为一处，移至归属行右上角</string>
+    <string name="chlog_145_4">最近账单条目不再显示归属/垫付标签（详情页仍可查看）</string>
+    <string name="chlog_144_1">修复：设置页/关于页版本号与实际版本同步</string>
+    <string name="chlog_144_2">分类区新增「更多」：全量图标带名称选择，可一键替换常驻分类图标</string>
+    <string name="chlog_144_3">数字键盘：滑动或点按主界面均收起</string>
+    <string name="select_book">选择账本</string>
+    <string name="uncategorized">未分类</string>
+    <string name="default_book">默认账本</string>
+    <string name="home_bills_n">%1$d 笔</string>
+    <string name="chlog_143_1">修复：点击金额卡片不弹出数字键盘</string>
+    <string name="chlog_143_2">移除页面切换淡入淡出，切页更流畅</string>
+    <string name="chlog_143_3">分类/账本图标扩充至 130+，全量网格展示</string>
+    <string name="chlog_142_1">英文名统一为小写 lalaledger（中文名不变）</string>
+    <string name="chlog_141_1">修复：切换语言立即生效（此前需切换两次才显示目标语言）</string>
+    <string name="chlog_141_2">应用更名为「拉拉记账」</string>
+    <string name="chlog_140_1">多语言：界面支持简体中文 / English 一键切换</string>
+    <string name="chlog_140_2">记账可选日期时间（默认当前时间），支持补记</string>
+    <string name="chlog_140_3">记账可选归属成员（谁消费）与付款人（谁垫付）</string>
+    <string name="chlog_140_4">账单卡片与详情页显示归属/垫付双胶囊标签</string>
+    <string name="chlog_140_5">统计页可切换账本，按分类/归属/垫付多维筛选</string>
+    <string name="chlog_140_6">AA 结算：自动算应收应付与简化转账，一键复制清单</string>
+    <string name="chlog_140_7">旅行账本与多选功能增加新手引导说明</string>
+    <string name="chlog_140_8">分类全量平铺（长按编辑），键盘滑动不误触收起</string>
+    <string name="chlog_140_9">性能优化：高刷新率适配，滑动更流畅</string>
+    <string name="chlog_140_10">APK 瘦身；新增开源许可与免责声明</string>
+    <string name="chlog_130_1">旅行定向记账：账本可设为旅行账本，仅旅行账本显示成员功能</string>
+    <string name="chlog_130_2">成员管理：账本内添加/编辑/删除同行成员，10 色标签可选</string>
+    <string name="chlog_130_3">归属记账：新增账单可选归属本人或指定成员，支持快捷加人</string>
+    <string name="chlog_130_4">账单展示：列表条目与详情页显示成员胶囊标签</string>
+    <string name="chlog_130_5">成员筛选：统计面板按成员筛选，单独查看某人的消费统计</string>
+    <string name="chlog_130_6">图片导出：汇总长图带成员标签；新增单条账单分享图</string>
+    <string name="chlog_120_1">键盘体验：打开/收起改为绘制层滑动动画，彻底消除卡顿</string>
+    <string name="chlog_120_2">最近账单：条目时间增加日期（今天/昨天/M月d日/往年带年份）</string>
+    <string name="chlog_110_1">记账页：金额键盘改为点击弹出，选完分类自动收起</string>
+    <string name="chlog_110_2">账单编辑：详情页顶栏进入修改，全量回填</string>
+    <string name="chlog_110_3">账单列表：条目内显示小票缩略图，点击可全屏预览</string>
+    <string name="chlog_110_4">图片导出：多选账单一键生成汇总 PNG 长图保存到相册</string>
+    <string name="chlog_110_5">批量操作：全选、实时统计、批量删除二次确认</string>
+    <string name="chlog_110_6">新图标：小狗叼钱；移除 CSV 导出</string>
+    <string name="chlog_100_1">首个版本：多账本 / 快速记账 / 分类管理 / 地点快捷录入</string>
+    <string name="chlog_100_2">拍照与相册小票、统计面板（环形饼图 + 分类排行 + 时段筛选）</string>
+    <string name="chlog_100_3">浅色/深色双主题、纯本地离线存储</string>
+</resources>
