@@ -73,8 +73,8 @@
     <string name="record_category_edit_hint">Long press to edit</string>
     <string name="category_more">More</string>
     <string name="icon_picker_title">All icons</string>
-    <string name="category_replace_title">Apply to category (tap to replace its icon)</string>
-    <string name="category_replace_done">Icon of %1$s replaced</string>
+    <string name="category_replace_title">Apply to category (tap to replace its icon &amp; name)</string>
+    <string name="category_replace_done">Replaced with \"%1$s\"</string>
     <string name="record_location">Location</string>
     <string name="record_current_location">Current place</string>
     <string name="record_manual_location">Manual</string>
@@ -213,6 +213,7 @@
     <string name="chlog_145_2">New "Shared" owner for all-member AA expenses, auto-split in stats and settlement</string>
     <string name="chlog_145_3">Single "+ Member" button moved to the top-right of the owner row</string>
     <string name="chlog_145_4">Recent bills no longer show owner/payer tags (still visible in bill detail)</string>
+    <string name="chlog_146_1">Replacing a pinned category icon via "More" now updates its name to match the icon</string>
     <string name="chlog_144_1">Fix: version number in Me/About now matches the actual build</string>
     <string name="chlog_144_2">Category More: pick from all named icons and replace a pinned category icon</string>
     <string name="chlog_144_3">Numeric keypad: swipe or tap the main area to dismiss</string>

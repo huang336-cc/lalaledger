@@ -496,11 +496,14 @@ class RecordViewModel(
         editorOpen.value = false
     }
 
-    /** 全量图标选择后，把常驻分类的图标替换为所选图标（名称与颜色不变） */
-    fun replaceCategoryIcon(categoryId: Long, iconKey: String) {
+    /** 全量图标选择后，把常驻分类替换为所选图标：图标与名称一起替换（颜色不变，历史账单归属不变） */
+    fun replaceCategoryIcon(categoryId: Long, iconKey: String, newName: String) {
         viewModelScope.launch {
             val target = container.categoryRepository.getById(categoryId) ?: return@launch
-            container.categoryRepository.update(target.copy(icon = iconKey))
+            val name = newName.trim()
+            container.categoryRepository.update(
+                target.copy(icon = iconKey, name = name.ifEmpty { target.name })
+            )
         }
     }
 

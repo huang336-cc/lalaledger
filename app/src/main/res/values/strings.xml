@@ -73,8 +73,8 @@
     <string name="record_category_edit_hint">长按可编辑</string>
     <string name="category_more">更多</string>
     <string name="icon_picker_title">全部图标</string>
-    <string name="category_replace_title">替换到分类（点击即替换其图标）</string>
-    <string name="category_replace_done">已替换「%1$s」的图标</string>
+    <string name="category_replace_title">替换到分类（点击即替换其图标与名称）</string>
+    <string name="category_replace_done">已替换为「%1$s」</string>
     <string name="record_location">地点</string>
     <string name="record_current_location">当前地点</string>
     <string name="record_manual_location">手动输入</string>
@@ -213,6 +213,7 @@
     <string name="chlog_145_2">成员归属新增「公共」：全员 AA 消费，统计与结算自动均摊</string>
     <string name="chlog_145_3">「+ 成员」合并为一处，移至归属行右上角</string>
     <string name="chlog_145_4">最近账单条目不再显示归属/垫付标签（详情页仍可查看）</string>
+    <string name="chlog_146_1">「更多」替换常驻分类图标时，名称同步替换为图标名称</string>
     <string name="chlog_144_1">修复：设置页/关于页版本号与实际版本同步</string>
     <string name="chlog_144_2">分类区新增「更多」：全量图标带名称选择，可一键替换常驻分类图标</string>
     <string name="chlog_144_3">数字键盘：滑动或点按主界面均收起</string>

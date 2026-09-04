@@ -54,6 +54,7 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.lightledger.app.LightLedgerApp
 import com.lightledger.app.R
+import com.lightledger.app.domain.model.IconLibrary
 import com.lightledger.app.ui.app.AppViewModel
 import com.lightledger.app.util.ImageStore
 import com.lightledger.app.util.LocaleHelper
@@ -516,11 +517,12 @@ fun RecordScreen(
                 useZh = useZh,
                 onDismiss = { showCategoryPick = false },
                 onPickCategory = { category ->
-                    viewModel.replaceCategoryIcon(category.id, icon)
+                    val newName = IconLibrary.displayName(icon, useZh)
+                    viewModel.replaceCategoryIcon(category.id, icon, newName)
                     showCategoryPick = false
                     Toast.makeText(
                         context,
-                        context.getString(R.string.category_replace_done, category.name),
+                        context.getString(R.string.category_replace_done, newName),
                         Toast.LENGTH_SHORT,
                     ).show()
                 },
