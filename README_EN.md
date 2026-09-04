@@ -13,6 +13,17 @@ A fully offline Android expense-tracking app: clean, fast, and beautiful.
 
 ---
 
+## Screenshots
+
+<p>
+  <img src="docs/screenshots/home.jpg" width="23%" alt="Home" />
+  <img src="docs/screenshots/record.jpg" width="23%" alt="Record" />
+  <img src="docs/screenshots/stats.jpg" width="23%" alt="Stats" />
+  <img src="docs/screenshots/profile.jpg" width="23%" alt="Profile" />
+</p>
+
+---
+
 ## Feature Overview
 
 | Module | Description |

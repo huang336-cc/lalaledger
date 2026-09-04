@@ -13,6 +13,17 @@
 
 ---
 
+## 截图
+
+<p>
+  <img src="docs/screenshots/home.jpg" width="23%" alt="首页" />
+  <img src="docs/screenshots/record.jpg" width="23%" alt="记账" />
+  <img src="docs/screenshots/stats.jpg" width="23%" alt="统计" />
+  <img src="docs/screenshots/profile.jpg" width="23%" alt="我的" />
+</p>
+
+---
+
 ## 功能总览
 
 | 模块 | 说明 |
