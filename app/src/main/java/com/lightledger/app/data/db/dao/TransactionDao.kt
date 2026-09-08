@@ -42,6 +42,26 @@ interface TransactionDao {
     @Query("SELECT * FROM transactions WHERE bookId = :bookId ORDER BY createdAt ASC")
     suspend fun getByBookOnce(bookId: Long): List<TransactionEntity>
 
+    /**
+     * 搜索账单：备注 / 位置 / 分类名 / 金额（元两位小数文本，如输入 12.5 命中 ¥12.50）模糊匹配。
+     * :q 由仓库层做 LIKE 通配符转义（ESCAPE '\'），按时间倒序，最多返回 500 条。
+     */
+    @Query(
+        """
+        SELECT * FROM transactions
+        WHERE bookId = :bookId
+          AND (
+            note LIKE '%' || :q || '%' ESCAPE '\\'
+            OR location LIKE '%' || :q || '%' ESCAPE '\\'
+            OR categoryId IN (SELECT id FROM categories WHERE name LIKE '%' || :q || '%' ESCAPE '\\')
+            OR printf('%.2f', amount / 100.0) LIKE '%' || :q || '%' ESCAPE '\\'
+          )
+        ORDER BY createdAt DESC, id DESC
+        LIMIT 500
+        """
+    )
+    fun observeSearch(bookId: Long, q: String): Flow<List<TransactionEntity>>
+
     @Insert
     suspend fun insert(tx: TransactionEntity): Long
 

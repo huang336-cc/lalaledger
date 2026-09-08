@@ -30,6 +30,7 @@ import androidx.compose.material.icons.outlined.DarkMode
 import androidx.compose.material.icons.outlined.EditNote
 import androidx.compose.material.icons.outlined.Group
 import androidx.compose.material.icons.outlined.LightMode
+import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.SettingsBackupRestore
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -50,10 +51,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -74,10 +77,14 @@ import com.lightledger.app.ui.components.ImagePreviewDialog
 import com.lightledger.app.ui.components.SectionTitle
 import com.lightledger.app.ui.theme.SemanticTheme
 import com.lightledger.app.ui.theme.argb
+import com.lightledger.app.util.DateUtils
 import com.lightledger.app.util.MoneyFormat
 import com.lightledger.app.util.SummaryImageExporter
 
 import kotlinx.coroutines.launch
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
 
 /**
  * 首页：账本切换 + 主题快捷入口 + 记一笔按钮 + 三张支出统计卡 + 最近账单。
@@ -90,6 +97,7 @@ fun HomeScreen(
     onOpenDetail: (Long) -> Unit,
     onGoRecord: () -> Unit,
     onOpenMembers: (Long) -> Unit = {},
+    onOpenSearch: () -> Unit = {},
 ) {
     val container = (LocalContext.current.applicationContext as LightLedgerApp).container
     val viewModel: HomeViewModel = viewModel(
@@ -117,6 +125,9 @@ fun HomeScreen(
     var exportingImage by remember { mutableStateOf(false) }
     var previewImages by remember { mutableStateOf<List<String>?>(null) }
     var previewIndex by remember { mutableStateOf(0) }
+
+    // ---------- 日期分组折叠状态（记录已折叠的日期） ----------
+    var collapsedDays by remember { mutableStateOf(emptySet<LocalDate>()) }
 
     val selfLabel = stringResource(R.string.record_self)
     val publicLabel = stringResource(R.string.member_public)
@@ -260,6 +271,35 @@ fun HomeScreen(
                         imageVector = if (isDark) Icons.Outlined.LightMode else Icons.Outlined.DarkMode,
                         contentDescription = stringResource(R.string.settings_theme),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(12.dp))
+
+            // ---------- 账单搜索入口（点击进搜索页，自动聚焦） ----------
+            Surface(
+                onClick = onOpenSearch,
+                shape = RoundedCornerShape(50),
+                color = MaterialTheme.colorScheme.surface,
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 14.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Search,
+                        contentDescription = stringResource(R.string.search_hint),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(18.dp),
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        text = stringResource(R.string.search_hint),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }
@@ -473,42 +513,73 @@ fun HomeScreen(
 
             Spacer(Modifier.height(8.dp))
 
-            // ---------- 账单列表 ----------
+            // ---------- 账单列表（按日期分组，组头显示当日收支合计，可折叠） ----------
             AppCard {
                 if (state.recent.isEmpty()) {
                     EmptyState(stringResource(R.string.home_empty))
                 } else {
                     Column(Modifier.padding(vertical = 6.dp)) {
-                        state.recent.forEach { item ->
-                            val category = item.category
-                            BillRow(
-                                categoryName = category?.name ?: stringResource(R.string.uncategorized),
-                                categoryIcon = category?.icon ?: "star",
-                                categoryColor = category?.color?.argb()
-                                    ?: MaterialTheme.colorScheme.onSurfaceVariant,
-                                amountFen = item.tx.amount,
-                                type = TransactionType.from(item.tx.type),
-                                time = item.tx.createdAt,
-                                note = item.tx.note,
-                                thumbnailPath = item.tx.images.firstOrNull(),
-                                onThumbnailClick = {
-                                    previewImages = item.tx.images
-                                    previewIndex = 0
-                                },
-                                selectionMode = selectionMode,
-                                selected = item.tx.id in selectedIds,
-                                onClick = {
-                                    if (selectionMode) {
-                                        selectedIds = if (item.tx.id in selectedIds) {
-                                            selectedIds - item.tx.id
-                                        } else {
-                                            selectedIds + item.tx.id
-                                        }
-                                    } else {
-                                        onOpenDetail(item.tx.id)
-                                    }
+                        val zone = remember { ZoneId.systemDefault() }
+                        val dayGroups = remember(state.recent, zone) {
+                            state.recent.groupBy { item ->
+                                Instant.ofEpochMilli(item.tx.createdAt).atZone(zone).toLocalDate()
+                            }
+                        }
+                        dayGroups.forEach { (day, items) ->
+                            val dayExpense = items
+                                .filter { it.tx.type == TransactionType.EXPENSE.value }
+                                .sumOf { it.tx.amount }
+                            val dayIncome = items
+                                .filter { it.tx.type == TransactionType.INCOME.value }
+                                .sumOf { it.tx.amount }
+                            val collapsed = day in collapsedDays
+                            DayGroupHeader(
+                                day = day,
+                                expenseFen = dayExpense,
+                                incomeFen = dayIncome,
+                                collapsed = collapsed,
+                                onToggle = {
+                                    collapsedDays = if (collapsed) collapsedDays - day else collapsedDays + day
                                 },
                             )
+                            if (!collapsed) {
+                                items.forEach { item ->
+                                    val category = item.category
+                                    BillRow(
+                                        categoryName = category?.name ?: stringResource(R.string.uncategorized),
+                                        categoryIcon = category?.icon ?: "star",
+                                        categoryColor = category?.color?.argb()
+                                            ?: MaterialTheme.colorScheme.onSurfaceVariant,
+                                        amountFen = item.tx.amount,
+                                        type = TransactionType.from(item.tx.type),
+                                        time = item.tx.createdAt,
+                                        note = item.tx.note,
+                                        thumbnailPath = item.tx.images.firstOrNull(),
+                                        onThumbnailClick = {
+                                            previewImages = item.tx.images
+                                            previewIndex = 0
+                                        },
+                                        selectionMode = selectionMode,
+                                        selected = item.tx.id in selectedIds,
+                                        onClick = {
+                                            if (selectionMode) {
+                                                selectedIds = if (item.tx.id in selectedIds) {
+                                                    selectedIds - item.tx.id
+                                                } else {
+                                                    selectedIds + item.tx.id
+                                                }
+                                            } else {
+                                                onOpenDetail(item.tx.id)
+                                            }
+                                        },
+                                        // 长按账单：快速进入多选模式并选中该条
+                                        onLongPress = {
+                                            selectionMode = true
+                                            selectedIds = setOf(item.tx.id)
+                                        },
+                                    )
+                                }
+                            }
                         }
                     }
                 }
@@ -642,6 +713,53 @@ fun HomeScreen(
             images = images,
             initialIndex = previewIndex,
             onDismiss = { previewImages = null },
+        )
+    }
+}
+
+/** 首页账单按日分组的组头：日期 + 当日支出/收入合计 + 折叠箭头（点击折叠/展开当日账单） */
+@Composable
+private fun DayGroupHeader(
+    day: LocalDate,
+    expenseFen: Long,
+    incomeFen: Long,
+    collapsed: Boolean,
+    onToggle: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(8.dp))
+            .clickable(onClick = onToggle)
+            .padding(horizontal = 8.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = DateUtils.formatGroupDate(day),
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.SemiBold,
+        )
+        Spacer(Modifier.weight(1f))
+        if (expenseFen > 0) {
+            Text(
+                text = stringResource(R.string.record_expense) + " ¥" + MoneyFormat.fenToString(expenseFen),
+                style = MaterialTheme.typography.labelMedium,
+                color = SemanticTheme.colors.expense,
+            )
+        }
+        if (incomeFen > 0) {
+            Spacer(Modifier.width(10.dp))
+            Text(
+                text = stringResource(R.string.record_income) + " ¥" + MoneyFormat.fenToString(incomeFen),
+                style = MaterialTheme.typography.labelMedium,
+                color = SemanticTheme.colors.income,
+            )
+        }
+        Icon(
+            imageVector = Icons.Outlined.ArrowDropDown,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.rotate(if (collapsed) 0f else 180f),
         )
     }
 }

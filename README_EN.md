@@ -8,7 +8,7 @@ No login · No ads · No cloud · No tracking — all data stays on your phone
 
 `Android 10+` · `Kotlin 2.0` · `Jetpack Compose` · `Material 3` · `MIT License`
 
-Current version **v1.4.6** · 中文文档：[README.md](README.md)
+Current version **v1.7.1** · 中文文档：[README.md](README.md)
 
 </div>
 
@@ -42,7 +42,7 @@ Data lives 100% on your device — uninstalling removes everything, and the app 
 - Minimal permissions: camera / location on demand only; gallery picks use the system Photo Picker and exports go through MediaStore — storage-permission-free on Android 10+
 
 ### ⚡ Fast recording, one bill a second
-- Large amount card opens a floating numeric keypad (slides in as an overlay, never covers categories); auto-collapses after picking a category
+- Large amount card opens a floating numeric keypad (slides in as an overlay, never covers categories); auto-collapses after picking a category; **categories sit right under the amount and type pills** (amount → type → category, so picking an icon is step two)
 - Tap or swipe the main UI to collapse the keypad; date & time are editable for backfilling; one-tap location + swipeable recent places
 - Shoot or multi-select receipt photos with inline thumbnails and full-screen preview; every bill is fully editable anytime
 
@@ -51,10 +51,21 @@ Data lives 100% on your device — uninstalling removes everything, and the app 
 - **"Shared" owner**: for group expenses like tickets or taxis, assign the bill to "Shared" — stats and settlement split it evenly across everyone
 - **AA settlement**: auto-computes each member's net receivable / payable; a greedy algorithm yields the fewest transfers, with one-tap copy of the plan
 
+### 📅 Calendar & day-by-day review
+- New "Calendar" tab in the bottom bar: the month view marks each day's **expense (red, with −) and income (green, with +)**, large amounts shorten to `1.22k`, today highlighted with a filled circle; tap a date to filter the bill list to that day, tap again to return to the whole month
+- Home recent bills are **grouped by date**: day headers show the day's expense/income totals and can be collapsed; **long-press any bill to jump straight into multi-select**
+
+### 🔍 Bill search, find anything fast
+- A search entry on top of the Home page opens the search screen (keyboard pops up automatically): fuzzy-match all historical bills in the current book by **note, category name, place or amount**
+- Amounts support partial matching: type `12.5` to hit ¥12.50; results stream in live with a 250ms debounce, tap one for bill detail (up to 500 results)
+
 ### 📊 Clear stats, export & share
 - Summary card (total expense / income / net / daily average) + category pie chart + ranking, filtered by today / week / month / all / custom range
+- **Donut chart with leader-line labels** (name + percentage, overlap-free; lines start radially without crossing the ring and are **colored per category**): tap a slice or a **label** to select it (highlight, center shows its amount & share, legend row highlights), tiny slices keep a minimum angle (visible & tappable); **tap the selected legend row again** to drill down into the category's total & count, **subtotals by note (two-level stats)** and its bill list
 - Multi-select category filter, dual-dimension member filters by owner / payer, independent stat-book switching
-- **Three image exports**: stats long image (summary + ranking + member breakdown + AA settlement), multi-select bill summary image, single bill share card — all 1080px PNG, light/dark adaptive
+- **Export dialog with two choices**: statistics image (1080px PNG to gallery) or **CSV bill file** (currently filtered rows, UTF-8 with BOM, opens directly in Excel, saved to Download/lalaledger)
+- **CSV bill import**: pick a CSV file in Me to bulk-import bills; categories and members are matched or auto-created, with a preview dialog (count, amount, date range) before writing into the current book
+- Two more image exports: multi-select bill summary image and single bill share card — all 1080px PNG, light/dark adaptive
 
 ### 🎨 Carefully polished details
 - Light (cream + mint green) / dark themes; capsules, charts, and exported images all adapt to both
@@ -80,19 +91,21 @@ Data lives 100% on your device — uninstalling removes everything, and the app 
 | --- | --- |
 | Multiple books | Create / delete / rename / switch books with optional icon & color; data fully isolated per book (FK CASCADE); **trip-book toggle** (checked on create or via menu; member features hidden in normal books) |
 | Trip bookkeeping | Trip-book exclusive: **fellow-member management** (add/edit/delete, 10 color tags); when recording, pick **owner (who spent)** and **payer (who paid)** separately, defaulting to self, with quick add via the single **"+ Member" button at the top-right of the owner row**; **"Shared" owner = split across everyone** (built-in public member, auto-averaged in stats & settlement); detail / export images show **owner & payer capsule tags** (light/dark adaptive); deleting a member keeps historical bills; first-visit guide card |
-| Backdated entry | Optional date & time per bill (date picker + 24-hour time picker), defaults to now — perfect for backfilling |
+| Time & place | **One merged row** on the record page: left time pill for backfilling (date picker + 24-hour time picker, defaults to now); right place pill opens a menu (GPS / manual input / recent places / clear) |
 | Quick recording | Large amount card **opens a floating numeric keypad** (overlay style, never covers categories); auto-collapses after picking a category; **tapping or swiping the main UI both collapse the keypad** (collapse triggers on gesture end; a 120ms window guards the amount card against accidental dismissal); expense/income capsule toggle |
 | Bill editing | "Edit" in the detail top bar enters edit mode; amount / type / category / member / payer / time / location / photos / note fully pre-filled; save keeps the original creation time |
 | Categories | 14 preset expense + 5 income categories, **fully laid out** (no add button); long-press any category to rename / re-icon / re-color; replacing a pinned category via "More" swaps **both its icon and name** |
-| Quick location | "Current location" one-tap GPS fill-in; swipeable chips of frequently used places; manual input supported |
 | Receipt photos | Camera / multi-select from gallery (Photo Picker); images compressed into app-private storage; **inline thumbnails in bill list + tap for full-screen preview**; Pager zoom preview on detail page |
-| Multi-select | Multi-select mode: round checkboxes, select-all / clear, live stats (count / total expense / total income / net); **first-visit hint**; bottom bar: generate summary image / batch delete (double-confirm) / cancel |
+| Multi-select | Multi-select mode: round checkboxes, select-all / clear, live stats (count / total expense / total income / net); **long-press a bill to start multi-select**; **first-visit hint**; bottom bar: generate summary image / batch delete (double-confirm) / cancel |
 | Summary image export | One-tap 1080px-wide PNG long image saved to gallery: summary card + bill list (**owner/payer capsules** / amount / receipt thumbnail); theme-aware colors, up to 100 items |
 | Single bill share image | Detail top-bar export: share card (amount / category / member / payer / time / location / note / receipt), light/dark adaptive |
-| Statistics | Total expense / income / net / daily average; **switch stat book independently** (does not affect global current book); **category multi-select filter** (lists categories present in the book, instantly syncs charts and totals); period filter: today / week / month / all / custom; trip books support **dual-dimension member filtering by owner (incl. "Shared") / payer**; **member breakdown card** (each member's spend and paid totals, shared expenses already averaged) |
-| Statistics image export | One-tap 1080px PNG long image from the stats top bar: summary card + category ranking (ratio bars) + member breakdown + AA settlement plan, light/dark adaptive, saved to gallery "Pictures/拉拉记账" |
+| Statistics | Total expense / income / net / daily average; **switch stat book independently** (does not affect global current book); **category multi-select filter** (lists categories present in the book, instantly syncs charts and totals); period filter: today / week / month / all / custom; trip books support **dual-dimension member filtering by owner (incl. "Shared") / payer**; **member breakdown card** (each member's spend and paid totals, shared expenses already averaged); **donut chart with leader-line labels** (name + percentage, overlap-free, category-colored lines): tap a slice / label / legend row to select (expanded highlight, center shows the category's amount & share), tiny slices keep a minimum angle (visible & tappable); tap the selected legend row again to drill into a sheet with the category's total/count, **subtotals by note** (two-level stats) and its bill list, tapping a detail row opens the bill |
+| CSV import | Me → "Import CSV bills" → pick a file → preview (bill count, expense/income, total, date range, categories & members to be created, skipped rows) → confirm to bulk-write into the current book; supports Chinese and English headers, multiple time formats, header-less files (default column order), categories matched by type+name and auto-created when missing, members matched by name and auto-created when missing |
 | AA settlement | Trip-book AA settlement card: auto-computes each member's spend, paid, and **net receivable / payable** ("Shared" expenses split per head); greedy algorithm produces a **simplified transfer plan** (who pays whom, how much); **one-tap copy** of the settlement text with a success toast |
 | Bill detail | Layered cards: amount / type / category / owner / payer / location / note / time / photos; top bar: share image / edit / delete double-confirm |
+| Home bill list | Recent bills **grouped by date**, day headers show the day's expense/income totals and are **collapsible**; rows carry the category icon, **category name as the title**, the note in small text beside the time, and the amount; long-press enters multi-select |
+| Bill search | Search entry on top of Home → search screen auto-focuses; fuzzy match the current book by **note / category name / place / amount** (type `12.5` to hit ¥12.50); live results (up to 500, capped with a hint), tap for detail |
+| Calendar tab | Its own bottom tab: month grid (weeks start on Sunday) marks each day's **expense in red with − and income in green with +**; amounts over 1,000 shorten to `1.22k` (millions to `1.22m`); today highlighted; switch months left/right, tap a date to filter the list below (tap again for the whole month); the list reuses the day-grouped style and rows open bill detail |
 | Theme | Light (cream + mint green + misty blue) / Dark (deep blue-gray + soft teal) / follow system; capsules and components adapt to both themes |
 | Language | Settings page **Simplified Chinese / English radio switch**, effective immediately (no restart); each language name is shown in its own language |
 | About | About dialog (version + intro + **open-source license** + **disclaimer** entry); changelog (auto-follows UI language in both languages) |
@@ -127,11 +140,12 @@ app/src/main/java/com/lightledger/app/
 ├── ui/
 │   ├── app/AppViewModel.kt    # Global state: theme / book / language
 │   ├── theme/                 # Material 3 theme + semantic colors + chart palette
-│   ├── navigation/NavGraph.kt # Bottom nav + routes (home/record/stats/me/books/detail/edit/members)
-│   ├── home/                  # Home: stat card + recent bills + multi-select + trip guide card
+│   ├── navigation/NavGraph.kt # Bottom nav + routes (home/record/stats/me/books/search/detail/edit/members)
+│   ├── home/                  # Home: stat card + search entry + recent bills + multi-select + trip guide card
 │   ├── record/                # Record: amount keypad / member dual pickers (incl. "Shared") / date-time / flat categories
 │   ├── stats/                 # Stats: pie chart / ranking / member breakdown / AA settlement / image export
 │   ├── detail/                # Bill detail
+│   ├── search/                # Bill search: debounced live query (note / category / place / amount)
 │   ├── books/  members/       # Book management / member management (built-in "Shared" member is locked)
 │   ├── settings/              # Me: theme / language / wipe / changelog / about
 │   └── components/            # BillRow (dual capsules) / MemberChip / dialogs, etc.
@@ -194,7 +208,7 @@ app/src/main/java/com/lightledger/app/
 # Requirements: JDK 17 + Android SDK (compileSdk 35 / build-tools 35.0.0) + Gradle 9.3
 # Debug build
 gradle assembleDebug
-# Release build (R8 + signing, output app/build/outputs/apk/release/lalaledger-v1.4.6.apk)
+# Release build (R8 + signing, output app/build/outputs/apk/release/lalaledger-v1.7.1.apk)
 gradle assembleRelease
 ```
 

@@ -4,6 +4,7 @@ import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.PieChart
 import androidx.compose.material.icons.outlined.Person
@@ -29,6 +30,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.lightledger.app.ui.app.AppViewModel
+import com.lightledger.app.ui.calendar.CalendarScreen
 import com.lightledger.app.ui.home.HomeScreen
 import com.lightledger.app.ui.record.RecordScreen
 import com.lightledger.app.ui.stats.StatsScreen
@@ -36,14 +38,17 @@ import com.lightledger.app.ui.settings.SettingsScreen
 import com.lightledger.app.ui.books.BooksScreen
 import com.lightledger.app.ui.detail.BillDetailScreen
 import com.lightledger.app.ui.members.MembersScreen
+import com.lightledger.app.ui.search.SearchScreen
 
 /** 路由常量 */
 object Routes {
     const val HOME = "home"
+    const val CALENDAR = "calendar"
     const val RECORD = "record"
     const val STATS = "stats"
     const val ME = "me"
     const val BOOKS = "books"
+    const val SEARCH = "search"
     const val DETAIL = "detail/{txId}"
     const val EDIT = "edit/{txId}"
     const val MEMBERS = "members/{bookId}"
@@ -54,7 +59,7 @@ object Routes {
 
     fun members(bookId: Long) = "members/$bookId"
 
-    val tabs = listOf(HOME, RECORD, STATS, ME)
+    val tabs = listOf(HOME, CALENDAR, RECORD, STATS, ME)
 }
 
 private data class TabItem(
@@ -65,6 +70,7 @@ private data class TabItem(
 
 private val bottomTabs = listOf(
     TabItem(Routes.HOME, com.lightledger.app.R.string.nav_home, Icons.Outlined.Home),
+    TabItem(Routes.CALENDAR, com.lightledger.app.R.string.nav_calendar, Icons.Outlined.CalendarMonth),
     TabItem(Routes.RECORD, com.lightledger.app.R.string.nav_record, Icons.Outlined.EditNote),
     TabItem(Routes.STATS, com.lightledger.app.R.string.nav_stats, Icons.Outlined.PieChart),
     TabItem(Routes.ME, com.lightledger.app.R.string.nav_me, Icons.Outlined.Person),
@@ -132,6 +138,13 @@ fun LightLedgerRoot(appViewModel: AppViewModel) {
                     onOpenDetail = { navController.navigate(Routes.detail(it)) },
                     onGoRecord = { navController.selectTab(Routes.RECORD) },
                     onOpenMembers = { navController.navigate(Routes.members(it)) },
+                    onOpenSearch = { navController.navigate(Routes.SEARCH) },
+                )
+            }
+            composable(Routes.CALENDAR) {
+                CalendarScreen(
+                    appViewModel = appViewModel,
+                    onOpenDetail = { navController.navigate(Routes.detail(it)) },
                 )
             }
             composable(Routes.RECORD) {
@@ -165,6 +178,13 @@ fun LightLedgerRoot(appViewModel: AppViewModel) {
                     appViewModel = appViewModel,
                     onBack = { navController.popBackStack() },
                     onOpenMembers = { navController.navigate(Routes.members(it)) },
+                )
+            }
+            composable(Routes.SEARCH) {
+                SearchScreen(
+                    appViewModel = appViewModel,
+                    onBack = { navController.popBackStack() },
+                    onOpenDetail = { navController.navigate(Routes.detail(it)) },
                 )
             }
             composable(

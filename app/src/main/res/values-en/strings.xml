@@ -14,6 +14,7 @@
 
     <!-- Nav -->
     <string name="nav_home">Home</string>
+    <string name="nav_calendar">Calendar</string>
     <string name="nav_record">Record</string>
     <string name="nav_stats">Stats</string>
     <string name="nav_me">Me</string>
@@ -51,11 +52,25 @@
     <string name="home_deleted_n">%1$d bills deleted</string>
     <string name="export_saved">Saved to Pictures/拉拉记账</string>
     <string name="export_failed">Export failed, please retry</string>
+    <string name="export_csv_saved">Saved to Download/lalaledger</string>
+    <string name="export_csv_empty">No bills to export with current filters</string>
+    <string name="stats_export_choose">Choose export format</string>
+    <string name="stats_export_image">Export statistics image</string>
+    <string name="stats_export_image_sub">PNG long image, saved to gallery</string>
+    <string name="stats_export_csv">Export CSV bills</string>
+    <string name="stats_export_csv_sub">Filtered details, openable in Excel</string>
     <string name="guide_trip_title">How trip books work</string>
     <string name="guide_trip_body">1. Add travel mates via "Manage members"; 2. When recording, pick "Who consumed" and "Who paid"; 3. Check personal spend &amp; advances in Stats, then settle up with one tap.</string>
     <string name="guide_trip_action">Add members</string>
     <string name="guide_multi_title">What multi-select does</string>
     <string name="guide_multi_body">After selecting bills you can export a summary image (with member tags) or delete them in batch; select only one member\'s bills to settle that person separately.</string>
+
+    <!-- Calendar -->
+    <string name="calendar_prev_month">Previous month</string>
+    <string name="calendar_next_month">Next month</string>
+    <string name="calendar_tap_hint">Tap a date to view its bills</string>
+    <string name="calendar_bills_of_day">Bills on %1$s</string>
+    <string name="calendar_bills_month">This month\'s bills</string>
 
     <!-- Record -->
     <string name="record_edit_title">Edit bill</string>
@@ -77,6 +92,7 @@
     <string name="category_replace_done">Replaced with \"%1$s\"</string>
     <string name="record_location">Location</string>
     <string name="record_current_location">Current place</string>
+    <string name="record_add_location">Add place</string>
     <string name="record_manual_location">Manual</string>
     <string name="record_clear_location">Clear location</string>
     <string name="record_photo">Camera</string>
@@ -139,6 +155,11 @@
     <string name="member_public_hint">Shared AA expense owner (built-in)</string>
     <string name="stats_switch_book">Switch book</string>
     <string name="stats_pie_center">%1$s expense</string>
+    <string name="stats_pie_tap_hint">Tap a slice, label or legend row to select &amp; sync; tap the selected legend row again for details</string>
+    <string name="stats_pie_other">Other</string>
+    <string name="stats_by_note">Subtotals by note</string>
+    <string name="stats_no_note">(no note)</string>
+    <string name="stats_sheet_bills">Records</string>
 
     <!-- Detail -->
     <string name="detail_time">Time</string>
@@ -190,6 +211,21 @@
     <string name="settings_no_book">No book selected</string>
     <string name="settings_theme">Dark mode</string>
     <string name="settings_language">Language</string>
+    <string name="settings_import_csv">Import CSV bills</string>
+    <string name="import_csv_title">Import CSV bills</string>
+    <string name="import_csv_done">Imported %1$d bills</string>
+    <string name="import_csv_failed">Failed to read the file</string>
+    <string name="import_csv_empty">No bills to import</string>
+    <string name="import_csv_no_book">Select a book before importing</string>
+    <string name="import_csv_parsing">Parsing file…</string>
+    <string name="import_csv_importing">Importing…</string>
+    <string name="import_csv_book">Into: %1$s</string>
+    <string name="import_csv_count">%1$d bills (expense %2$d / income %3$d), total ¥%4$s</string>
+    <string name="import_csv_range">Period: %1$s ~ %2$s</string>
+    <string name="import_csv_new_cat">New categories: %1$d</string>
+    <string name="import_csv_new_member">New members: %1$d</string>
+    <string name="import_csv_skipped">Skipped %1$d rows (invalid time or amount)</string>
+    <string name="import_csv_default_category">Other</string>
     <string name="settings_clear">Clear current book data</string>
     <string name="settings_clear_title">Clear all bills in "%1$s"?</string>
     <string name="settings_clear_msg">All bills and receipt photos in this book will be deleted. The book itself is kept. This cannot be undone.</string>
@@ -214,6 +250,27 @@
     <string name="chlog_145_3">Single "+ Member" button moved to the top-right of the owner row</string>
     <string name="chlog_145_4">Recent bills no longer show owner/payer tags (still visible in bill detail)</string>
     <string name="chlog_146_1">Replacing a pinned category icon via "More" now updates its name to match the icon</string>
+    <string name="chlog_147_1">Record page: category grid moved right below the amount card — amount, then type, then category</string>
+    <string name="chlog_148_1">Removed the empty space above the amount and made the category grid more compact, so more fits on one screen</string>
+    <string name="chlog_148_2">"Owner" and "Payer" rows moved to the bottom; amount and categories are shown first</string>
+    <string name="chlog_149_1">Time and location merged into one row (location opens a menu from its pill); slimmer photo buttons — the record page fits on one screen</string>
+    <string name="search_hint">Search bills</string>
+    <string name="search_empty_hint">Type keywords to search notes, categories, places or amounts</string>
+    <string name="search_no_result">No matching bills</string>
+    <string name="search_result_count">%1$d bills</string>
+    <string name="search_result_limit">Showing first 500; try a more specific keyword</string>
+    <string name="chlog_170_1">Bill search on home: find historical bills by note, category, place or amount (e.g. 12.5), tap a result for details</string>
+    <string name="chlog_171_1">Pie leader lines redrawn: radial start (no longer crossing the ring) and category-colored; tap a label or legend row to highlight its slice (tap legend again for details)</string>
+    <string name="chlog_163_1">Fixed tiny slices being untappable: a minimum slice angle keeps them visible &amp; tappable, plus a wider hit band</string>
+    <string name="chlog_162_1">Pie chart upgrade: leader-line labels (name + percentage, overlap-free); tap a slice to select with center amount sync, legend highlights in sync</string>
+    <string name="chlog_161_1">Bill rows now use the category name as the title, with the note in small text beside the time</string>
+    <string name="chlog_160_1">Calendar amounts now carry signs (expense - / income +), large values shorten to 1.22k</string>
+    <string name="chlog_160_2">Stats export button opens a dialog: export as image or as a CSV bill file</string>
+    <string name="chlog_160_3">New "Import CSV bills" in Me: categories and members are matched or auto-created, with a preview before importing</string>
+    <string name="chlog_150_1">Home recent bills grouped by date with daily expense/income totals (collapsible); long-press a bill to start multi-select</string>
+    <string name="chlog_150_2">New Calendar tab: month view with daily expense (today highlighted), tap a date to view its bills</string>
+    <string name="chlog_150_3">Pie chart shows percentage labels on large slices; tap a slice or a legend row to drill into category details</string>
+    <string name="chlog_150_4">Category drill-down sheet adds "Subtotals by note" for two-level stats</string>
     <string name="chlog_144_1">Fix: version number in Me/About now matches the actual build</string>
     <string name="chlog_144_2">Category More: pick from all named icons and replace a pinned category icon</string>
     <string name="chlog_144_3">Numeric keypad: swipe or tap the main area to dismiss</string>

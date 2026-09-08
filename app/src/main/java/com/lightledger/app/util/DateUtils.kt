@@ -18,6 +18,8 @@ object DateUtils {
 
     private val fmtTime = SimpleDateFormat("HH:mm", Locale.CHINA)
     private val fmtMonthDay = DateTimeFormatter.ofPattern("M月d日")
+    private val fmtFullDate = DateTimeFormatter.ofPattern("yyyy年M月d日")
+    private val fmtYearMonth = DateTimeFormatter.ofPattern("yyyy年M月")
     private val fmtFull = DateTimeFormatter.ofPattern("yyyy年M月d日 HH:mm")
     private val fmtCsv = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
 
@@ -61,4 +63,34 @@ object DateUtils {
     /** "yyyy-MM-dd" -> LocalDate */
     fun parseDate(text: String): LocalDate? =
         runCatching { LocalDate.parse(text) }.getOrNull()
+
+    /** 年月 -> "yyyy年M月"（日历页月标题） */
+    fun formatYearMonth(yearMonth: java.time.YearMonth): String =
+        yearMonth.format(fmtYearMonth)
+
+    /**
+     * 账单列表按日分组的组头文案：
+     * 今天/昨天 → 相对词；今年 → "M月d日 周X"；往年 → "yyyy年M月d日 周X"。
+     */
+    fun formatGroupDate(date: LocalDate): String {
+        val today = LocalDate.now()
+        val dateText = when {
+            date == today -> "今天"
+            date == today.minusDays(1) -> "昨天"
+            date.year == today.year -> date.format(fmtMonthDay)
+            else -> date.format(fmtFullDate)
+        }
+        return "$dateText ${dowText(date.dayOfWeek)}"
+    }
+
+    /** 星期几中文短文案 */
+    fun dowText(day: java.time.DayOfWeek): String = when (day) {
+        java.time.DayOfWeek.MONDAY -> "周一"
+        java.time.DayOfWeek.TUESDAY -> "周二"
+        java.time.DayOfWeek.WEDNESDAY -> "周三"
+        java.time.DayOfWeek.THURSDAY -> "周四"
+        java.time.DayOfWeek.FRIDAY -> "周五"
+        java.time.DayOfWeek.SATURDAY -> "周六"
+        else -> "周日"
+    }
 }

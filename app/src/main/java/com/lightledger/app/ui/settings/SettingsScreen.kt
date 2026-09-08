@@ -1,6 +1,8 @@
 package com.lightledger.app.ui.settings
 
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -18,11 +20,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.DeleteSweep
 import androidx.compose.material.icons.outlined.Contrast
+import androidx.compose.material.icons.outlined.FileUpload
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material.icons.outlined.MenuBook
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -31,6 +35,7 @@ import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -43,14 +48,19 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
 import com.lightledger.app.LightLedgerApp
 import com.lightledger.app.R
 import com.lightledger.app.domain.model.ThemeMode
 import com.lightledger.app.ui.app.AppViewModel
 import com.lightledger.app.ui.components.AppCard
 import com.lightledger.app.ui.components.ConfirmDialog
+import com.lightledger.app.util.DateUtils
 import com.lightledger.app.util.LocaleHelper
 import com.lightledger.app.util.LocaleHelper.findActivity
+import com.lightledger.app.util.MoneyFormat
 import kotlinx.coroutines.launch
 
 /** ThemeMode → 文案资源 */
@@ -88,6 +98,36 @@ fun SettingsScreen(
     var showDisclaimerDialog by remember { mutableStateOf(false) }
     var showClearDialog by remember { mutableStateOf(false) }
     var showChangelogDialog by remember { mutableStateOf(false) }
+
+    // ---------- CSV 账单导入 ----------
+    val importViewModel: CsvImportViewModel = viewModel(
+        factory = viewModelFactory {
+            initializer { CsvImportViewModel(container, appViewModel.currentBookId) }
+        }
+    )
+    val importState by importViewModel.state.collectAsStateWithLifecycle()
+    val defaultCategoryName = stringResource(R.string.import_csv_default_category)
+    val csvPicker = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri ->
+        if (uri != null) importViewModel.parse(context, uri, defaultCategoryName)
+    }
+    // 结果/错误以 Toast 提示后回到空闲态
+    LaunchedEffect(importState) {
+        when (val s = importState) {
+            is CsvImportViewModel.State.Done -> {
+                Toast.makeText(
+                    context, context.getString(R.string.import_csv_done, s.count), Toast.LENGTH_SHORT
+                ).show()
+                importViewModel.reset()
+            }
+            is CsvImportViewModel.State.Error -> {
+                Toast.makeText(context, context.getString(s.messageRes), Toast.LENGTH_SHORT).show()
+                importViewModel.reset()
+            }
+            else -> Unit
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -149,6 +189,13 @@ fun SettingsScreen(
                 title = stringResource(R.string.settings_language),
                 value = stringResource(if (language == LocaleHelper.EN) R.string.lang_en else R.string.lang_zh),
                 onClick = { showLanguageDialog = true },
+            )
+            HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
+            SettingRow(
+                icon = Icons.Outlined.FileUpload,
+                title = stringResource(R.string.settings_import_csv),
+                value = currentBook?.name ?: "",
+                onClick = { csvPicker.launch("*/*") },
             )
             HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
             SettingRow(
@@ -383,6 +430,96 @@ fun SettingsScreen(
         )
     }
 
+    // ---------- CSV 导入：解析中 / 导入中 / 预览确认 ----------
+    when (val s = importState) {
+        CsvImportViewModel.State.Parsing -> {
+            ProgressDialog(text = stringResource(R.string.import_csv_parsing))
+        }
+        CsvImportViewModel.State.Importing -> {
+            ProgressDialog(text = stringResource(R.string.import_csv_importing))
+        }
+        is CsvImportViewModel.State.Previewing -> {
+            val p = s.preview
+            val zone = remember { java.time.ZoneId.systemDefault() }
+            val startDate = java.time.Instant.ofEpochMilli(p.minTime).atZone(zone).toLocalDate()
+            val endDate = java.time.Instant.ofEpochMilli(p.maxTime).atZone(zone).toLocalDate()
+            AlertDialog(
+                onDismissRequest = { importViewModel.reset() },
+                shape = MaterialTheme.shapes.large,
+                title = {
+                    Text(
+                        stringResource(R.string.import_csv_title),
+                        style = MaterialTheme.typography.titleMedium,
+                    )
+                },
+                text = {
+                    Column(
+                        modifier = Modifier.verticalScroll(rememberScrollState()),
+                        verticalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        Text(
+                            stringResource(R.string.import_csv_book, p.bookName),
+                            style = MaterialTheme.typography.titleSmall,
+                        )
+                        Text(
+                            stringResource(
+                                R.string.import_csv_count,
+                                p.rows.size, p.expenseCount, p.incomeCount,
+                                MoneyFormat.fenToString(p.totalFen),
+                            ),
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+                        Text(
+                            stringResource(
+                                R.string.import_csv_range,
+                                DateUtils.formatDate(startDate),
+                                DateUtils.formatDate(endDate),
+                            ),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        if (p.newCategoryNames.isNotEmpty()) {
+                            Text(
+                                stringResource(R.string.import_csv_new_cat, p.newCategoryNames.size) +
+                                    "：" + p.newCategoryNames.take(6).joinToString("、") +
+                                    (if (p.newCategoryNames.size > 6) " …" else ""),
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        if (p.newMemberNames.isNotEmpty()) {
+                            Text(
+                                stringResource(R.string.import_csv_new_member, p.newMemberNames.size) +
+                                    "：" + p.newMemberNames.take(6).joinToString("、") +
+                                    (if (p.newMemberNames.size > 6) " …" else ""),
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        if (p.skipped > 0) {
+                            Text(
+                                stringResource(R.string.import_csv_skipped, p.skipped),
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.error,
+                            )
+                        }
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = { importViewModel.confirmImport() }) {
+                        Text(stringResource(R.string.confirm))
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { importViewModel.reset() }) {
+                        Text(stringResource(R.string.cancel))
+                    }
+                },
+            )
+        }
+        else -> Unit
+    }
+
     // ---------- 清空当前账本 ----------
     if (showClearDialog) {
         ConfirmDialog(
@@ -401,6 +538,26 @@ fun SettingsScreen(
             onDismiss = { showClearDialog = false },
         )
     }
+}
+
+/** 导入 CSV 时的忙碌弹窗（不可取消） */
+@Composable
+private fun ProgressDialog(text: String) {
+    AlertDialog(
+        onDismissRequest = {},
+        shape = MaterialTheme.shapes.large,
+        text = {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(22.dp),
+                    strokeWidth = 2.dp,
+                )
+                Spacer(Modifier.width(14.dp))
+                Text(text, style = MaterialTheme.typography.bodyMedium)
+            }
+        },
+        confirmButton = {},
+    )
 }
 
 @Composable
@@ -447,6 +604,72 @@ private fun SettingRow(
 
 /** 版本变更履历（最新在前），条目走字符串资源支持中英文 */
 private enum class ChangeLog(val version: String, val date: String, val items: List<Int>) {
+    V1_7_1(
+        "1.7.1", "2026-09-08",
+        listOf(
+            R.string.chlog_171_1,
+        ),
+    ),
+    V1_7_0(
+        "1.7.0", "2026-09-08",
+        listOf(
+            R.string.chlog_170_1,
+        ),
+    ),
+    V1_6_3(
+        "1.6.3", "2026-09-08",
+        listOf(
+            R.string.chlog_163_1,
+        ),
+    ),
+    V1_6_2(
+        "1.6.2", "2026-09-08",
+        listOf(
+            R.string.chlog_162_1,
+        ),
+    ),
+    V1_6_1(
+        "1.6.1", "2026-09-08",
+        listOf(
+            R.string.chlog_161_1,
+        ),
+    ),
+    V1_6_0(
+        "1.6.0", "2026-09-09",
+        listOf(
+            R.string.chlog_160_1,
+            R.string.chlog_160_2,
+            R.string.chlog_160_3,
+        ),
+    ),
+    V1_5_0(
+        "1.5.0", "2026-09-06",
+        listOf(
+            R.string.chlog_150_1,
+            R.string.chlog_150_2,
+            R.string.chlog_150_3,
+            R.string.chlog_150_4,
+        ),
+    ),
+    V1_4_9(
+        "1.4.9", "2026-09-06",
+        listOf(
+            R.string.chlog_149_1,
+        ),
+    ),
+    V1_4_8(
+        "1.4.8", "2026-09-06",
+        listOf(
+            R.string.chlog_148_1,
+            R.string.chlog_148_2,
+        ),
+    ),
+    V1_4_7(
+        "1.4.7", "2026-09-05",
+        listOf(
+            R.string.chlog_147_1,
+        ),
+    ),
     V1_4_6(
         "1.4.6", "2026-09-05",
         listOf(

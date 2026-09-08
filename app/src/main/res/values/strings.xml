@@ -14,6 +14,7 @@
 
     <!-- 导航 -->
     <string name="nav_home">首页</string>
+    <string name="nav_calendar">日历</string>
     <string name="nav_record">记账</string>
     <string name="nav_stats">统计</string>
     <string name="nav_me">我的</string>
@@ -51,11 +52,25 @@
     <string name="home_deleted_n">已删除 %1$d 笔账单</string>
     <string name="export_saved">已保存到相册 Pictures/拉拉记账</string>
     <string name="export_failed">生成失败，请重试</string>
+    <string name="export_csv_saved">已保存到 Download/拉拉记账</string>
+    <string name="export_csv_empty">当前筛选没有可导出的账单</string>
+    <string name="stats_export_choose">选择导出方式</string>
+    <string name="stats_export_image">导出统计图片</string>
+    <string name="stats_export_image_sub">PNG 长图，保存到相册</string>
+    <string name="stats_export_csv">导出 CSV 账单</string>
+    <string name="stats_export_csv_sub">当前筛选的明细，可用 Excel 打开</string>
     <string name="guide_trip_title">旅行账本怎么用</string>
     <string name="guide_trip_body">① 菜单「管理成员」添加同行人；② 记账时分别选「谁消费」「谁垫付」；③ 统计页查看个人消费与垫付，AA 结算一键算账。</string>
     <string name="guide_trip_action">去添加成员</string>
     <string name="guide_multi_title">多选能做什么</string>
     <string name="guide_multi_body">勾选账单后可生成汇总长图（带成员标签）或批量删除；只勾选某位成员的账单，即可单独统计与结算。</string>
+
+    <!-- 日历页 -->
+    <string name="calendar_prev_month">上个月</string>
+    <string name="calendar_next_month">下个月</string>
+    <string name="calendar_tap_hint">点击日期查看当日账单</string>
+    <string name="calendar_bills_of_day">%1$s的账单</string>
+    <string name="calendar_bills_month">本月账单</string>
 
     <!-- 记账页 -->
     <string name="record_edit_title">编辑账单</string>
@@ -77,6 +92,7 @@
     <string name="category_replace_done">已替换为「%1$s」</string>
     <string name="record_location">地点</string>
     <string name="record_current_location">当前地点</string>
+    <string name="record_add_location">添加地点</string>
     <string name="record_manual_location">手动输入</string>
     <string name="record_clear_location">清除地点</string>
     <string name="record_photo">拍照</string>
@@ -139,6 +155,11 @@
     <string name="member_public_hint">全员 AA 消费归属（系统内置）</string>
     <string name="stats_switch_book">切换账本</string>
     <string name="stats_pie_center">%1$s支出</string>
+    <string name="stats_pie_tap_hint">点扇区、标签或图例选中并联动金额，再点已选图例看明细</string>
+    <string name="stats_pie_other">其他</string>
+    <string name="stats_by_note">按备注小计</string>
+    <string name="stats_no_note">（无备注）</string>
+    <string name="stats_sheet_bills">账单明细</string>
 
     <!-- 账单详情 -->
     <string name="detail_time">时间</string>
@@ -190,6 +211,21 @@
     <string name="settings_no_book">未选择账本</string>
     <string name="settings_theme">深色模式</string>
     <string name="settings_language">语言</string>
+    <string name="settings_import_csv">导入 CSV 账单</string>
+    <string name="import_csv_title">导入 CSV 账单</string>
+    <string name="import_csv_done">已导入 %1$d 笔账单</string>
+    <string name="import_csv_failed">读取文件失败</string>
+    <string name="import_csv_empty">没有可导入的账单</string>
+    <string name="import_csv_no_book">请先选择账本再导入</string>
+    <string name="import_csv_parsing">正在解析文件…</string>
+    <string name="import_csv_importing">正在导入…</string>
+    <string name="import_csv_book">导入到：%1$s</string>
+    <string name="import_csv_count">共 %1$d 笔（支出 %2$d / 收入 %3$d），合计 ¥%4$s</string>
+    <string name="import_csv_range">时间：%1$s ~ %2$s</string>
+    <string name="import_csv_new_cat">新建分类 %1$d 个</string>
+    <string name="import_csv_new_member">新建成员 %1$d 个</string>
+    <string name="import_csv_skipped">跳过 %1$d 行（时间或金额无法识别）</string>
+    <string name="import_csv_default_category">其他</string>
     <string name="settings_clear">清空当前账本数据</string>
     <string name="settings_clear_title">清空「%1$s」的全部账单？</string>
     <string name="settings_clear_msg">该账本下的所有账单记录与小票图片将被删除，账本本身保留。此操作无法撤销。</string>
@@ -214,6 +250,27 @@
     <string name="chlog_145_3">「+ 成员」合并为一处，移至归属行右上角</string>
     <string name="chlog_145_4">最近账单条目不再显示归属/垫付标签（详情页仍可查看）</string>
     <string name="chlog_146_1">「更多」替换常驻分类图标时，名称同步替换为图标名称</string>
+    <string name="chlog_147_1">记账页分类区上移至金额卡下方：金额 → 类型 → 分类，选完金额紧接着选分类</string>
+    <string name="chlog_148_1">去掉金额上方空白，分类图标区整体缩小，一屏放下更多内容</string>
+    <string name="chlog_148_2">「这笔归谁」「谁垫付」移至页面最底部，金额与分类优先展示</string>
+    <string name="chlog_149_1">时间与地点合并为一行（地点改为点胶囊弹菜单），拍照/相册按钮压扁，记账页一屏放下</string>
+    <string name="search_hint">搜索账单</string>
+    <string name="search_empty_hint">输入关键词，搜索备注、分类、位置或金额</string>
+    <string name="search_no_result">未找到相关账单</string>
+    <string name="search_result_count">共 %1$d 笔</string>
+    <string name="search_result_limit">仅显示前 500 条，试试更精确的关键词</string>
+    <string name="chlog_170_1">首页新增账单搜索：按备注、分类、位置或金额（如 12.5）快速查找历史账单，点结果直达详情</string>
+    <string name="chlog_171_1">饼图引导线重画：沿径向出发不再穿环、颜色随分类对应，点标签或图例即可联动高亮扇形（再点图例看明细）</string>
+    <string name="chlog_163_1">修复占比极小的扇区点不到：增加最小扇区角度（看得见也点得中），并放宽触摸命中范围</string>
+    <string name="chlog_162_1">统计饼图升级：引导线分类标签（名称+百分比，防重叠）；点扇区选中联动环心金额，图例同步高亮</string>
+    <string name="chlog_161_1">账单列表改为分类名作标题，备注以小字显示在时间旁</string>
+    <string name="chlog_160_1">日历页金额加正负号（支出 - / 收入 +），大额自动简写为 1.22k</string>
+    <string name="chlog_160_2">统计页导出按钮改为弹窗：可选导出统计图片或 CSV 账单文件</string>
+    <string name="chlog_160_3">我的页新增导入 CSV 账单：自动匹配或新建分类与成员，导入前可预览确认</string>
+    <string name="chlog_150_1">首页最近账单按日期分组并统计当日支出/收入，组头可折叠；长按账单快速进入多选</string>
+    <string name="chlog_150_2">新增日历页：月历展示每日支出（今日高亮），点击日期查看当日账单</string>
+    <string name="chlog_150_3">统计饼图大扇区显示百分比标注，点击扇区或图例下钻查看分类明细</string>
+    <string name="chlog_150_4">分类下钻弹层新增「按备注小计」，实现二级统计</string>
     <string name="chlog_144_1">修复：设置页/关于页版本号与实际版本同步</string>
     <string name="chlog_144_2">分类区新增「更多」：全量图标带名称选择，可一键替换常驻分类图标</string>
     <string name="chlog_144_3">数字键盘：滑动或点按主界面均收起</string>

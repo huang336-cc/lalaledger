@@ -23,6 +23,18 @@ class TransactionRepository(private val dao: TransactionDao) {
 
     suspend fun getByBookOnce(bookId: Long): List<TransactionEntity> = dao.getByBookOnce(bookId)
 
+    /**
+     * 账单搜索：备注 / 分类名 / 位置 / 金额（如输入 12.5 命中 ¥12.50）。
+     * 关键词先做 LIKE 通配符转义，输入 % _ \ 均按字面匹配。
+     */
+    fun observeSearch(bookId: Long, keyword: String): Flow<List<TransactionEntity>> {
+        val q = keyword.trim()
+            .replace("\\", "\\\\")
+            .replace("%", "\\%")
+            .replace("_", "\\_")
+        return dao.observeSearch(bookId, q)
+    }
+
     suspend fun add(
         bookId: Long,
         type: TransactionType,

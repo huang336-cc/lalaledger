@@ -27,7 +27,9 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ArrowDropDown
 import androidx.compose.material.icons.outlined.ContentCopy
+import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.Group
+import androidx.compose.material.icons.outlined.Image
 import androidx.compose.material.icons.outlined.IosShare
 import androidx.compose.material.icons.outlined.SwapHoriz
 import androidx.compose.material3.AlertDialog
@@ -35,13 +37,16 @@ import androidx.compose.material3.DateRangePicker
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDateRangePickerState
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -50,6 +55,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -63,6 +69,7 @@ import com.lightledger.app.LightLedgerApp
 import com.lightledger.app.R
 import com.lightledger.app.domain.model.StatPeriod
 import com.lightledger.app.domain.model.ThemeMode
+import com.lightledger.app.domain.model.TransactionType
 import com.lightledger.app.ui.app.AppViewModel
 import com.lightledger.app.ui.components.AppCard
 import com.lightledger.app.ui.components.CategoryIcon
@@ -71,8 +78,10 @@ import com.lightledger.app.ui.components.MemberChip
 import com.lightledger.app.ui.components.SectionTitle
 import com.lightledger.app.ui.theme.SemanticTheme
 import com.lightledger.app.ui.theme.argb
+import com.lightledger.app.util.CsvExporter
 import com.lightledger.app.util.MoneyFormat
 import com.lightledger.app.util.StatsImageExporter
+import com.lightledger.app.util.DateUtils
 import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDate
@@ -113,6 +122,12 @@ fun StatsScreen(
     var payerMenuOpen by remember { mutableStateOf(false) }
     var bookMenuOpen by remember { mutableStateOf(false) }
     var exportingStats by remember { mutableStateOf(false) }
+    // 导出方式弹窗（图片 / CSV）
+    var showExportDialog by remember { mutableStateOf(false) }
+    // 饼图下钻：当前查看的分类 id（非空时弹出底部明细面板，分类数据实时从 state 取）
+    var drilldownId by remember { mutableStateOf<Long?>(null) }
+    // 饼图选中态：点扇区选中（中心联动 + 高亮），再点同一扇区或环心取消
+    var selectedSliceId by remember { mutableStateOf<Long?>(null) }
 
     // 主题明暗（导出统计图配色用）
     val themeMode by appViewModel.themeMode.collectAsStateWithLifecycle()
@@ -221,6 +236,27 @@ fun StatsScreen(
         )
     }
 
+    // ---------- CSV 导出：当前筛选后的全部明细 ----------
+    val categoryMap by container.categoryRepository.observeIdMap()
+        .collectAsStateWithLifecycle(initialValue = emptyMap())
+
+    fun toast(resId: Int) {
+        Toast.makeText(context, context.getString(resId), Toast.LENGTH_SHORT).show()
+    }
+
+    fun buildCsvRows(): List<CsvExporter.CsvRow> = state.detailTxs.map { tx ->
+        CsvExporter.CsvRow(
+            timeText = DateUtils.formatCsvTime(tx.createdAt),
+            typeText = if (tx.type == TransactionType.EXPENSE.value) expenseLabel else incomeLabel,
+            amountText = MoneyFormat.fenToPlain(tx.amount),
+            categoryName = categoryMap[tx.categoryId]?.name.orEmpty(),
+            note = tx.note.orEmpty(),
+            location = tx.location.orEmpty(),
+            memberName = if (tx.memberId == null) "" else nameOf(tx.memberId),
+            payerName = if (tx.payerMemberId == null) "" else nameOf(tx.payerMemberId),
+        )
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -238,22 +274,7 @@ fun StatsScreen(
             )
             IconButton(
                 enabled = !exportingStats,
-                onClick = {
-                    scope.launch {
-                        exportingStats = true
-                        val uri = StatsImageExporter.export(
-                            context, buildStatsExportData(periodText), isDark,
-                        )
-                        exportingStats = false
-                        Toast.makeText(
-                            context,
-                            context.getString(
-                                if (uri != null) R.string.export_saved else R.string.export_failed
-                            ),
-                            Toast.LENGTH_SHORT,
-                        ).show()
-                    }
-                },
+                onClick = { showExportDialog = true },
             ) {
                 Icon(
                     Icons.Outlined.IosShare,
@@ -478,27 +499,69 @@ fun StatsScreen(
             Column(Modifier.padding(16.dp)) {
                 SectionTitle(stringResource(R.string.stats_pie_title))
                 Spacer(Modifier.height(12.dp))
+                // 缓存 slices：仅在分类数据变化时重建，避免普通重组重放进场动画
+                val pieSlices = remember(state.categories) {
+                    state.categories.take(8).map {
+                        PieSlice(
+                            label = it.name,
+                            ratio = it.ratio,
+                            color = Color(it.color),
+                        )
+                    }
+                }
+                // 选中分类（可能已被筛选清掉，取不到时按未选中渲染）
+                val selectedCat = state.categories.firstOrNull { it.categoryId == selectedSliceId }
+                val selectedPieIndex = selectedCat?.let { sel ->
+                    state.categories.take(8).indexOfFirst { it.categoryId == sel.categoryId }
+                        .takeIf { it in 0 until 6 } // 第 7、8 类在图上并入"其他"，无独立扇区
+                }
                 Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                     CategoryPieChart(
-                        slices = state.categories.take(8).map {
-                            PieSlice(
-                                label = it.name,
-                                ratio = it.ratio,
-                                color = Color(it.color),
-                            )
+                        slices = pieSlices,
+                        otherLabel = stringResource(R.string.stats_pie_other),
+                        selectedSlice = selectedPieIndex,
+                        centerTitle = selectedCat?.let {
+                            it.name + " · " + String.format(java.util.Locale.US, "%.1f%%", it.ratio * 100)
+                        } ?: stringResource(R.string.stats_pie_center, stringResource(state.period.labelRes())),
+                        centerValue = selectedCat?.let {
+                            "¥${MoneyFormat.fenToString(it.total)}"
+                        } ?: "¥${MoneyFormat.fenToString(state.totalExpense)}",
+                        onSliceClick = { index ->
+                            // 点扇区：选中/取消（"其他"合并段点击视为清除选中）
+                            val catId = state.categories.getOrNull(index)?.categoryId
+                            selectedSliceId = if (catId != null && selectedSliceId == catId) null else catId
                         },
-                        centerTitle = stringResource(R.string.stats_pie_center, stringResource(state.period.labelRes())),
-                        centerValue = "¥${MoneyFormat.fenToString(state.totalExpense)}",
+                        onCenterClick = { selectedSliceId = null },
                     )
                 }
-                // 图例（前 6 类）
+                Spacer(Modifier.height(2.dp))
+                Text(
+                    stringResource(R.string.stats_pie_tap_hint),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                    modifier = Modifier.padding(start = 4.dp),
+                )
+                // 图例（前 6 类；点击选中并联动高亮扇形，再次点击打开下钻明细）
                 if (state.categories.isNotEmpty()) {
                     Spacer(Modifier.height(12.dp))
                     state.categories.take(6).forEach { item ->
+                        val isSelected = selectedSliceId == item.categoryId
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(vertical = 4.dp),
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(
+                                    if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)
+                                    else Color.Transparent
+                                )
+                                .clickable {
+                                    if (selectedSliceId == item.categoryId) {
+                                        drilldownId = item.categoryId
+                                    } else {
+                                        selectedSliceId = item.categoryId
+                                    }
+                                }
+                                .padding(horizontal = 4.dp, vertical = 4.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Box(
@@ -665,6 +728,68 @@ fun StatsScreen(
         Spacer(Modifier.height(16.dp))
     }
 
+    // ---------- 导出方式弹窗：统计图片 / CSV 账单 ----------
+    if (showExportDialog) {
+        AlertDialog(
+            onDismissRequest = { if (!exportingStats) showExportDialog = false },
+            title = {
+                Text(
+                    stringResource(R.string.stats_export_choose),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                )
+            },
+            text = {
+                Column {
+                    ExportOptionRow(
+                        icon = Icons.Outlined.Image,
+                        title = stringResource(R.string.stats_export_image),
+                        subtitle = stringResource(R.string.stats_export_image_sub),
+                        enabled = !exportingStats,
+                        onClick = {
+                            showExportDialog = false
+                            scope.launch {
+                                exportingStats = true
+                                val uri = StatsImageExporter.export(
+                                    context, buildStatsExportData(periodText), isDark,
+                                )
+                                exportingStats = false
+                                toast(if (uri != null) R.string.export_saved else R.string.export_failed)
+                            }
+                        },
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    ExportOptionRow(
+                        icon = Icons.Outlined.Description,
+                        title = stringResource(R.string.stats_export_csv),
+                        subtitle = stringResource(R.string.stats_export_csv_sub),
+                        enabled = !exportingStats,
+                        onClick = {
+                            val rows = buildCsvRows()
+                            if (rows.isEmpty()) {
+                                toast(R.string.export_csv_empty)
+                            } else {
+                                showExportDialog = false
+                                scope.launch {
+                                    exportingStats = true
+                                    val uri = CsvExporter.export(context, rows, "账单")
+                                    exportingStats = false
+                                    toast(if (uri != null) R.string.export_csv_saved else R.string.export_failed)
+                                }
+                            }
+                        },
+                    )
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                TextButton(onClick = { showExportDialog = false }) {
+                    Text(stringResource(R.string.cancel))
+                }
+            },
+        )
+    }
+
     // ---------- 自定义时间段 ----------
     if (showRangePicker) {
         CustomRangeDialog(
@@ -674,6 +799,128 @@ fun StatsScreen(
                 showRangePicker = false
             },
         )
+    }
+
+    // ---------- 饼图下钻：分类明细底部面板（备注小计 + 账单明细） ----------
+    val drilldownCat = state.categories.firstOrNull { it.categoryId == drilldownId }
+    if (drilldownCat != null) {
+        val cat = drilldownCat
+        val catTxs = state.expenseTxs
+            .filter { it.categoryId == cat.categoryId }
+            .sortedByDescending { it.createdAt }
+        // "二级分类统计"：按备注聚合小计（无备注合并为一行），无需数据模型支持
+        val noteGroups = catTxs
+            .groupBy { it.note?.trim()?.takeIf { n -> n.isNotEmpty() } }
+            .map { (note, list) -> Triple(note, list.sumOf { it.amount }, list.size) }
+            .sortedByDescending { it.second }
+        ModalBottomSheet(
+            onDismissRequest = { drilldownId = null },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        ) {
+            Column(
+                modifier = Modifier
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 16.dp)
+                    .padding(bottom = 24.dp),
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    CategoryIcon(iconKey = cat.icon, color = cat.color.argb(), size = 42)
+                    Spacer(Modifier.width(12.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text(cat.name, style = MaterialTheme.typography.titleLarge)
+                        Text(
+                            stringResource(R.string.stats_bills_count, cat.count, (cat.ratio * 100).toInt()),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    Text(
+                        text = "¥${MoneyFormat.fenToString(cat.total)}",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = SemanticTheme.colors.expense,
+                    )
+                }
+                Spacer(Modifier.height(14.dp))
+                HorizontalDivider()
+                Spacer(Modifier.height(12.dp))
+                Text(
+                    stringResource(R.string.stats_by_note),
+                    style = MaterialTheme.typography.titleSmall,
+                )
+                Spacer(Modifier.height(2.dp))
+                if (noteGroups.isEmpty()) {
+                    Text(
+                        stringResource(R.string.stats_rank_empty),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(vertical = 10.dp),
+                    )
+                }
+                noteGroups.forEach { (note, sum, cnt) ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 7.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            text = note ?: stringResource(R.string.stats_no_note),
+                            style = MaterialTheme.typography.bodyMedium,
+                            maxLines = 1,
+                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f),
+                        )
+                        Text(
+                            text = stringResource(R.string.home_bills_n, cnt),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        Spacer(Modifier.width(10.dp))
+                        Text(
+                            text = "¥${MoneyFormat.fenToString(sum)}",
+                            style = MaterialTheme.typography.labelLarge,
+                        )
+                    }
+                }
+                Spacer(Modifier.height(12.dp))
+                HorizontalDivider()
+                Spacer(Modifier.height(12.dp))
+                Text(
+                    stringResource(R.string.stats_sheet_bills),
+                    style = MaterialTheme.typography.titleSmall,
+                )
+                Spacer(Modifier.height(2.dp))
+                catTxs.forEach { tx ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(8.dp))
+                            .clickable { onOpenDetail(tx.id) }
+                            .padding(horizontal = 4.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(Modifier.weight(1f)) {
+                            Text(
+                                text = tx.note?.takeIf { it.isNotBlank() } ?: cat.name,
+                                style = MaterialTheme.typography.bodyMedium,
+                                maxLines = 1,
+                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                            )
+                            Text(
+                                text = DateUtils.formatBillTime(tx.createdAt),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        Text(
+                            text = "¥${MoneyFormat.fenToString(tx.amount)}",
+                            style = MaterialTheme.typography.titleSmall,
+                            color = SemanticTheme.colors.expense,
+                        )
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -1013,4 +1260,48 @@ private fun CustomRangeDialog(
             TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
         },
     )
+}
+
+/** 导出弹窗中的单个选项行：图标 + 标题 + 副标题 */
+@Composable
+private fun ExportOptionRow(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    title: String,
+    subtitle: String,
+    enabled: Boolean,
+    onClick: () -> Unit,
+) {
+    Surface(
+        onClick = onClick,
+        enabled = enabled,
+        shape = MaterialTheme.shapes.medium,
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f),
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 14.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                icon,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(24.dp),
+            )
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.weight(1f)) {
+                Text(
+                    title,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
+                )
+                Text(
+                    subtitle,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+    }
 }

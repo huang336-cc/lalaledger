@@ -90,6 +90,10 @@ data class StatsUiState(
     val aaBalances: List<MemberBalance> = emptyList(),
     /** AA 结算：简化转账方案 */
     val aaTransfers: List<TransferItem> = emptyList(),
+    /** 时间+分类+成员筛选后的支出明细（供饼图点击下钻查看备注小计与账单） */
+    val expenseTxs: List<TransactionEntity> = emptyList(),
+    /** 时间+分类+成员筛选后的全部明细（支出+收入，按时间降序），供 CSV 导出 */
+    val detailTxs: List<TransactionEntity> = emptyList(),
 ) {
     companion object {
         /** 成员筛选中的"本人"哨兵值（本人账单 memberId 为 null） */
@@ -369,6 +373,8 @@ class StatsViewModel(
             memberDetails = memberDetails,
             aaBalances = aaBalances,
             aaTransfers = aaTransfers,
+            expenseTxs = expenses,
+            detailTxs = byMember.sortedByDescending { it.createdAt },
         )
     }
 

@@ -1,8 +1,10 @@
 package com.lightledger.app.ui.components
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -147,6 +149,7 @@ fun MemberChip(
 }
 
 /** 账单列表行：分类图标 + 名称/时间 + 金额；可选小票缩略图与多选勾选框 */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun BillRow(
     categoryName: String,
@@ -164,11 +167,13 @@ fun BillRow(
     /** 多选模式：行首显示圆形勾选框 */
     selectionMode: Boolean = false,
     selected: Boolean = false,
+    /** 长按回调（首页长按快速进入多选模式）；null = 无长按行为 */
+    onLongPress: (() -> Unit)? = null,
 ) {
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .combinedClickable(onClick = onClick, onLongClick = onLongPress)
             .padding(horizontal = 4.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -179,16 +184,21 @@ fun BillRow(
         CategoryIcon(iconKey = categoryIcon, color = categoryColor)
         Spacer(Modifier.width(14.dp))
         Column(Modifier.weight(1f)) {
+            // 分类名固定作大标题；备注以小字列在时间旁
             Text(
-                text = note?.takeIf { it.isNotBlank() } ?: categoryName,
+                text = categoryName,
                 style = MaterialTheme.typography.bodyLarge,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
+            val noteText = note?.trim()?.takeIf { it.isNotBlank() }
+            val timeText = DateUtils.formatBillTime(time)
             Text(
-                text = DateUtils.formatBillTime(time),
+                text = if (noteText != null) "$noteText · $timeText" else timeText,
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
             )
         }
         if (thumbnailPath != null) {

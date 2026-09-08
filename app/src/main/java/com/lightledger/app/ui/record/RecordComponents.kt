@@ -47,7 +47,10 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DatePickerState
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.TimePicker
 import androidx.compose.material3.rememberDatePickerState
@@ -106,7 +109,7 @@ fun AmountDisplay(
         color = MaterialTheme.colorScheme.surface,
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 20.dp, vertical = 22.dp),
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
             verticalAlignment = Alignment.Bottom,
         ) {
             Text(
@@ -118,7 +121,7 @@ fun AmountDisplay(
             Spacer(Modifier.width(6.dp))
             Text(
                 text = amountText.ifEmpty { "0.00" },
-                style = MaterialTheme.typography.headlineLarge.copy(fontSize = 40.sp, lineHeight = 46.sp),
+                style = MaterialTheme.typography.headlineLarge.copy(fontSize = 34.sp, lineHeight = 40.sp),
                 color = if (amountText.isEmpty()) {
                     MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
                 } else {
@@ -218,10 +221,17 @@ private fun TypeTab(
 }
 
 /**
- * 地点快捷录入：当前地点按钮 + 常用地点横向胶囊 + 手动输入。
- */@Composable
-fun LocationSection(
-    selected: String?,
+ * 时间 + 地点合并行：一行两个等宽胶囊，压缩纵向空间。
+ * 左：时间胶囊（点击 → 日期 → 时间两步选择）；
+ * 右：地点胶囊（点击弹菜单：当前定位 / 手动输入 / 常用地点 / 清除）。
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun TimePlaceRow(
+    selectedMillis: Long?,
+    displayText: String,
+    onPick: (Long) -> Unit,
+    selectedPlace: String?,
     places: List<String>,
     onSelectPlace: (String) -> Unit,
     onClearLocation: () -> Unit,
@@ -229,126 +239,154 @@ fun LocationSection(
     onLocate: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(modifier = modifier.fillMaxWidth()) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                text = stringResource(R.string.record_location),
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Spacer(Modifier.width(10.dp))
-            // 当前地点（定位）
+    var showDate by remember { mutableStateOf(false) }
+    var showTime by remember { mutableStateOf(false) }
+    var pickedDateUtc by remember { mutableStateOf<Long?>(null) }
+    var placeMenu by remember { mutableStateOf(false) }
+
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        // 时间胶囊
+        Surface(
+            onClick = { showDate = true },
+            shape = RoundedCornerShape(12.dp),
+            color = MaterialTheme.colorScheme.surface,
+            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+            modifier = Modifier.weight(1.15f),
+        ) {
+            Row(
+                modifier = Modifier.padding(horizontal = 10.dp, vertical = 11.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.Schedule,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(15.dp),
+                )
+                Spacer(Modifier.width(6.dp))
+                Text(
+                    text = displayText,
+                    style = MaterialTheme.typography.bodySmall,
+                    maxLines = 1,
+                )
+            }
+        }
+        // 地点胶囊 + 弹出菜单
+        Box(modifier = Modifier.weight(1f)) {
             Surface(
-                onClick = onLocate,
-                shape = RoundedCornerShape(50),
-                color = MaterialTheme.colorScheme.primaryContainer,
+                onClick = { placeMenu = true },
+                shape = RoundedCornerShape(12.dp),
+                color = MaterialTheme.colorScheme.surface,
+                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                modifier = Modifier.fillMaxWidth(),
             ) {
                 Row(
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 11.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Icon(
                         imageVector = Icons.Outlined.LocationOn,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(14.dp),
+                        modifier = Modifier.size(15.dp),
                     )
-                    Spacer(Modifier.width(4.dp))
+                    Spacer(Modifier.width(6.dp))
                     Text(
-                        stringResource(R.string.record_current_location),
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.primary,
+                        text = selectedPlace ?: stringResource(R.string.record_add_location),
+                        style = MaterialTheme.typography.bodySmall,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                     )
                 }
             }
-            Spacer(Modifier.width(8.dp))
-            // 手动输入
-            Surface(
-                onClick = onManualInput,
-                shape = RoundedCornerShape(50),
-                color = MaterialTheme.colorScheme.surfaceVariant,
-            ) {
-                Text(
-                    stringResource(R.string.record_manual_location),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
+            DropdownMenu(expanded = placeMenu, onDismissRequest = { placeMenu = false }) {
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.record_current_location)) },
+                    onClick = { placeMenu = false; onLocate() },
                 )
-            }
-            if (selected != null) {
-                Spacer(Modifier.width(8.dp))
-                Surface(
-                    shape = RoundedCornerShape(50),
-                    color = MaterialTheme.colorScheme.secondaryContainer,
-                ) {
-                    Row(
-                        modifier = Modifier.padding(start = 12.dp, end = 4.dp, top = 4.dp, bottom = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(
-                            selected,
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.widthIn(max = 160.dp),
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.record_manual_location)) },
+                    onClick = { placeMenu = false; onManualInput() },
+                )
+                if (places.isNotEmpty()) {
+                    HorizontalDivider()
+                    places.forEach { place ->
+                        DropdownMenuItem(
+                            text = { Text(place, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                            onClick = { placeMenu = false; onSelectPlace(place) },
                         )
-                        IconButton(
-                            onClick = onClearLocation,
-                            modifier = Modifier.size(20.dp),
-                        ) {
-                            Icon(
-                                Icons.Outlined.Close,
-                                contentDescription = stringResource(R.string.record_clear_location),
-                                modifier = Modifier.size(14.dp),
-                            )
-                        }
                     }
                 }
-            }
-        }
-
-        if (places.isNotEmpty()) {
-            Spacer(Modifier.height(8.dp))
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(places) { place ->
-                    val isSelected = place == selected
-                    Surface(
-                        onClick = { onSelectPlace(place) },
-                        shape = RoundedCornerShape(50),
-                        color = if (isSelected) {
-                            MaterialTheme.colorScheme.primaryContainer
-                        } else {
-                            MaterialTheme.colorScheme.surface
-                        },
-                        border = androidx.compose.foundation.BorderStroke(
-                            width = 1.dp,
-                            color = if (isSelected) {
-                                MaterialTheme.colorScheme.primary
-                            } else {
-                                MaterialTheme.colorScheme.outline
-                            },
-                        ),
-                    ) {
-                        Text(
-                            place,
-                            style = MaterialTheme.typography.labelMedium,
-                            color = if (isSelected) {
-                                MaterialTheme.colorScheme.primary
-                            } else {
-                                MaterialTheme.colorScheme.onSurfaceVariant
-                            },
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
-                        )
-                    }
+                if (selectedPlace != null) {
+                    HorizontalDivider()
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.record_clear_location)) },
+                        onClick = { placeMenu = false; onClearLocation() },
+                    )
                 }
             }
         }
     }
-}
 
+    // 日期 → 时间 两步选择
+    if (showDate) {
+        val initState = rememberDatePickerState(
+            initialSelectedDateMillis = selectedMillis ?: System.currentTimeMillis(),
+        )
+        DatePickerDialog(
+            onDismissRequest = { showDate = false },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        pickedDateUtc = initState.selectedDateMillis
+                        showDate = false
+                        showTime = true
+                    },
+                ) { Text(stringResource(R.string.done)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDate = false }) { Text(stringResource(R.string.cancel)) }
+            },
+        ) {
+            DatePicker(state = initState)
+        }
+    }
+    if (showTime) {
+        val initial = java.time.Instant.ofEpochMilli(selectedMillis ?: System.currentTimeMillis())
+            .atZone(java.time.ZoneId.systemDefault())
+        val timeState = rememberTimePickerState(
+            initialHour = initial.hour,
+            initialMinute = initial.minute,
+            is24Hour = true,
+        )
+        AlertDialog(
+            onDismissRequest = { showTime = false },
+            shape = MaterialTheme.shapes.large,
+            title = { Text(stringResource(R.string.record_pick_datetime)) },
+            text = { TimePicker(state = timeState) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        // DatePicker 返回 UTC 当天 0 点毫秒 → 转 LocalDate 后与本地时间合成
+                        val date = java.time.Instant.ofEpochMilli(pickedDateUtc ?: System.currentTimeMillis())
+                            .atZone(java.time.ZoneOffset.UTC).toLocalDate()
+                        val millis = date.atTime(timeState.hour, timeState.minute)
+                            .atZone(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli()
+                        onPick(millis)
+                        showTime = false
+                    },
+                ) { Text(stringResource(R.string.done)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showTime = false }) { Text(stringResource(R.string.cancel)) }
+            },
+        )
+    }
+}
 /**
  * 图片上传区：拍照 / 相册按钮 + 已选缩略图（可删除）。
  */
@@ -421,7 +459,7 @@ private fun PhotoAction(
 ) {
     Surface(
         onClick = onClick,
-        modifier = modifier.height(64.dp),
+        modifier = modifier.height(44.dp),
         shape = MaterialTheme.shapes.small,
         color = MaterialTheme.colorScheme.surface,
         border = androidx.compose.foundation.BorderStroke(
@@ -472,7 +510,7 @@ fun CategorySection(
                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
             )
         }
-        Spacer(Modifier.height(10.dp))
+        Spacer(Modifier.height(6.dp))
         // 末尾追加 null 占位 = 「更多」格
         val cells: List<Any?> = categories + null
         val rows = cells.chunked(5)
@@ -500,7 +538,7 @@ fun CategorySection(
                 // 末行不满 5 列时空位补齐
                 repeat(5 - rowItems.size) { Spacer(Modifier.weight(1f)) }
             }
-            Spacer(Modifier.height(10.dp))
+            Spacer(Modifier.height(6.dp))
         }
     }
 }
@@ -517,12 +555,12 @@ private fun MoreCell(
             .clip(MaterialTheme.shapes.small)
             .background(Color.Transparent)
             .combinedClickable(onClick = onClick)
-            .padding(vertical = 8.dp),
+            .padding(vertical = 4.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Box(
             modifier = Modifier
-                .size(42.dp)
+                .size(34.dp)
                 .clip(CircleShape)
                 .background(MaterialTheme.colorScheme.surfaceVariant)
                 .border(
@@ -536,13 +574,13 @@ private fun MoreCell(
                 imageVector = Icons.Outlined.MoreHoriz,
                 contentDescription = label,
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(22.dp),
+                modifier = Modifier.size(18.dp),
             )
         }
-        Spacer(Modifier.height(6.dp))
+        Spacer(Modifier.height(4.dp))
         Text(
             text = label,
-            style = MaterialTheme.typography.labelMedium,
+            style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1,
         )
@@ -767,110 +805,6 @@ fun MemberPickerRow(
     }
 }
 
-/**
- * 日期时间选择入口：显示当前选择（默认"当前时间"语义），点击弹出 日期 → 时间 两步选择。
- */
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun DateTimeSection(
-    selectedMillis: Long?,
-    displayText: String,
-    onPick: (Long) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    var showDate by remember { mutableStateOf(false) }
-    var showTime by remember { mutableStateOf(false) }
-    var pickedDateUtc by remember { mutableStateOf<Long?>(null) }
-
-    Column(modifier = modifier.fillMaxWidth()) {
-        Text(
-            text = stringResource(R.string.record_time_title),
-            style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Spacer(Modifier.height(8.dp))
-        Surface(
-            onClick = { showDate = true },
-            shape = RoundedCornerShape(12.dp),
-            color = MaterialTheme.colorScheme.surface,
-            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-        ) {
-            Row(
-                modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Icon(
-                    imageVector = Icons.Outlined.Schedule,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(16.dp),
-                )
-                Spacer(Modifier.width(8.dp))
-                Text(
-                    text = displayText,
-                    style = MaterialTheme.typography.bodyMedium,
-                    maxLines = 1,
-                )
-            }
-        }
-    }
-
-    // 日期 → 时间 两步选择
-    if (showDate) {
-        val initState = rememberDatePickerState(
-            initialSelectedDateMillis = selectedMillis ?: System.currentTimeMillis(),
-        )
-        DatePickerDialog(
-            onDismissRequest = { showDate = false },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        pickedDateUtc = initState.selectedDateMillis
-                        showDate = false
-                        showTime = true
-                    },
-                ) { Text(stringResource(R.string.done)) }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDate = false }) { Text(stringResource(R.string.cancel)) }
-            },
-        ) {
-            DatePicker(state = initState)
-        }
-    }
-    if (showTime) {
-        val initial = java.time.Instant.ofEpochMilli(selectedMillis ?: System.currentTimeMillis())
-            .atZone(java.time.ZoneId.systemDefault())
-        val timeState = rememberTimePickerState(
-            initialHour = initial.hour,
-            initialMinute = initial.minute,
-            is24Hour = true,
-        )
-        AlertDialog(
-            onDismissRequest = { showTime = false },
-            shape = MaterialTheme.shapes.large,
-            title = { Text(stringResource(R.string.record_pick_datetime)) },
-            text = { TimePicker(state = timeState) },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        // DatePicker 返回 UTC 当天 0 点毫秒 → 转 LocalDate 后与本地时间合成
-                        val date = java.time.Instant.ofEpochMilli(pickedDateUtc ?: System.currentTimeMillis())
-                            .atZone(java.time.ZoneOffset.UTC).toLocalDate()
-                        val millis = date.atTime(timeState.hour, timeState.minute)
-                            .atZone(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli()
-                        onPick(millis)
-                        showTime = false
-                    },
-                ) { Text(stringResource(R.string.done)) }
-            },
-            dismissButton = {
-                TextButton(onClick = { showTime = false }) { Text(stringResource(R.string.cancel)) }
-            },
-        )
-    }
-}
-
 @Composable
 private fun CategoryCell(
     category: CategoryEntity,
@@ -896,14 +830,14 @@ private fun CategoryCell(
                 shape = MaterialTheme.shapes.small,
             )
             .combinedClickable(onClick = onClick, onLongClick = onLongClick)
-            .padding(vertical = 8.dp),
+            .padding(vertical = 4.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        CategoryIcon(iconKey = category.icon, color = category.color.argb(), size = 42)
-        Spacer(Modifier.height(6.dp))
+        CategoryIcon(iconKey = category.icon, color = category.color.argb(), size = 34)
+        Spacer(Modifier.height(4.dp))
         Text(
             text = category.name,
-            style = MaterialTheme.typography.labelMedium,
+            style = MaterialTheme.typography.labelSmall,
             color = if (selected) category.color.argb() else MaterialTheme.colorScheme.onSurface,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,

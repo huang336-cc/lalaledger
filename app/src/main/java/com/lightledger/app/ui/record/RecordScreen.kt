@@ -282,63 +282,39 @@ fun RecordScreen(
                 }
                 .padding(horizontal = 16.dp),
         ) {
-            Spacer(Modifier.height(16.dp))
-
-            // 金额显示：点击弹出数字键盘
+            // 金额显示：点击弹出数字键盘（紧贴状态栏，不再留顶部空白）
             AmountDisplay(
                 amountText = state.amountText,
                 onClick = viewModel::openKeyboard,
             )
 
-            Spacer(Modifier.height(14.dp))
+            Spacer(Modifier.height(10.dp))
 
             TypeSwitch(
                 current = state.type,
                 onSelect = viewModel::selectType,
             )
 
-            // ---------- 归属 / 垫付（仅旅行账本） ----------
-            // 「+ 成员」按钮全局唯一，固定在归属行右上角；归属行额外提供「公共」= 全员 AA
-            if (state.isTripBook) {
-                Spacer(Modifier.height(14.dp))
-                MemberPickerRow(
-                    title = stringResource(R.string.record_owner_title),
-                    hint = stringResource(R.string.record_owner_hint),
-                    selfLabel = stringResource(R.string.record_self),
-                    members = state.members,
-                    selectedId = state.selectedMemberId,
-                    publicLabel = stringResource(R.string.member_public),
-                    addLabel = stringResource(R.string.record_add_member),
-                    onSelect = viewModel::selectMember,
-                    onAddMember = { showQuickMember = true },
-                )
-                Spacer(Modifier.height(14.dp))
-                MemberPickerRow(
-                    title = stringResource(R.string.record_payer_title),
-                    hint = stringResource(R.string.record_payer_hint),
-                    selfLabel = stringResource(R.string.record_self),
-                    members = state.members,
-                    selectedId = state.selectedPayerId,
-                    publicLabel = null,
-                    addLabel = stringResource(R.string.record_add_member),
-                    onSelect = viewModel::selectPayer,
-                    onAddMember = null,
-                )
-            }
+            // ---------- 分类（视觉第二重点：金额 → 类型 → 分类 → 其他） ----------
+            // 分类平铺全量列出；长按编辑；末尾「更多」点开全量图标选择（替换图标与名称）
+            Spacer(Modifier.height(10.dp))
+            CategorySection(
+                categories = state.categories,
+                selectedId = state.selectedCategoryId,
+                moreLabel = stringResource(R.string.category_more),
+                onSelect = viewModel::selectCategory,
+                onLongPress = { viewModel.openCategoryEditor(it, isNew = false) },
+                onMore = { showIconPicker = true },
+            )
 
-            // ---------- 日期时间（默认当前时间） ----------
-            Spacer(Modifier.height(14.dp))
-            DateTimeSection(
+            // ---------- 时间 + 地点（合并一行，压缩纵向空间） ----------
+            Spacer(Modifier.height(10.dp))
+            TimePlaceRow(
                 selectedMillis = billTime,
                 displayText = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
                     .format(Date(billTime ?: System.currentTimeMillis())),
                 onPick = viewModel::setBillTime,
-            )
-
-            Spacer(Modifier.height(14.dp))
-
-            LocationSection(
-                selected = state.location,
+                selectedPlace = state.location,
                 places = state.places.map { it.name },
                 onSelectPlace = viewModel::setLocation,
                 onClearLocation = viewModel::clearLocation,
@@ -369,7 +345,7 @@ fun RecordScreen(
                 },
             )
 
-            Spacer(Modifier.height(14.dp))
+            Spacer(Modifier.height(10.dp))
 
             PhotoSection(
                 images = state.images,
@@ -387,7 +363,7 @@ fun RecordScreen(
                 onRemove = viewModel::removeImage,
             )
 
-            Spacer(Modifier.height(14.dp))
+            Spacer(Modifier.height(10.dp))
 
             OutlinedTextField(
                 value = state.note,
@@ -397,7 +373,7 @@ fun RecordScreen(
                 },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(56.dp)
+                    .height(52.dp)
                     // 聚焦备注框（系统输入法弹出）时，自定义数字键盘必须让位
                     .onFocusChanged { if (it.isFocused) viewModel.closeKeyboard() },
                 shape = MaterialTheme.shapes.small,
@@ -405,17 +381,34 @@ fun RecordScreen(
                 textStyle = MaterialTheme.typography.bodyMedium,
             )
 
-            Spacer(Modifier.height(14.dp))
-
-            // 分类平铺全量列出；长按编辑；末尾「更多」点开全量图标选择（可替换常驻分类图标）
-            CategorySection(
-                categories = state.categories,
-                selectedId = state.selectedCategoryId,
-                moreLabel = stringResource(R.string.category_more),
-                onSelect = viewModel::selectCategory,
-                onLongPress = { viewModel.openCategoryEditor(it, isNew = false) },
-                onMore = { showIconPicker = true },
-            )
+            // ---------- 归属 / 垫付（旅行账本；置于最底部，优先保证金额 + 分类一屏可见） ----------
+            // 「+ 成员」按钮全局唯一，固定在归属行右上角；归属行额外提供「公共」= 全员 AA
+            if (state.isTripBook) {
+                Spacer(Modifier.height(10.dp))
+                MemberPickerRow(
+                    title = stringResource(R.string.record_owner_title),
+                    hint = stringResource(R.string.record_owner_hint),
+                    selfLabel = stringResource(R.string.record_self),
+                    members = state.members,
+                    selectedId = state.selectedMemberId,
+                    publicLabel = stringResource(R.string.member_public),
+                    addLabel = stringResource(R.string.record_add_member),
+                    onSelect = viewModel::selectMember,
+                    onAddMember = { showQuickMember = true },
+                )
+                Spacer(Modifier.height(10.dp))
+                MemberPickerRow(
+                    title = stringResource(R.string.record_payer_title),
+                    hint = stringResource(R.string.record_payer_hint),
+                    selfLabel = stringResource(R.string.record_self),
+                    members = state.members,
+                    selectedId = state.selectedPayerId,
+                    publicLabel = null,
+                    addLabel = stringResource(R.string.record_add_member),
+                    onSelect = viewModel::selectPayer,
+                    onAddMember = null,
+                )
+            }
 
             Spacer(Modifier.height(16.dp))
         }
