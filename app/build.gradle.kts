@@ -15,8 +15,8 @@ android {
         // 兼容 Android 10 及以上
         minSdk = 29
         targetSdk = 35
-        versionCode = 24
-        versionName = "1.8.1"
+        versionCode = 25
+        versionName = "1.8.2"
         vectorDrawables { useSupportLibrary = true }
         // APK 瘦身：仅保留中英资源
         resourceConfigurations += listOf("zh", "en")

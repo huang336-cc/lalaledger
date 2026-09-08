@@ -8,10 +8,10 @@ No login · No ads · No cloud · No tracking — all data stays on your phone
 
 `Android 10+` · `Kotlin 2.0` · `Jetpack Compose` · `Material 3` · `MIT License`
 
-Current version **v1.8.1** · 中文文档：[README.md](README.md)
+Current version **v1.8.2** · 中文文档：[README.md](README.md)
 
 <p>
-  <a href="https://github.com/huang336-cc/lalaledger/releases"><img src="https://img.shields.io/badge/Download%20Release-v1.8.1-2E7D32?style=for-the-badge&logo=github" alt="Go to Releases"/></a>
+  <a href="https://github.com/huang336-cc/lalaledger/releases"><img src="https://img.shields.io/badge/Download%20Release-v1.8.2-2E7D32?style=for-the-badge&logo=github" alt="Go to Releases"/></a>
   <br/>
   <strong>Click the button above to open the GitHub Releases page and download the latest APK</strong>
 </p>
@@ -20,7 +20,7 @@ Current version **v1.8.1** · 中文文档：[README.md](README.md)
 
 ---
 
-> **Installation tip**: every release (APK + source) lives on the **[Releases](https://github.com/huang336-cc/lalaledger/releases)** page — expand a version tag (e.g. `v1.8.1`) and download `lalaledger-v1.8.1.apk` from **Assets** to install. Hit the button above to jump there.
+> **Installation tip**: every release (APK + source) lives on the **[Releases](https://github.com/huang336-cc/lalaledger/releases)** page — expand a version tag (e.g. `v1.8.2`) and download `lalaledger-v1.8.2.apk` from **Assets** to install. Hit the button above to jump there.
 
 ## Screenshots
 
@@ -226,7 +226,7 @@ app/src/main/java/com/lightledger/app/
 # Requirements: JDK 17 + Android SDK (compileSdk 35 / build-tools 35.0.0) + Gradle 9.3
 # Debug build
 gradle assembleDebug
-# Release build (R8 + signing, output app/build/outputs/apk/release/lalaledger-v1.8.0.apk)
+# Release build (R8 + signing, output app/build/outputs/apk/release/lalaledger-v1.8.2.apk)
 gradle assembleRelease
 ```
 
@@ -237,7 +237,31 @@ gradle assembleRelease
 
 ## License & Disclaimer
 
-This project is open-sourced under the [MIT License](LICENSE). In-app: "Me → About → License / Disclaimer" shows the full text (bilingual). Summary:
+This project is open-sourced under the [MIT License](LICENSE). In-app: "Me → About → License / Disclaimer" shows the full text (bilingual).
 
-- Free to use, copy, modify, merge, publish, distribute, sublicense, and sell.
-- The software is provided "as is", without warranty of any kind; AA settlement and transfer plans are for reference only — verify before use.
+### Third-party components & licenses
+
+All third-party dependencies are permissive (MIT / Apache-2.0, mutually compatible) — **no copyleft GPL-style licenses**, safe for commercial use and derivative work:
+
+| Component | Purpose | License |
+| --- | --- | --- |
+| lalaledger (this project) | All source code | MIT License |
+| Kotlin / kotlinx.coroutines | Language & coroutines | Apache-2.0 |
+| Jetpack Compose + Material 3 (incl. icon library) | UI framework | Apache-2.0 |
+| AndroidX Core / Lifecycle / Activity | Base components | Apache-2.0 |
+| Room | Local database | Apache-2.0 |
+| DataStore | Lightweight key-value storage | Apache-2.0 |
+| Navigation Compose | Navigation | Apache-2.0 |
+| Coil | Image loading | Apache-2.0 |
+| AGP / KSP | Build-time tools (not shipped in the APK) | Apache-2.0 |
+
+Each component is copyrighted by its respective owners; see their official repositories for full license texts.
+
+### Disclaimer
+
+1. This app is a personal expense tracker. Data is stored locally only — no network, no tracking, no upload.
+2. Amount calculations, settle-up suggestions and transfer plans are for reference only. The developer is not liable for any accounting disputes or financial loss arising from use of this app.
+3. Back up your important data (CSV export / summary images); uninstalling the app permanently deletes all bills and photos on this device.
+4. This app provides no investment, tax or legal advice. Consult professionals for such purposes.
+5. This app is provided "as is" and may contain defects or compatibility issues on certain devices or system versions; it is not guaranteed to run error-free or without interruption, and the developer is not liable for data anomalies or losses caused by such issues.
+6. Exported images and CSV files contain personal financial data — keep them safe. Only obtain installation packages of this app from trusted sources.

@@ -8,10 +8,10 @@
 
 `Android 10+` · `Kotlin 2.0` · `Jetpack Compose` · `Material 3` · `MIT License`
 
-当前版本 **v1.8.1** · [English](README_EN.md)
+当前版本 **v1.8.2** · [English](README_EN.md)
 
 <p>
-  <a href="https://github.com/huang336-cc/lalaledger/releases"><img src="https://img.shields.io/badge/下载最近版本-v1.8.1-2E7D32?style=for-the-badge&logo=github" alt="前往 Release 下载"/></a>
+  <a href="https://github.com/huang336-cc/lalaledger/releases"><img src="https://img.shields.io/badge/下载最近版本-v1.8.2-2E7D32?style=for-the-badge&logo=github" alt="前往 Release 下载"/></a>
   <br/>
   <strong>点击上方按钮 → 前往 GitHub Releases 页下载最新 APK</strong>
 </p>
@@ -20,7 +20,7 @@
 
 ---
 
-> **安装提示**：所有版本（`APK 安装包` + `源码包`）都发布在 **[Releases](https://github.com/huang336-cc/lalaledger/releases)** 页 —— 展开对应版本标签（如 `v1.8.1`），在 **Assets** 下下载 `lalaledger-v1.8.1.apk` 直接安装即可；点击上方按钮可一键前往。
+> **安装提示**：所有版本（`APK 安装包` + `源码包`）都发布在 **[Releases](https://github.com/huang336-cc/lalaledger/releases)** 页 —— 展开对应版本标签（如 `v1.8.2`），在 **Assets** 下下载 `lalaledger-v1.8.2.apk` 直接安装即可；点击上方按钮可一键前往。
 
 ## 截图
 
@@ -226,7 +226,7 @@ app/src/main/java/com/lightledger/app/
 # 环境：JDK 17 + Android SDK（compileSdk 35 / build-tools 35.0.0）+ Gradle 9.3
 # Debug 构建
 gradle assembleDebug
-# Release 构建（R8 + 签名，产物 app/build/outputs/apk/release/lalaledger-v1.8.0.apk）
+# Release 构建（R8 + 签名，产物 app/build/outputs/apk/release/lalaledger-v1.8.2.apk）
 gradle assembleRelease
 ```
 
@@ -237,7 +237,31 @@ gradle assembleRelease
 
 ## 开源协议与免责声明
 
-本项目基于 [MIT License](LICENSE) 开源。应用内「我的 → 关于 → 开源许可 / 免责声明」可查看完整文案（中英双语）。摘要：
+本项目基于 [MIT License](LICENSE) 开源。应用内「我的 → 关于 → 开源许可 / 免责声明」可查看完整文案（中英双语）。
 
-- 可自由使用、复制、修改、合并、出版发行、散布、再授权及贩售。
-- 软件按"原样"提供，不含任何担保；AA 结算与转账方案仅供参考，请自行核对后使用。
+### 第三方组件与许可
+
+第三方依赖均为宽松协议（MIT / Apache-2.0 相互兼容），**无 GPL 类传染性协议**，可放心商用与二次开发：
+
+| 组件 | 用途 | 许可 |
+| --- | --- | --- |
+| lalaledger 本项目 | 全部源码 | MIT License |
+| Kotlin / kotlinx.coroutines | 语言与协程 | Apache-2.0 |
+| Jetpack Compose + Material 3（含图标库） | UI 框架 | Apache-2.0 |
+| AndroidX Core / Lifecycle / Activity | 基础组件 | Apache-2.0 |
+| Room | 本地数据库 | Apache-2.0 |
+| DataStore | 轻量键值存储 | Apache-2.0 |
+| Navigation Compose | 页面导航 | Apache-2.0 |
+| Coil | 图片加载 | Apache-2.0 |
+| AGP / KSP | 构建期工具（不分发进 APK） | Apache-2.0 |
+
+各组件版权归其各自持有者，完整许可文本见各组件官方仓库。
+
+### 免责声明
+
+1. 本应用为个人记账工具，仅在本机存储数据，不联网、不采集、不上传任何信息。
+2. 应用内的金额计算、AA 结算与转账方案仅供参考，请自行核对后使用；因使用本应用产生的任何账目争议或经济损失，开发者不承担责任。
+3. 请自行备份重要数据（CSV 导出 / 汇总长图）；卸载应用将彻底删除本机全部账单与图片，且无法恢复。
+4. 本应用不提供任何投资、税务、法律建议，相关用途请咨询专业人士。
+5. 本应用按"现状"提供，可能存在缺陷或与特定机型、系统版本的兼容性问题，不保证完全无错误、不间断运行；开发者不对因此造成的数据异常或损失负责。
+6. 导出的图片与 CSV 含个人财务信息，请自行妥善保管、谨防泄露；请仅从可信渠道获取本应用安装包。

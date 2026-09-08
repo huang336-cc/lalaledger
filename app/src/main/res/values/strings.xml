@@ -239,8 +239,8 @@
 
     <!-- 关于 / 协议 / 免责 -->
     <string name="about_body">版本 %1$s\n\n一款简洁、极速、好看的日常记账 App。\n\n· 纯本地离线存储（Room 数据库）\n· 无登录、无广告、无云端服务\n· 多账本 / 旅行分账 / 拍照小票 / 汇总图片导出</string>
-    <string name="license_body">本应用基于 MIT License 开源，可自由使用、复制、修改、合并、出版发行、散布、再授权及贩售软件及副本。\n\n软件按"原样"提供，不作任何明示或暗示的担保，包括但不限于适销性、特定用途适用性和非侵权性。作者或版权持有人不对任何索赔、损害或其他责任负责。\n\n第三方依赖：Jetpack Compose、Room、DataStore、Coil（Apache-2.0 / MIT 兼容协议）。</string>
-    <string name="disclaimer_body">1. 本应用为个人记账工具，仅在本机存储数据，不联网、不采集、不上传任何信息。\n\n2. 应用内的金额计算、AA 结算与转账方案仅供参考，请自行核对后使用；因使用本应用产生的任何账目争议或经济损失，开发者不承担责任。\n\n3. 请自行备份重要数据；卸载应用将彻底删除本机全部账单与图片，且无法恢复。\n\n4. 本应用不提供任何投资、税务、法律建议，相关用途请咨询专业人士。</string>
+    <string name="license_body">本应用（拉拉记账 / lalaledger）基于 MIT License 开源：可自由使用、复制、修改、合并、出版发行、散布、再授权及贩售软件及副本，但须保留版权与许可声明。\n\n软件按"原样"提供，不作任何明示或暗示的担保，包括但不限于适销性、特定用途适用性和非侵权性。作者或版权持有人不对任何索赔、损害或其他责任负责。\n\n第三方组件（均为宽松协议、MIT 兼容，无 GPL 类传染性协议，版权归各自持有者）：\n· Apache License 2.0 —— Kotlin、kotlinx.coroutines、AndroidX / Jetpack Compose（含 Material 3 与图标库）、Room、DataStore、Navigation Compose、Lifecycle、Activity Compose、Coil\n· 构建期工具（不分发进安装包）—— Android Gradle Plugin、KSP（Apache License 2.0）\n\n完整许可文本见工程根目录 LICENSE 与各组件官方仓库。</string>
+    <string name="disclaimer_body">1. 本应用为个人记账工具，仅在本机存储数据，不联网、不采集、不上传任何信息。\n\n2. 应用内的金额计算、AA 结算与转账方案仅供参考，请自行核对后使用；因使用本应用产生的任何账目争议或经济损失，开发者不承担责任。\n\n3. 请自行备份重要数据（CSV 导出 / 汇总长图）；卸载应用将彻底删除本机全部账单与图片，且无法恢复。\n\n4. 本应用不提供任何投资、税务、法律建议，相关用途请咨询专业人士。\n\n5. 本应用按"现状"提供，可能存在缺陷或与特定机型、系统版本的兼容性问题，不保证完全无错误、不间断运行；开发者不对因此造成的数据异常或损失负责。\n\n6. 导出的图片与 CSV 含个人财务信息，请自行妥善保管、谨防泄露；请仅从可信渠道获取本应用安装包。</string>
     <string name="back">返回</string>
     <string name="record_err_save">保存失败，请重试</string>
     <string name="record_category_add">添加分类</string>
@@ -287,6 +287,8 @@
     <!-- v1.8.1 修复 -->
     <string name="chlog_181_1">修复退格大键：点击逐位删除一个数字，长按才清空全部（此前点击直接清空）</string>
     <string name="chlog_181_2">账单副行时间前置：时间固定显示在最左，长备注被截断也不再隐藏时间</string>
+    <!-- v1.8.2 关于页 -->
+    <string name="chlog_182_1">关于页完善：开源许可补全第三方组件清单（全部为 MIT 兼容的宽松协议），免责声明扩充至六条并同步双语 README</string>
     <string name="chlog_163_1">修复占比极小的扇区点不到：增加最小扇区角度（看得见也点得中），并放宽触摸命中范围</string>
     <string name="chlog_162_1">统计饼图升级：引导线分类标签（名称+百分比，防重叠）；点扇区选中联动环心金额，图例同步高亮</string>
     <string name="chlog_161_1">账单列表改为分类名作标题，备注以小字显示在时间旁</string>

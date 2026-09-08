@@ -604,6 +604,12 @@ private fun SettingRow(
 
 /** 版本变更履历（最新在前），条目走字符串资源支持中英文 */
 private enum class ChangeLog(val version: String, val date: String, val items: List<Int>) {
+    V1_8_2(
+        "1.8.2", "2026-09-08",
+        listOf(
+            R.string.chlog_182_1,
+        ),
+    ),
     V1_8_1(
         "1.8.1", "2026-09-08",
         listOf(
