@@ -10,6 +10,10 @@ No login · No ads · No cloud · No tracking — all data stays on your phone
 
 Current version **v1.7.1** · 中文文档：[README.md](README.md)
 
+<p>
+  <a href="https://github.com/huang336-cc/lalaledger/releases"><img src="https://img.shields.io/badge/Download%20Release-v1.7.1-2E7D32?style=for-the-badge&logo=github" alt="Go to Releases"/></a>
+</p>
+
 </div>
 
 ---

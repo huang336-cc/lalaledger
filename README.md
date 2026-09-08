@@ -10,6 +10,10 @@
 
 当前版本 **v1.7.1** · [English](README_EN.md)
 
+<p>
+  <a href="https://github.com/huang336-cc/lalaledger/releases"><img src="https://img.shields.io/badge/下载最近版本-v1.7.1-2E7D32?style=for-the-badge&logo=github" alt="前往 Release 下载"/></a>
+</p>
+
 </div>
 
 ---
