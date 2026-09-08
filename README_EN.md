@@ -18,6 +18,10 @@ Current version **v1.7.1** · 中文文档：[README.md](README.md)
 
 ---
 
+> **Installation tip**: every release (APK + source) lives on the **[Releases](https://github.com/huang336-cc/lalaledger/releases)** page — expand a version tag (e.g. `v1.7.1`) and download `lalaledger-v1.7.1.apk` from **Assets** to install. Hit the button above to jump there.
+
+---
+
 ## Screenshots
 
 <p>

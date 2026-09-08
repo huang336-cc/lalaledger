@@ -18,6 +18,10 @@
 
 ---
 
+> **安装提示**：所有版本（`APK 安装包` + `源码包`）都发布在 **[Releases](https://github.com/huang336-cc/lalaledger/releases)** 页 —— 展开对应版本标签（如 `v1.7.1`），在 **Assets** 下下载 `lalaledger-v1.7.1.apk` 直接安装即可；点击上方按钮可一键前往。
+
+---
+
 ## 截图
 
 <p>
