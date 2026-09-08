@@ -43,6 +43,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDateRangePickerState
@@ -124,6 +125,8 @@ fun StatsScreen(
     var exportingStats by remember { mutableStateOf(false) }
     // 导出方式弹窗（图片 / CSV）
     var showExportDialog by remember { mutableStateOf(false) }
+    // 打码分享：打开后导出的图片/CSV 中所有金额替换为「¥***」
+    var maskAmounts by remember { mutableStateOf(false) }
     // 饼图下钻：当前查看的分类 id（非空时弹出底部明细面板，分类数据实时从 state 取）
     var drilldownId by remember { mutableStateOf<Long?>(null) }
     // 饼图选中态：点扇区选中（中心联动 + 高亮），再点同一扇区或环心取消
@@ -173,26 +176,27 @@ fun StatsScreen(
     // 当前筛选时段文案（随 state.period 变化重组刷新）
     val periodText = stringResource(state.period.labelRes())
 
-    fun buildStatsExportData(periodText: String): StatsImageExporter.StatsData {
+    fun buildStatsExportData(periodText: String, mask: Boolean): StatsImageExporter.StatsData {
+        val maskText = "¥***"
         return StatsImageExporter.StatsData(
             titleText = exportTitle,
             bookName = state.statBook?.name ?: "",
             periodText = periodText,
             expenseLabel = expenseLabel,
-            expenseText = MoneyFormat.fenToString(state.totalExpense),
+            expenseText = if (mask) maskText else MoneyFormat.fenToString(state.totalExpense),
             incomeLabel = incomeLabel,
-            incomeText = MoneyFormat.fenToString(state.totalIncome),
+            incomeText = if (mask) maskText else MoneyFormat.fenToString(state.totalIncome),
             netLabel = netLabel,
-            netText = MoneyFormat.fenToString(state.netExpense),
+            netText = if (mask) maskText else MoneyFormat.fenToString(state.netExpense),
             dailyLabel = dailyLabel,
-            dailyText = MoneyFormat.fenToString(state.dailyAvg),
+            dailyText = if (mask) maskText else MoneyFormat.fenToString(state.dailyAvg),
             rankTitle = rankTitleText,
             rankEmptyText = rankEmptyText,
             categories = state.categories.take(15).map {
                 StatsImageExporter.CategoryLine(
                     name = it.name,
                     color = it.color,
-                    amountText = MoneyFormat.fenToString(it.total),
+                    amountText = if (mask) maskText else MoneyFormat.fenToString(it.total),
                     percentText = "${(it.ratio * 100).toInt()}%",
                     ratio = it.ratio,
                 )
@@ -205,8 +209,8 @@ fun StatsScreen(
                 StatsImageExporter.MemberLine(
                     name = nameOf(it.memberId),
                     color = it.color,
-                    consumeText = MoneyFormat.fenToString(it.consume),
-                    paidText = MoneyFormat.fenToString(it.paid),
+                    consumeText = if (mask) maskText else MoneyFormat.fenToString(it.consume),
+                    paidText = if (mask) maskText else MoneyFormat.fenToString(it.paid),
                 )
             },
             aaTitle = if (state.isTrip) aaTitleText else null,
@@ -217,11 +221,13 @@ fun StatsScreen(
                     name = nameOf(b.memberId),
                     color = b.color,
                     netText = when {
+                        mask -> "$receiveLabel $maskText"
                         b.net > 0 -> "$receiveLabel ¥${MoneyFormat.fenToString(b.net)}"
                         b.net < 0 -> "$payLabel ¥${MoneyFormat.fenToString(-b.net)}"
                         else -> settledLabel
                     },
                     netType = when {
+                        mask && b.net != 0L -> if (b.net > 0) 1 else 2
                         b.net > 0 -> 1
                         b.net < 0 -> 2
                         else -> 0
@@ -230,7 +236,11 @@ fun StatsScreen(
             },
             transfers = state.aaTransfers.map {
                 StatsImageExporter.TransferLine(
-                    transferFmt.format(nameOf(it.fromId), nameOf(it.toId), MoneyFormat.fenToString(it.amount))
+                    transferFmt.format(
+                        nameOf(it.fromId),
+                        nameOf(it.toId),
+                        if (mask) maskText else MoneyFormat.fenToString(it.amount),
+                    )
                 )
             },
         )
@@ -244,16 +254,17 @@ fun StatsScreen(
         Toast.makeText(context, context.getString(resId), Toast.LENGTH_SHORT).show()
     }
 
-    fun buildCsvRows(): List<CsvExporter.CsvRow> = state.detailTxs.map { tx ->
+    fun buildCsvRows(mask: Boolean = false): List<CsvExporter.CsvRow> = state.detailTxs.map { tx ->
         CsvExporter.CsvRow(
             timeText = DateUtils.formatCsvTime(tx.createdAt),
             typeText = if (tx.type == TransactionType.EXPENSE.value) expenseLabel else incomeLabel,
-            amountText = MoneyFormat.fenToPlain(tx.amount),
+            amountText = if (mask) "***" else MoneyFormat.fenToPlain(tx.amount),
             categoryName = categoryMap[tx.categoryId]?.name.orEmpty(),
             note = tx.note.orEmpty(),
             location = tx.location.orEmpty(),
             memberName = if (tx.memberId == null) "" else nameOf(tx.memberId),
             payerName = if (tx.payerMemberId == null) "" else nameOf(tx.payerMemberId),
+            mood = tx.mood.orEmpty(),
         )
     }
 
@@ -751,7 +762,7 @@ fun StatsScreen(
                             scope.launch {
                                 exportingStats = true
                                 val uri = StatsImageExporter.export(
-                                    context, buildStatsExportData(periodText), isDark,
+                                    context, buildStatsExportData(periodText, maskAmounts), isDark,
                                 )
                                 exportingStats = false
                                 toast(if (uri != null) R.string.export_saved else R.string.export_failed)
@@ -765,7 +776,7 @@ fun StatsScreen(
                         subtitle = stringResource(R.string.stats_export_csv_sub),
                         enabled = !exportingStats,
                         onClick = {
-                            val rows = buildCsvRows()
+                            val rows = buildCsvRows(maskAmounts)
                             if (rows.isEmpty()) {
                                 toast(R.string.export_csv_empty)
                             } else {
@@ -779,6 +790,28 @@ fun StatsScreen(
                             }
                         },
                     )
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp))
+                    // 打码分享：所有金额显示为「¥***」（CSV 中为 ***）
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(Modifier.weight(1f)) {
+                            Text(
+                                stringResource(R.string.stats_export_mask),
+                                style = MaterialTheme.typography.bodyMedium,
+                            )
+                            Text(
+                                stringResource(R.string.stats_export_mask_sub),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        Switch(
+                            checked = maskAmounts,
+                            onCheckedChange = { maskAmounts = it },
+                        )
+                    }
                 }
             },
             confirmButton = {},

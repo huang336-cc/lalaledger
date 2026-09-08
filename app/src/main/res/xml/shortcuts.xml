@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 长按桌面图标弹出的快捷入口：点 extra.route 直接跳到对应页面 -->
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <shortcut
+        android:shortcutId="record"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_record"
+        android:shortcutShortLabel="@string/nav_record"
+        android:shortcutLongLabel="@string/shortcut_record_long">
+        <intent
+            android:action="com.lightledger.app.action.SHORTCUT"
+            android:targetPackage="com.lightledger.app"
+            android:targetClass="com.lightledger.app.MainActivity">
+            <extra
+                android:name="route"
+                android:value="record" />
+        </intent>
+    </shortcut>
+
+    <shortcut
+        android:shortcutId="search"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_search"
+        android:shortcutShortLabel="@string/nav_search"
+        android:shortcutLongLabel="@string/shortcut_search_long">
+        <intent
+            android:action="com.lightledger.app.action.SHORTCUT"
+            android:targetPackage="com.lightledger.app"
+            android:targetClass="com.lightledger.app.MainActivity">
+            <extra
+                android:name="route"
+                android:value="search" />
+        </intent>
+    </shortcut>
+
+    <shortcut
+        android:shortcutId="calendar"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_calendar"
+        android:shortcutShortLabel="@string/nav_calendar"
+        android:shortcutLongLabel="@string/shortcut_calendar_long">
+        <intent
+            android:action="com.lightledger.app.action.SHORTCUT"
+            android:targetPackage="com.lightledger.app"
+            android:targetClass="com.lightledger.app.MainActivity">
+            <extra
+                android:name="route"
+                android:value="calendar" />
+        </intent>
+    </shortcut>
+
+    <shortcut
+        android:shortcutId="stats"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_stats"
+        android:shortcutShortLabel="@string/nav_stats"
+        android:shortcutLongLabel="@string/shortcut_stats_long">
+        <intent
+            android:action="com.lightledger.app.action.SHORTCUT"
+            android:targetPackage="com.lightledger.app"
+            android:targetClass="com.lightledger.app.MainActivity">
+            <extra
+                android:name="route"
+                android:value="stats" />
+        </intent>
+    </shortcut>
+
+</shortcuts>

@@ -41,6 +41,8 @@ data class RecordUiState(
     val selectedMemberId: Long? = null,
     /** 付款成员（谁垫付）；null = 本人（默认） */
     val selectedPayerId: Long? = null,
+    /** 心情 emoji（如 "😀"）；null = 未标记 */
+    val mood: String? = null,
     /** 账单时间；null = 使用当前时间 */
     val billTime: Long? = null,
 ) {
@@ -67,6 +69,9 @@ class RecordViewModel(
     private val images = MutableStateFlow<List<String>>(emptyList())
     private val saving = MutableStateFlow(false)
     private val keyboardOpen = MutableStateFlow(false)
+
+    /** 心情 emoji（可空；再点同一表情取消） */
+    private val mood = MutableStateFlow<String?>(null)
 
     /** 归属成员（谁消费）：null = 本人；仅旅行账本可修改 */
     private val selectedMemberId = MutableStateFlow<Long?>(null)
@@ -157,10 +162,11 @@ class RecordViewModel(
         val note: String,
         val images: List<String>,
         val saving: Boolean,
+        val mood: String?,
     )
 
-    private val textInputs = combine(location, note, images, saving) { l, n, i, s ->
-        TextInputs(l, n, i, s)
+    private val textInputs = combine(location, note, images, saving, mood) { l, n, i, s, m ->
+        TextInputs(l, n, i, s, m)
     }
 
     private data class KeyboardInputs(
@@ -202,6 +208,7 @@ class RecordViewModel(
             note = kb.extra.note,
             images = kb.extra.images,
             saving = kb.extra.saving,
+            mood = kb.extra.mood,
             keyboardOpen = kb.keyboardOpen,
             editTxId = kb.editTxId,
             isTripBook = mi.isTripBook,
@@ -291,6 +298,11 @@ class RecordViewModel(
         note.value = text
     }
 
+    /** 选择心情 emoji；再次选择同一表情 = 取消 */
+    fun selectMood(emoji: String?) {
+        mood.value = if (mood.value == emoji) null else emoji
+    }
+
     // ---------- 成员归属（旅行账本） ----------
 
     /** 选择归属成员（谁消费）；memberId=null 表示本人 */
@@ -372,6 +384,7 @@ class RecordViewModel(
             billTime.value = tx.createdAt
             // 无千分位格式回填，保证继续按键追加时长度校验正常
             amountText.value = MoneyFormat.fenToPlain(tx.amount)
+            mood.value = tx.mood
         }
     }
 
@@ -422,6 +435,7 @@ class RecordViewModel(
                     images = images.value,
                     memberId = selectedMemberId.value,
                     payerMemberId = selectedPayerId.value,
+                    mood = mood.value,
                     createdAt = billTime.value ?: System.currentTimeMillis(),
                 )
                 loc?.let { container.placeRepository.recordUsage(it) }
@@ -432,6 +446,7 @@ class RecordViewModel(
                 location.value = null
                 images.value = emptyList()
                 billTime.value = null
+                mood.value = null
                 keyboardOpen.value = false
                 saving.value = false
                 onSuccess()
@@ -462,6 +477,7 @@ class RecordViewModel(
                         images = images.value,
                         memberId = selectedMemberId.value,
                         payerMemberId = selectedPayerId.value,
+                        mood = mood.value?.takeIf { it.isNotBlank() },
                         createdAt = billTime.value ?: base.createdAt,
                         updatedAt = System.currentTimeMillis(),
                     )

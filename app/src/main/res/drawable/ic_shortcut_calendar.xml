@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 快捷入口图标：日历 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#FFE8A87C"
+        android:pathData="M54,54m-54,0a54,54 0 1,0 108,0a54,54 0 1,0 -108,0" />
+    <path
+        android:pathData="M34,34h40a6,6 0 0 1 6,6v32a6,6 0 0 1 -6,6h-40a6,6 0 0 1 -6,-6v-32a6,6 0 0 1 6,-6z"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeLineJoin="round"
+        android:strokeWidth="6" />
+    <path
+        android:pathData="M42,28v11M66,28v11M28,49h52"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeLineCap="round"
+        android:strokeWidth="6" />
+</vector>

@@ -219,6 +219,7 @@ fun SearchScreen(
                                 type = TransactionType.from(item.tx.type),
                                 time = item.tx.createdAt,
                                 note = item.tx.note,
+                                mood = item.tx.mood,
                                 thumbnailPath = item.tx.images.firstOrNull(),
                                 onThumbnailClick = {
                                     previewImages = item.tx.images

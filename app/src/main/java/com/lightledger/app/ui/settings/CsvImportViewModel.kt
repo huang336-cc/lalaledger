@@ -34,6 +34,7 @@ class CsvImportViewModel(
         val location: String?,
         val memberName: String?,
         val payerName: String?,
+        val mood: String?,
         val createdAt: Long,
     )
 
@@ -117,6 +118,7 @@ class CsvImportViewModel(
             Field.LOCATION to colIndex(Field.LOCATION),
             Field.MEMBER to colIndex(Field.MEMBER),
             Field.PAYER to colIndex(Field.PAYER),
+            Field.MOOD to colIndex(Field.MOOD),
         )
 
         val rows = mutableListOf<ParsedRow>()
@@ -143,6 +145,7 @@ class CsvImportViewModel(
                 location = get(Field.LOCATION).ifBlank { null },
                 memberName = get(Field.MEMBER).ifBlank { null },
                 payerName = get(Field.PAYER).ifBlank { null },
+                mood = get(Field.MOOD).ifBlank { null },
                 createdAt = time,
             )
         }
@@ -224,6 +227,7 @@ class CsvImportViewModel(
                 memberId = memberId(row.memberName),
                 payerMemberId = memberId(row.payerName),
                 createdAt = row.createdAt,
+                mood = row.mood,
             )
             count++
         }
@@ -232,11 +236,11 @@ class CsvImportViewModel(
 
     // ---------- CSV / 字段解析 ----------
 
-    private enum class Field { TIME, TYPE, AMOUNT, CATEGORY, NOTE, LOCATION, MEMBER, PAYER }
+    private enum class Field { TIME, TYPE, AMOUNT, CATEGORY, NOTE, LOCATION, MEMBER, PAYER, MOOD }
 
     private val DEFAULT_ORDER = listOf(
         Field.TIME, Field.TYPE, Field.AMOUNT, Field.CATEGORY,
-        Field.NOTE, Field.LOCATION, Field.MEMBER, Field.PAYER,
+        Field.NOTE, Field.LOCATION, Field.MEMBER, Field.PAYER, Field.MOOD,
     )
 
     /** 表头别名（中英兼容，含常见记账 App 列名） */
@@ -249,6 +253,7 @@ class CsvImportViewModel(
         Field.LOCATION to listOf("位置", "地点", "location", "place"),
         Field.MEMBER to listOf("归属", "成员", "member", "owner"),
         Field.PAYER to listOf("付款", "垫付", "支付", "payer", "paid"),
+        Field.MOOD to listOf("心情", "mood"),
     )
 
     /** 支持引号与换行的 CSV 行解析 */

@@ -100,6 +100,7 @@
     <string name="record_note_hint">Add a note…</string>
     <string name="record_save">Save</string>
     <string name="record_save_edit">Save changes</string>
+    <string name="record_done">Done</string>
     <string name="record_saved">Saved ✓</string>
     <string name="record_updated">Updated ✓</string>
     <string name="record_err_amount">Enter a valid amount</string>
@@ -261,6 +262,31 @@
     <string name="search_result_limit">Showing first 500; try a more specific keyword</string>
     <string name="chlog_170_1">Bill search on home: find historical bills by note, category, place or amount (e.g. 12.5), tap a result for details</string>
     <string name="chlog_171_1">Pie leader lines redrawn: radial start (no longer crossing the ring) and category-colored; tap a label or legend row to highlight its slice (tap legend again for details)</string>
+    <string name="chlog_172_1">The big key on the number keypad changed from &quot;Save&quot; to &quot;Done&quot;: it only collapses the keypad instead of saving; saving is unified on the bottom button</string>
+    <!-- v1.8.0 mood / save again / masked sharing / app shortcuts -->
+    <string name="record_mood">Mood</string>
+    <string name="detail_mood">Mood</string>
+    <string name="record_saved_again_title">Saved</string>
+    <string name="record_saved_again_msg">Add another one? Type and category are kept, just enter the amount.</string>
+    <string name="record_save_again">Add another</string>
+    <string name="record_saved_ok">OK</string>
+    <string name="stats_export_mask">Hide amounts</string>
+    <string name="stats_export_mask_sub">All amounts become &quot;¥***&quot; in the exported image and CSV</string>
+    <string name="export_mask_ask">Hide amounts in the shared image?</string>
+    <string name="export_with_amount">Show amounts</string>
+    <string name="export_mask_amount">Hide amounts (masked)</string>
+    <string name="nav_search">Search</string>
+    <string name="shortcut_record_long">Add an entry</string>
+    <string name="shortcut_search_long">Search bills</string>
+    <string name="shortcut_calendar_long">View calendar</string>
+    <string name="shortcut_stats_long">View statistics</string>
+    <string name="chlog_180_1">Mood emoji: pick an emoji below the note to record how you feel; shown in bill lists and details</string>
+    <string name="chlog_180_2">After saving, choose &quot;Add another&quot;: type and category are kept for quick consecutive logging</string>
+    <string name="chlog_180_3">Masked sharing: hide all amounts (¥***) in stats exports and multi-select summary images</string>
+    <string name="chlog_180_4">Long-press the app icon for shortcuts: add entry, search, calendar and stats</string>
+    <!-- v1.8.1 fixes -->
+    <string name="chlog_181_1">Fixed the big backspace key: tap deletes one digit, long-press clears all (a single tap used to wipe the whole amount)</string>
+    <string name="chlog_181_2">Bill subtitle now starts with the time: long notes get truncated first, so the time always stays visible</string>
     <string name="chlog_163_1">Fixed tiny slices being untappable: a minimum slice angle keeps them visible &amp; tappable, plus a wider hit band</string>
     <string name="chlog_162_1">Pie chart upgrade: leader-line labels (name + percentage, overlap-free); tap a slice to select with center amount sync, legend highlights in sync</string>
     <string name="chlog_161_1">Bill rows now use the category name as the title, with the note in small text beside the time</string>

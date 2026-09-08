@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 快捷入口图标：统计（饼图） -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#FFB59BD1"
+        android:pathData="M54,54m-54,0a54,54 0 1,0 108,0a54,54 0 1,0 -108,0" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M54,54 L54,30 A24,24 0 0,1 75.5,63.5 Z" />
+    <path
+        android:pathData="M54,54m-24,0a24,24 0 1,0 48,0a24,24 0 1,0 -48,0"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="6" />
+</vector>

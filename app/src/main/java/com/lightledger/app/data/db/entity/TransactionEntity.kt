@@ -50,6 +50,8 @@ data class TransactionEntity(
     val memberId: Long? = null,
     /** v4：付款成员 id（谁垫付）；null = 本人 */
     val payerMemberId: Long? = null,
+    /** v6：心情 emoji（如 "😀"）；null = 未标记 */
+    val mood: String? = null,
     val createdAt: Long = System.currentTimeMillis(),
     /** v1 -> v2 新增字段，示例迁移见 [com.lightledger.app.data.db.Migrations] */
     val updatedAt: Long = System.currentTimeMillis(),

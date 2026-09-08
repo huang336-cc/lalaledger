@@ -99,5 +99,18 @@ object Migrations {
         }
     }
 
-    val ALL: Array<Migration> = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
+    /**
+     * v5 -> v6：心情标记
+     * transactions 新增 mood（emoji 文本，可空）：记账时可选一个心情，
+     * 纯展示属性不参与统计，历史账单为 null。
+     */
+    val MIGRATION_5_6 = object : Migration(5, 6) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("ALTER TABLE transactions ADD COLUMN mood TEXT")
+        }
+    }
+
+    val ALL: Array<Migration> = arrayOf(
+        MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6,
+    )
 }

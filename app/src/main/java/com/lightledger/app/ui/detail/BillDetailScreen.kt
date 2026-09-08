@@ -58,6 +58,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
@@ -287,6 +288,23 @@ fun BillDetailScreen(
                             label = stringResource(R.string.detail_note),
                             value = it,
                         )
+                    }
+                    // 心情行：emoji + 标签（仅记账时选了心情才显示）
+                    tx.mood?.takeIf { it.isNotBlank() }?.let { mood ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(mood, fontSize = 17.sp)
+                            Spacer(Modifier.width(10.dp))
+                            Text(
+                                stringResource(R.string.detail_mood),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
                     }
                 }
             }

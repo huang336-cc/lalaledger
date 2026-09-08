@@ -17,10 +17,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -91,6 +93,18 @@ fun LightLedgerRoot(appViewModel: AppViewModel) {
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
     val showBottomBar = currentRoute in Routes.tabs
+
+    // ---------- 快捷入口（长按桌面图标）：跳到对应页面后清空待处理路由 ----------
+    val pendingShortcutRoute by appViewModel.pendingShortcutRoute.collectAsStateWithLifecycle()
+    LaunchedEffect(pendingShortcutRoute) {
+        val route = pendingShortcutRoute ?: return@LaunchedEffect
+        when (route) {
+            Routes.RECORD, Routes.CALENDAR, Routes.STATS -> navController.selectTab(route)
+            Routes.SEARCH -> navController.navigate(Routes.SEARCH)
+            else -> return@LaunchedEffect
+        }
+        appViewModel.clearShortcutRoute()
+    }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,

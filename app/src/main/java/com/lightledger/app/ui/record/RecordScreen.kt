@@ -11,9 +11,12 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -23,15 +26,20 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -47,6 +55,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.content.FileProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -192,6 +201,9 @@ fun RecordScreen(
     var manualPlaceDialog by remember { mutableStateOf(false) }
     var showQuickMember by remember { mutableStateOf(false) }
 
+    // 保存成功后的「再记一笔」浮层：确定 = 返回上一页；再记一笔 = 留在当前页继续输入
+    var showSaveAgain by remember { mutableStateOf(false) }
+
     // 全量图标选择（更多入口）：先选图标 → 再选要替换的常驻分类
     var showIconPicker by remember { mutableStateOf(false) }
     var pickedIcon by remember { mutableStateOf<String?>(null) }
@@ -206,7 +218,8 @@ fun RecordScreen(
                     Toast.makeText(context, context.getString(R.string.record_updated), Toast.LENGTH_SHORT).show()
                     onDone()
                 } else {
-                    Toast.makeText(context, context.getString(R.string.record_saved), Toast.LENGTH_SHORT).show()
+                    // 弹「再记一笔」浮层代替 Toast：金额/备注等已由 VM 重置，类型/分类/成员保留
+                    showSaveAgain = true
                 }
             },
             onError = { msgRes -> Toast.makeText(context, context.getString(msgRes), Toast.LENGTH_SHORT).show() },
@@ -381,6 +394,13 @@ fun RecordScreen(
                 textStyle = MaterialTheme.typography.bodyMedium,
             )
 
+            // ---------- 心情 emoji（可选中/再点取消，随账单保存） ----------
+            Spacer(Modifier.height(10.dp))
+            MoodPickerRow(
+                selected = state.mood,
+                onSelect = viewModel::selectMood,
+            )
+
             // ---------- 归属 / 垫付（旅行账本；置于最底部，优先保证金额 + 分类一屏可见） ----------
             // 「+ 成员」按钮全局唯一，固定在归属行右上角；归属行额外提供「公共」= 全员 AA
             if (state.isTripBook) {
@@ -436,7 +456,9 @@ fun RecordScreen(
                     enabled = !state.saving,
                     onKey = viewModel::onAmountKey,
                     onClear = viewModel::clearAmount,
-                    onSave = { handleSave() },
+                    // 键盘上的大键 = 完成：只收起键盘，保存交给底部保存按钮
+                    // （避免分类/备注等信息还没填就误存）
+                    onDone = { viewModel.closeKeyboard() },
                     modifier = Modifier.graphicsLayer {
                         translationY = size.height * keyboardSlide.value
                     },
@@ -520,6 +542,74 @@ fun RecordScreen(
                     ).show()
                 },
             )
+        }
+    }
+
+    // ---------- 保存成功：再记一笔 / 知道了 ----------
+    if (showSaveAgain) {
+        AlertDialog(
+            onDismissRequest = { showSaveAgain = false },
+            title = { Text(stringResource(R.string.record_saved_again_title)) },
+            text = { Text(stringResource(R.string.record_saved_again_msg)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        // 关掉浮层继续输入：VM 已重置金额/备注/图片/时间，类型/分类/成员保留
+                        showSaveAgain = false
+                    }
+                ) { Text(stringResource(R.string.record_save_again)) }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        showSaveAgain = false
+                        onDone()
+                    }
+                ) { Text(stringResource(R.string.record_saved_ok)) }
+            },
+        )
+    }
+}
+
+/** 常用心情 emoji（横滑选择，再点同一枚取消） */
+private val MOOD_EMOJIS = listOf(
+    "😀", "🥰", "😎", "🤩", "😂", "😌",
+    "😪", "🥱", "😢", "😭", "😤", "😡", "🤒", "🥺",
+)
+
+@Composable
+private fun MoodPickerRow(
+    selected: String?,
+    onSelect: (String?) -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState()),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = stringResource(R.string.record_mood),
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(Modifier.width(4.dp))
+        MOOD_EMOJIS.forEach { emoji ->
+            val isSel = emoji == selected
+            Surface(
+                onClick = { onSelect(if (isSel) null else emoji) },
+                shape = RoundedCornerShape(50),
+                color = if (isSel) MaterialTheme.colorScheme.primaryContainer
+                else MaterialTheme.colorScheme.surface,
+                border = if (isSel) BorderStroke(1.dp, MaterialTheme.colorScheme.primary) else null,
+                modifier = Modifier.padding(end = 6.dp),
+            ) {
+                Text(
+                    text = emoji,
+                    fontSize = 20.sp,
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                )
+            }
         }
     }
 }

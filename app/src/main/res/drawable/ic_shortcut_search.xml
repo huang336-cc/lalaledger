@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 快捷入口图标：搜索（放大镜） -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#FF6C7A9C"
+        android:pathData="M54,54m-54,0a54,54 0 1,0 108,0a54,54 0 1,0 -108,0" />
+    <path
+        android:pathData="M48,32a16,16 0 1,1 -0.01,0"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="7" />
+    <path
+        android:pathData="M59.5,59.5L74,74"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeLineCap="round"
+        android:strokeWidth="7" />
+</vector>

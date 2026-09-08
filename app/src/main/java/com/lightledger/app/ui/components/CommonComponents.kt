@@ -169,6 +169,8 @@ fun BillRow(
     selected: Boolean = false,
     /** 长按回调（首页长按快速进入多选模式）；null = 无长按行为 */
     onLongPress: (() -> Unit)? = null,
+    /** 心情 emoji；非空时显示在副行开头 */
+    mood: String? = null,
 ) {
     Row(
         modifier = modifier
@@ -184,17 +186,23 @@ fun BillRow(
         CategoryIcon(iconKey = categoryIcon, color = categoryColor)
         Spacer(Modifier.width(14.dp))
         Column(Modifier.weight(1f)) {
-            // 分类名固定作大标题；备注以小字列在时间旁
+            // 主标题：分类名
             Text(
                 text = categoryName,
                 style = MaterialTheme.typography.bodyLarge,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
+            // 副行：时间固定在最左（长备注被截断时时间仍可见），心情与备注跟在后面
             val noteText = note?.trim()?.takeIf { it.isNotBlank() }
+            val moodText = mood?.trim()?.takeIf { it.isNotBlank() }
             val timeText = DateUtils.formatBillTime(time)
             Text(
-                text = if (noteText != null) "$noteText · $timeText" else timeText,
+                text = buildString {
+                    append(timeText)
+                    if (moodText != null) append(" · ").append(moodText)
+                    if (noteText != null) append(" · ").append(noteText)
+                },
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,

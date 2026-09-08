@@ -45,6 +45,7 @@ class TransactionRepository(private val dao: TransactionDao) {
         images: List<String>,
         memberId: Long? = null,
         payerMemberId: Long? = null,
+        mood: String? = null,
         createdAt: Long = System.currentTimeMillis(),
     ): Long = dao.insert(
         TransactionEntity(
@@ -57,6 +58,7 @@ class TransactionRepository(private val dao: TransactionDao) {
             images = images,
             memberId = memberId,
             payerMemberId = payerMemberId,
+            mood = mood?.takeIf { it.isNotBlank() },
             createdAt = createdAt,
         )
     )

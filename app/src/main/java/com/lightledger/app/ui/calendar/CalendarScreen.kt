@@ -270,6 +270,7 @@ fun CalendarScreen(
                                 type = TransactionType.from(item.tx.type),
                                 time = item.tx.createdAt,
                                 note = item.tx.note,
+                                mood = item.tx.mood,
                                 thumbnailPath = item.tx.images.firstOrNull(),
                                 selectionMode = false,
                                 selected = false,

@@ -20,7 +20,7 @@ import java.util.Locale
 object CsvExporter {
 
     /** 表头（顺序即列顺序） */
-    val COLUMNS = listOf("时间", "类型", "金额", "分类", "备注", "位置", "归属成员", "付款成员")
+    val COLUMNS = listOf("时间", "类型", "金额", "分类", "备注", "位置", "归属成员", "付款成员", "心情")
 
     /** 导出的一行账单（amountText 为元，无千分位） */
     data class CsvRow(
@@ -32,9 +32,10 @@ object CsvExporter {
         val location: String = "",
         val memberName: String = "",
         val payerName: String = "",
+        val mood: String = "",
     ) {
         fun toCsvLine(): String = listOf(
-            timeText, typeText, amountText, categoryName, note, location, memberName, payerName,
+            timeText, typeText, amountText, categoryName, note, location, memberName, payerName, mood,
         ).joinToString(",") { escape(it) }
     }
 

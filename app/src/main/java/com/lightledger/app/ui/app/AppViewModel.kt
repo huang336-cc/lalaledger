@@ -7,6 +7,7 @@ import com.lightledger.app.data.db.entity.AccountBookEntity
 import com.lightledger.app.domain.model.ThemeMode
 import com.lightledger.app.util.LocaleHelper
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -45,6 +46,20 @@ class AppViewModel(private val container: AppContainer) : ViewModel() {
         // 写完后 collector 收到相同值，幂等不冲突。
         (container.app as? com.lightledger.app.LightLedgerApp)?.updateLanguageNow(tag)
         viewModelScope.launch { container.settings.setLanguage(tag) }
+    }
+
+    // ---------- 快捷入口（长按桌面图标） ----------
+
+    /** 待跳转的快捷入口路由；由 MainActivity 写入，NavGraph 消费后清空 */
+    private val _pendingShortcutRoute = MutableStateFlow<String?>(null)
+    val pendingShortcutRoute: StateFlow<String?> = _pendingShortcutRoute
+
+    fun pushShortcutRoute(route: String) {
+        if (route.isNotBlank()) _pendingShortcutRoute.value = route
+    }
+
+    fun clearShortcutRoute() {
+        _pendingShortcutRoute.value = null
     }
 
     // ---------- 账本 ----------

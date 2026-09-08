@@ -32,6 +32,7 @@ import androidx.compose.material.icons.outlined.Group
 import androidx.compose.material.icons.outlined.LightMode
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.SettingsBackupRestore
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
@@ -42,6 +43,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -123,6 +125,8 @@ fun HomeScreen(
     var selectedIds by remember { mutableStateOf(emptySet<Long>()) }
     var confirmDeleteBills by remember { mutableStateOf(false) }
     var exportingImage by remember { mutableStateOf(false) }
+    // 导出分享图前询问是否隐藏金额（打码分享）
+    var showExportMaskChoice by remember { mutableStateOf(false) }
     var previewImages by remember { mutableStateOf<List<String>?>(null) }
     var previewIndex by remember { mutableStateOf(0) }
 
@@ -153,6 +157,57 @@ fun HomeScreen(
     fun exitSelection() {
         selectionMode = false
         selectedIds = emptySet()
+    }
+
+    // ---------- 导出选中账单汇总图（mask=true 时所有金额打码为「¥***」） ----------
+    fun doExportSummary(mask: Boolean) {
+        val bookName = currentBook?.name ?: context.getString(R.string.default_book)
+        val fallbackColor = 0xFF9A968D.toInt()
+        val maskText = "¥***"
+        val rows = selItems.map { item ->
+            SummaryImageExporter.Row(
+                title = item.tx.note?.takeIf { it.isNotBlank() }
+                    ?: (item.category?.name ?: context.getString(R.string.uncategorized)),
+                categoryName = item.category?.name
+                    ?: context.getString(R.string.uncategorized),
+                categoryColor = item.category?.color ?: fallbackColor,
+                amountText = if (mask) maskText
+                else (if (item.tx.type == TransactionType.EXPENSE.value) "-" else "+") +
+                    MoneyFormat.fenToPlain(item.tx.amount),
+                isExpense = item.tx.type == TransactionType.EXPENSE.value,
+                timeText = com.lightledger.app.util.DateUtils.formatBillTime(item.tx.createdAt),
+                thumbnailPath = item.tx.images.firstOrNull(),
+                memberName = if (state.isTrip) {
+                    item.member?.let { if (it.isPublic) publicLabel else it.name } ?: selfLabel
+                } else null,
+                memberColor = if (state.isTrip && item.member == null) 0xFF6C7A9C.toInt()
+                else item.member?.color ?: 0xFF5BB3A2.toInt(),
+                payerName = if (state.isTrip) {
+                    item.payer?.let { if (it.isPublic) publicLabel else it.name } ?: selfLabel
+                } else null,
+                payerColor = if (state.isTrip && item.payer == null) 0xFF6C7A9C.toInt()
+                else item.payer?.color ?: 0xFF5BB3A2.toInt(),
+            )
+        }
+        val summary = SummaryImageExporter.Summary(
+            bookName = bookName,
+            count = selItems.size,
+            expenseText = if (mask) maskText else MoneyFormat.fenToString(selExpense),
+            incomeText = if (mask) maskText else MoneyFormat.fenToString(selIncome),
+            netText = if (mask) maskText else MoneyFormat.fenToString(selNet),
+        )
+        scope.launch {
+            exportingImage = true
+            val uri = SummaryImageExporter.export(context, summary, rows, isDark)
+            exportingImage = false
+            Toast.makeText(
+                context,
+                context.getString(
+                    if (uri != null) R.string.export_saved else R.string.export_failed
+                ),
+                Toast.LENGTH_SHORT,
+            ).show()
+        }
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -554,6 +609,7 @@ fun HomeScreen(
                                         type = TransactionType.from(item.tx.type),
                                         time = item.tx.createdAt,
                                         note = item.tx.note,
+                                        mood = item.tx.mood,
                                         thumbnailPath = item.tx.images.firstOrNull(),
                                         onThumbnailClick = {
                                             previewImages = item.tx.images
@@ -619,53 +675,7 @@ fun HomeScreen(
                         filled = true,
                         enabled = selectedIds.isNotEmpty() && !exportingImage,
                         modifier = Modifier.weight(1.2f),
-                        onClick = {
-                            val bookName = currentBook?.name ?: context.getString(R.string.default_book)
-                            val fallbackColor = 0xFF9A968D.toInt()
-                            val rows = selItems.map { item ->
-                                SummaryImageExporter.Row(
-                                    title = item.tx.note?.takeIf { it.isNotBlank() }
-                                        ?: (item.category?.name ?: context.getString(R.string.uncategorized)),
-                                    categoryName = item.category?.name
-                                        ?: context.getString(R.string.uncategorized),
-                                    categoryColor = item.category?.color ?: fallbackColor,
-                                    amountText = (if (item.tx.type == TransactionType.EXPENSE.value) "-" else "+") +
-                                        MoneyFormat.fenToPlain(item.tx.amount),
-                                    isExpense = item.tx.type == TransactionType.EXPENSE.value,
-                                    timeText = com.lightledger.app.util.DateUtils.formatBillTime(item.tx.createdAt),
-                                    thumbnailPath = item.tx.images.firstOrNull(),
-                                    memberName = if (state.isTrip) {
-                                        item.member?.let { if (it.isPublic) publicLabel else it.name } ?: selfLabel
-                                    } else null,
-                                    memberColor = if (state.isTrip && item.member == null) 0xFF6C7A9C.toInt()
-                                    else item.member?.color ?: 0xFF5BB3A2.toInt(),
-                                    payerName = if (state.isTrip) {
-                                        item.payer?.let { if (it.isPublic) publicLabel else it.name } ?: selfLabel
-                                    } else null,
-                                    payerColor = if (state.isTrip && item.payer == null) 0xFF6C7A9C.toInt()
-                                    else item.payer?.color ?: 0xFF5BB3A2.toInt(),
-                                )
-                            }
-                            val summary = SummaryImageExporter.Summary(
-                                bookName = bookName,
-                                count = selItems.size,
-                                expenseText = MoneyFormat.fenToString(selExpense),
-                                incomeText = MoneyFormat.fenToString(selIncome),
-                                netText = MoneyFormat.fenToString(selNet),
-                            )
-                            scope.launch {
-                                exportingImage = true
-                                val uri = SummaryImageExporter.export(context, summary, rows, isDark)
-                                exportingImage = false
-                                Toast.makeText(
-                                    context,
-                                    context.getString(
-                                        if (uri != null) R.string.export_saved else R.string.export_failed
-                                    ),
-                                    Toast.LENGTH_SHORT,
-                                ).show()
-                            }
-                        },
+                        onClick = { showExportMaskChoice = true },
                     )
                     SelectionAction(
                         text = stringResource(R.string.action_batch_delete),
@@ -704,6 +714,49 @@ fun HomeScreen(
                 exitSelection()
             },
             onDismiss = { confirmDeleteBills = false },
+        )
+    }
+
+    // ---------- 导出分享图：是否隐藏金额（打码分享） ----------
+    if (showExportMaskChoice) {
+        AlertDialog(
+            onDismissRequest = { showExportMaskChoice = false },
+            title = {
+                Text(
+                    stringResource(R.string.action_export_image),
+                    style = MaterialTheme.typography.titleMedium,
+                )
+            },
+            text = {
+                Column {
+                    Text(
+                        stringResource(R.string.export_mask_ask),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    TextButton(
+                        onClick = {
+                            showExportMaskChoice = false
+                            doExportSummary(mask = false)
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                    ) { Text(stringResource(R.string.export_with_amount)) }
+                    TextButton(
+                        onClick = {
+                            showExportMaskChoice = false
+                            doExportSummary(mask = true)
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                    ) { Text(stringResource(R.string.export_mask_amount)) }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                TextButton(onClick = { showExportMaskChoice = false }) {
+                    Text(stringResource(R.string.cancel))
+                }
+            },
         )
     }
 

@@ -100,6 +100,7 @@
     <string name="record_note_hint">添加备注…</string>
     <string name="record_save">保存</string>
     <string name="record_save_edit">保存修改</string>
+    <string name="record_done">完成</string>
     <string name="record_saved">已记一笔 ✓</string>
     <string name="record_updated">已更新 ✓</string>
     <string name="record_err_amount">请输入有效金额</string>
@@ -261,6 +262,31 @@
     <string name="search_result_limit">仅显示前 500 条，试试更精确的关键词</string>
     <string name="chlog_170_1">首页新增账单搜索：按备注、分类、位置或金额（如 12.5）快速查找历史账单，点结果直达详情</string>
     <string name="chlog_171_1">饼图引导线重画：沿径向出发不再穿环、颜色随分类对应，点标签或图例即可联动高亮扇形（再点图例看明细）</string>
+    <string name="chlog_172_1">数字键盘右下角大键从「保存」改为「完成」：只收起键盘不误存，保存统一走底部按钮</string>
+    <!-- v1.8.0 心情记账 / 再记一笔 / 打码分享 / 快捷入口 -->
+    <string name="record_mood">心情</string>
+    <string name="detail_mood">心情</string>
+    <string name="record_saved_again_title">已保存</string>
+    <string name="record_saved_again_msg">要再来一笔吗？类型与分类会保留，接着填金额就行。</string>
+    <string name="record_save_again">再记一笔</string>
+    <string name="record_saved_ok">知道了</string>
+    <string name="stats_export_mask">隐藏金额</string>
+    <string name="stats_export_mask_sub">导出的图片与 CSV 中所有金额替换为「¥***」</string>
+    <string name="export_mask_ask">分享图中的金额要隐藏吗？</string>
+    <string name="export_with_amount">显示金额</string>
+    <string name="export_mask_amount">隐藏金额（打码）</string>
+    <string name="nav_search">搜索</string>
+    <string name="shortcut_record_long">记一笔账</string>
+    <string name="shortcut_search_long">搜索账单</string>
+    <string name="shortcut_calendar_long">查看日历</string>
+    <string name="shortcut_stats_long">查看统计</string>
+    <string name="chlog_180_1">心情记账：备注下方选一枚 emoji 记录当下心情，账单列表与详情同步展示</string>
+    <string name="chlog_180_2">保存后可选「再记一笔」：类型与分类保留，连记不用退出去</string>
+    <string name="chlog_180_3">分享打码：统计导出与多选汇总图都可隐藏全部金额（¥***）</string>
+    <string name="chlog_180_4">长按应用图标直达：记一笔、搜索、日历、统计</string>
+    <!-- v1.8.1 修复 -->
+    <string name="chlog_181_1">修复退格大键：点击逐位删除一个数字，长按才清空全部（此前点击直接清空）</string>
+    <string name="chlog_181_2">账单副行时间前置：时间固定显示在最左，长备注被截断也不再隐藏时间</string>
     <string name="chlog_163_1">修复占比极小的扇区点不到：增加最小扇区角度（看得见也点得中），并放宽触摸命中范围</string>
     <string name="chlog_162_1">统计饼图升级：引导线分类标签（名称+百分比，防重叠）；点扇区选中联动环心金额，图例同步高亮</string>
     <string name="chlog_161_1">账单列表改为分类名作标题，备注以小字显示在时间旁</string>

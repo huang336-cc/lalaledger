@@ -846,14 +846,16 @@ private fun CategoryCell(
 }
 
 /**
- * 大号自定义数字键盘：3 列数字区 + 右侧删除与渐变保存键。
+ * 大号自定义数字键盘：3 列数字区 + 右侧删除与「完成」键。
+ * 完成键只收起键盘（金额输入完毕），保存走键盘收起后的底部按钮，
+ * 避免分类/备注等信息还没填就误存。
  */
 @Composable
 fun AmountKeyboard(
     enabled: Boolean,
     onKey: (String) -> Unit,
     onClear: () -> Unit,
-    onSave: () -> Unit,
+    onDone: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Surface(
@@ -895,28 +897,30 @@ fun AmountKeyboard(
                 }
             }
             Spacer(Modifier.width(10.dp))
-            // 右列：删除 + 保存（大按钮）
+            // 右列：删除 + 完成（收起键盘，继续填其他信息）
             Column(Modifier.weight(1f)) {
-                Surface(
-                    onClick = onClear,
-                    enabled = enabled,
-                    shape = MaterialTheme.shapes.small,
-                    color = MaterialTheme.colorScheme.surfaceVariant,
+                // 退格大键：点击逐位删除，长按清空全部（此前点击直接清空，易误删）
+                Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .weight(1f),
+                        .weight(1f)
+                        .clip(MaterialTheme.shapes.small)
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                        .combinedClickable(
+                            onClick = { onKey("del") },
+                            onLongClick = onClear,
+                        ),
+                    contentAlignment = Alignment.Center,
                 ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            Icons.Outlined.Backspace,
-                            contentDescription = stringResource(R.string.delete),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
+                    Icon(
+                        Icons.Outlined.Backspace,
+                        contentDescription = stringResource(R.string.delete),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
                 Spacer(Modifier.height(10.dp))
                 Surface(
-                    onClick = onSave,
+                    onClick = onDone,
                     enabled = enabled,
                     shape = MaterialTheme.shapes.small,
                     modifier = Modifier
@@ -944,7 +948,7 @@ fun AmountKeyboard(
                         contentAlignment = Alignment.Center,
                     ) {
                         Text(
-                            stringResource(R.string.record_save),
+                            stringResource(R.string.record_done),
                             style = MaterialTheme.typography.titleLarge,
                             color = if (enabled) MaterialTheme.colorScheme.onPrimary
                             else MaterialTheme.colorScheme.onSurfaceVariant,
