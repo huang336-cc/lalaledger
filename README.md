@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="docs/ic_launcher.png" width="120" height="120" alt="拉拉记账图标" style="border-radius:24px;display:inline-block"/>
+
 # 拉拉记账 · lalaledger
 
 **一款纯本地离线的安卓记账 App —— 简洁、极速、好看**

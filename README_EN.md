@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="docs/ic_launcher.png" width="120" height="120" alt="lalaledger icon" style="border-radius:24px;display:inline-block"/>
+
 # lalaledger · 拉拉记账
 
 **A fully offline Android expense-tracking app — clean, fast, and beautiful**
