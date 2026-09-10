@@ -90,6 +90,15 @@
     <string name="icon_picker_title">全部图标</string>
     <string name="category_replace_title">替换到分类（点击即替换其图标与名称）</string>
     <string name="category_replace_done">已替换为「%1$s」</string>
+    <string name="icon_use_choice_title">使用这个图标</string>
+    <string name="icon_use_choice_subtitle">选择它的用途</string>
+    <string name="icon_use_replace">替换常驻分类</string>
+    <string name="icon_use_replace_desc">挑一个分类，图标与名称一起换掉</string>
+    <string name="icon_use_once">仅本次使用</string>
+    <string name="icon_use_once_desc">只在这一笔账单上用这个图标，分类保持不变</string>
+    <string name="icon_use_once_done">本次将使用「%1$s」图标</string>
+    <string name="icon_once_chip">仅本次 · %1$s</string>
+    <string name="icon_once_clear">取消临时图标</string>
     <string name="record_location">地点</string>
     <string name="record_current_location">当前地点</string>
     <string name="record_add_location">添加地点</string>
@@ -196,6 +205,12 @@
 
     <!-- 成员 -->
     <string name="members_title">同行成员</string>
+    <string name="members_delete_all">一键删除</string>
+    <string name="members_delete_all_title">删除全部成员？</string>
+    <string name="members_delete_all_msg">将删除本账本中 %1$d 位成员（「公共」会保留）。历史账单不会被删除，只是归属与垫付会清空显示为「本人」，此操作不可撤销。</string>
+    <string name="members_delete_all_done">已删除 %1$d 位成员</string>
+    <string name="members_delete_all_none">没有可删除的成员</string>
+    <string name="members_delete_all_hint">一键删除本账本全部成员</string>
     <string name="members_add">添加成员</string>
     <string name="members_empty">还没有同行成员\n点右上角"添加成员"，一起旅行分账吧</string>
     <string name="members_item_hint">消费归属该成员 · 删除后账单保留</string>
@@ -238,9 +253,30 @@
     <string name="settings_privacy">数据仅保存在本机，无广告、无登录、无云端</string>
 
     <!-- 关于 / 协议 / 免责 -->
-    <string name="about_body">版本 %1$s\n\n一款简洁、极速、好看的日常记账 App。\n\n· 纯本地离线存储（Room 数据库）\n· 无登录、无广告、无云端服务\n· 多账本 / 旅行分账 / 拍照小票 / 汇总图片导出</string>
+    <string name="about_developer">开发者</string>
+    <string name="about_developer_name">huang336</string>
+    <string name="about_version_label">版本 %1$s</string>
+    <string name="about_tagline">一款简洁、极速、好看的日常记账 App</string>
+    <string name="about_features_title">功能特性</string>
+    <string name="about_feature_1">纯本地离线存储（Room 数据库）</string>
+    <string name="about_feature_2">无登录、无广告、无云端服务</string>
+    <string name="about_feature_3">多账本 / 旅行分账 / 拍照小票</string>
+    <string name="about_feature_4">汇总图片导出、CSV 导出与导入</string>
+    <string name="about_feature_5">开源项目，欢迎自行构建与改进</string>
+    <string name="about_open_source_title">开源说明</string>
+    <string name="about_open_source_body">本项目已开源，源码公开可查，欢迎学习、构建与改进。</string>
+    <string name="about_github">GitHub 项目地址</string>
+    <string name="about_github_url">https://github.com/huang336-cc/lalaledger</string>
+    <string name="about_github_open">打开 GitHub</string>
+    <string name="about_github_copied">已复制项目地址，可粘贴到浏览器打开</string>
+    <string name="about_update_hint">本应用为纯本地离线软件，不会自动联网检查更新。如需获取最新版本，请前往 GitHub 项目地址，在 Releases 页面自行下载安装包更新（覆盖安装不会丢失数据）。</string>
+    <string name="about_body">版本 %1$s\n\n一款简洁、极速、好看的日常记账 App。\n\n· 纯本地离线存储（Room 数据库）\n· 无登录、无广告、无云端服务\n· 多账本 / 旅行分账 / 拍照小票 / 汇总图片导出\n· 开源项目，欢迎自行构建与改进</string>
     <string name="license_body">本应用（拉拉记账 / lalaledger）基于 MIT License 开源：可自由使用、复制、修改、合并、出版发行、散布、再授权及贩售软件及副本，但须保留版权与许可声明。\n\n软件按"原样"提供，不作任何明示或暗示的担保，包括但不限于适销性、特定用途适用性和非侵权性。作者或版权持有人不对任何索赔、损害或其他责任负责。\n\n第三方组件（均为宽松协议、MIT 兼容，无 GPL 类传染性协议，版权归各自持有者）：\n· Apache License 2.0 —— Kotlin、kotlinx.coroutines、AndroidX / Jetpack Compose（含 Material 3 与图标库）、Room、DataStore、Navigation Compose、Lifecycle、Activity Compose、Coil\n· 构建期工具（不分发进安装包）—— Android Gradle Plugin、KSP（Apache License 2.0）\n\n完整许可文本见工程根目录 LICENSE 与各组件官方仓库。</string>
-    <string name="disclaimer_body">1. 本应用为个人记账工具，仅在本机存储数据，不联网、不采集、不上传任何信息。\n\n2. 应用内的金额计算、AA 结算与转账方案仅供参考，请自行核对后使用；因使用本应用产生的任何账目争议或经济损失，开发者不承担责任。\n\n3. 请自行备份重要数据（CSV 导出 / 汇总长图）；卸载应用将彻底删除本机全部账单与图片，且无法恢复。\n\n4. 本应用不提供任何投资、税务、法律建议，相关用途请咨询专业人士。\n\n5. 本应用按"现状"提供，可能存在缺陷或与特定机型、系统版本的兼容性问题，不保证完全无错误、不间断运行；开发者不对因此造成的数据异常或损失负责。\n\n6. 导出的图片与 CSV 含个人财务信息，请自行妥善保管、谨防泄露；请仅从可信渠道获取本应用安装包。</string>
+    <string name="disclaimer_body">1. 本应用为个人记账工具，仅在本机存储数据，不联网、不采集、不上传任何信息。\n\n2. 应用内的金额计算、AA 结算与转账方案仅供参考，请自行核对后使用；因使用本应用产生的任何账目争议或经济损失，开发者不承担责任。\n\n3. 请自行备份重要数据（CSV 导出 / 汇总长图）；卸载应用将彻底删除本机全部账单与图片，且无法恢复。\n\n4. 本应用不提供任何投资、税务、法律建议，相关用途请咨询专业人士。\n\n5. 本应用按"现状"提供，可能存在缺陷或与特定机型、系统版本的兼容性问题，不保证完全无错误、不间断运行；开发者不对因此造成的数据异常或损失负责。\n\n6. 导出的图片与 CSV 含个人财务信息，请自行妥善保管、谨防泄露；请仅从可信渠道获取本应用安装包。\n\n7. 本应用不提供自动更新服务，也不会联网检查版本。您可能正在使用旧版本，请自行前往 GitHub 项目地址（https://github.com/huang336-cc/lalaledger）的 Releases 页面确认并下载最新版；因使用过时版本产生的问题，开发者不承担额外责任。\n\n8. 本应用与任何手机厂商、应用商店、金融机构均无关联，也不构成任何形式的背书或合作。\n\n9. 您应确保录入的账目信息真实合法。因您自行录入错误、误删账本、清理应用数据、刷机、系统迁移或设备损坏造成的数据丢失，开发者不承担责任。\n\n10. 开发者保留在不事先通知的情况下修改、暂停或终止本应用开发与分发的权利；本免责声明的最终解释权归开发者所有。若您不同意上述任一条款，请立即停止使用并卸载本应用。</string>
+    <string name="disclaimer_open_source">开源项目声明</string>
+    <string name="disclaimer_open_source_body">1. 本应用（拉拉记账 / lalaledger）为开源项目，基于 MIT License 发布，完整源码公开于 https://github.com/huang336-cc/lalaledger ，任何人可自由查阅、学习、复制、修改与再分发，但须保留原始版权声明与许可文本。\n\n2. 开源不等于无风险、也不等于官方认证。源码公开仅代表实现可被审查，不代表开发者对您的使用结果作出任何承诺或担保。\n\n3. 除 MIT License 明确授予的权利外，开发者未授予任何商标、名称、图标或品牌相关的使用许可。二次分发时请勿使用相同名称与图标误导他人，也请勿暗示获得开发者授权或背书。\n\n4. 第三方如基于本项目源码进行修改、编译、打包或再分发，均属第三方独立行为，与本项目开发者无关。请自行甄别安装包来源，仅从可信渠道获取。\n\n5. 本项目可能包含由第三方贡献者提交的代码，开发者不对第三方代码的适用性、安全性或合法性作出额外保证。</string>
+    <string name="disclaimer_derivative">二次开发免责声明</string>
+    <string name="disclaimer_derivative_body">1. 开发者不对任何二次开发版本负责。任何个人或组织基于本项目源码进行的修改、编译、打包、分发、运营或商业使用，均由其自行承担全部责任与后果。\n\n2. 二次开发版本中出现的任何功能变更、数据异常、账目错误、隐私泄露、恶意代码、广告植入、收费行为或数据丢失，均与本项目开发者无关，开发者不提供任何形式的技术支持、修复、退款或赔偿。\n\n3. 二次开发版本产生的账单数据格式可能与官方版本不兼容。使用二次开发版本可能造成数据错乱或无法在官方版本中正常读取，此类风险由使用者自行承担。\n\n4. 强烈建议仅使用官方发布的版本。因安装、使用来源不明的二次打包版本而导致的一切损失，开发者不承担责任。\n\n5. 若您将本项目用于二次开发并对外分发，您应自行确保符合当地法律法规（包括但不限于开源许可合规、隐私保护与数据安全要求），并自行承担由此产生的法律责任。</string>
     <string name="back">返回</string>
     <string name="record_err_save">保存失败，请重试</string>
     <string name="record_category_add">添加分类</string>
@@ -287,6 +323,39 @@
     <!-- v1.8.1 修复 -->
     <string name="chlog_181_1">修复退格大键：点击逐位删除一个数字，长按才清空全部（此前点击直接清空）</string>
     <string name="chlog_181_2">账单副行时间前置：时间固定显示在最左，长备注被截断也不再隐藏时间</string>
+    <!-- v1.9.0 关于页完善 + 版本号 -->
+    <string name="chlog_190_1">关于页新增 GitHub 项目地址入口（点击直达仓库），并提示本应用不联网、需自行前往 Releases 下载最新版</string>
+    <string name="chlog_190_2">关于页显示开发者 huang336；免责声明由 6 条扩充至 10 条，补齐更新渠道、责任边界、数据丢失与条款变更等说明</string>
+    <string name="chlog_190_4">关于页改版：顶部图标与版本号居中、功能特性改为要点列表、开发者与开源说明合并为信息卡片、GitHub 入口独立成可点击卡片、底部按钮等宽并排；免责声明拆为「总则 / 开源项目声明 / 二次开发免责」三个分区</string>
+    <string name="chlog_190_3">管理成员新增「一键删除」：一次性清空本账本全部成员（内置「公共」保留），历史账单不受影响，仅归属与垫付回到「本人」</string>
+    <!-- v1.8.15 图标用途二选一 -->
+    <string name="chlog_1815_1">分类「更多」选完图标后可自选用途：替换常驻分类（图标与名称一起换），或仅本次使用——只在这一笔账单上显示该图标，不动任何分类，统计口径不变</string>
+    <string name="chlog_1815_2">修复打开即闪退：数据库升级到 v7 时缺少 6→7 迁移注册，旧版本升级上来会直接崩溃，现已补全并验证各历史版本升级路径</string>
+    <!-- v1.8.14 CSV 导入修复 -->
+    <string name="chlog_1814_1">修复 CSV 导入三处问题：公共消费不再退化成普通成员（AA 结算恢复正确）；无表头 CSV 中备注含 date、note 等词不再被误当表头丢弃与错位；导入改为整批事务写入，中途失败不再留下半批账单</string>
+    <string name="chlog_1814_2">饼图标签主次分明：分类名维持主字号与中粗字重，百分比缩小一档并淡化，两行不再等大，占比一眼可读</string>
+    <!-- v1.8.13 备注焦点判定修复 -->
+    <string name="chlog_1813_1">修复备注光标不灭：无论点页面空白处还是分类、心情、拍照等任意其它位置，输入焦点都会立即释放，光标停止闪烁、输入法同步收起；同时点备注框本身（含框内拖选文字）仍可正常聚焦输入</string>
+    <!-- v1.8.12 备注聚焦回归修复 -->
+    <string name="chlog_1812_1">修复备注无法点开：上一版焦点清除误伤了备注框，现改为仅点击页面空白处时释放焦点，备注可正常点开输入，点空白处光标停止闪烁</string>
+    <!-- v1.8.11 备注焦点修复 -->
+    <string name="chlog_1811_1">修复备注光标不灭：输入完备注点击页面其他位置，输入焦点立即释放，光标停止闪烁、键盘同步收起</string>
+    <!-- v1.8.10 成员卡片溢出修复 -->
+    <string name="chlog_1810_1">修复多成员显示不全：「这笔归谁」「谁垫付」卡片随成员行数自动向下延伸，超出九个的成员也能完整显示、不再被裁切</string>
+    <!-- v1.8.9 记账页对齐修复 -->
+    <string name="chlog_189_1">记账页对齐修复：「谁垫付」标题行与「这笔归谁」等高，两卡片标题与成员胶囊行完全对齐，不再高低错位</string>
+    <!-- v1.8.8 成员卡片优化 -->
+    <string name="chlog_188_1">记账页成员卡片优化：「这笔归谁」「谁垫付」两卡片高度同步对齐；成员胶囊改紧凑样式，数量多时自动换行展示、不再横向裁切，全部成员一眼可见</string>
+    <!-- v1.8.7 记账页微调 -->
+    <string name="chlog_187_1">记账页微调：备注、拍照、相册改为 2:1:1 加权分布（备注更宽更好读）；「这笔归谁」「谁垫付」两栏各自加上描边卡片，并修复「+ 成员」按钮把标题行撑高导致的两栏错位</string>
+    <!-- v1.8.6 记账页交互优化 -->
+    <string name="chlog_186_1">记账页交互优化：分类「更多」按钮加大并加描边（可点击感更明确）；备注、拍照、相册一行平均三等分；旅行账本「这笔归谁」「谁垫付」合并为一排双列，整页内容一屏完整显示</string>
+    <!-- v1.8.5 记账页布局 -->
+    <string name="chlog_185_1">记账页一屏收拢：分类「更多」缩小为小圆钮移到分类标签右侧（不再占一整格）；备注输入框上移，与拍照/相册按钮并排一行；图片缩略图仅在有图时占行；整体间距收紧，一屏即可记完一笔</string>
+    <!-- v1.8.4 视觉优化 -->
+    <string name="chlog_184_1">账单列表视觉优化：金额三段式排版（整数突出、符号与小数弱化），副行时间淡色、备注分层更清晰，日期分组间距拉开，图标与缩略图收敛——重点更突出、整屏更干净</string>
+    <!-- v1.8.3 搜索修复 -->
+    <string name="chlog_183_1">修复搜索闪退：SQL 转义符写法错误导致输入关键词即崩溃，现已稳定支持按备注、位置、分类、金额即输即搜</string>
     <!-- v1.8.2 关于页 -->
     <string name="chlog_182_1">关于页完善：开源许可补全第三方组件清单（全部为 MIT 兼容的宽松协议），免责声明扩充至六条并同步双语 README</string>
     <string name="chlog_163_1">修复占比极小的扇区点不到：增加最小扇区角度（看得见也点得中），并放宽触摸命中范围</string>

@@ -90,6 +90,15 @@
     <string name="icon_picker_title">All icons</string>
     <string name="category_replace_title">Apply to category (tap to replace its icon &amp; name)</string>
     <string name="category_replace_done">Replaced with \"%1$s\"</string>
+    <string name="icon_use_choice_title">Use this icon</string>
+    <string name="icon_use_choice_subtitle">Choose how to use it</string>
+    <string name="icon_use_replace">Replace a pinned category</string>
+    <string name="icon_use_replace_desc">Pick a category - its icon and name will both be replaced</string>
+    <string name="icon_use_once">Use for this bill only</string>
+    <string name="icon_use_once_desc">Only this bill shows the icon; your categories stay unchanged</string>
+    <string name="icon_use_once_done">This bill will use the \"%1$s\" icon</string>
+    <string name="icon_once_chip">Once · %1$s</string>
+    <string name="icon_once_clear">Clear temporary icon</string>
     <string name="record_location">Location</string>
     <string name="record_current_location">Current place</string>
     <string name="record_add_location">Add place</string>
@@ -196,6 +205,12 @@
 
     <!-- Members -->
     <string name="members_title">Members</string>
+    <string name="members_delete_all">Delete all</string>
+    <string name="members_delete_all_title">Delete all members?</string>
+    <string name="members_delete_all_msg">This removes %1$d member(s) from this book (the built-in "Public" member is kept). Existing bills are not deleted - their owner and payer simply clear back to "Me". This cannot be undone.</string>
+    <string name="members_delete_all_done">Deleted %1$d member(s)</string>
+    <string name="members_delete_all_none">No members to delete</string>
+    <string name="members_delete_all_hint">Delete every member in this book</string>
     <string name="members_add">Add</string>
     <string name="members_empty">No members yet\nTap "Add" above to invite your travel mates</string>
     <string name="members_item_hint">Bills can belong to this member · kept after removal</string>
@@ -238,9 +253,30 @@
     <string name="settings_privacy">Data stays on this device only · no ads, no login, no cloud</string>
 
     <!-- About / License / Disclaimer -->
-    <string name="about_body">Version %1$s\n\nA clean, fast and beautiful expense tracker.\n\n· Fully offline (Room database)\n· No login, no ads, no cloud\n· Multi-book / trip splitting / receipts / image export</string>
+    <string name="about_developer">Developer</string>
+    <string name="about_developer_name">huang336</string>
+    <string name="about_version_label">Version %1$s</string>
+    <string name="about_tagline">A clean, fast and beautiful expense tracker</string>
+    <string name="about_features_title">Features</string>
+    <string name="about_feature_1">Fully offline (Room database)</string>
+    <string name="about_feature_2">No login, no ads, no cloud</string>
+    <string name="about_feature_3">Multi-book / trip splitting / receipts</string>
+    <string name="about_feature_4">Summary image export, CSV export and import</string>
+    <string name="about_feature_5">Open source - feel free to build and improve it</string>
+    <string name="about_open_source_title">Open source</string>
+    <string name="about_open_source_body">This project is open source. The full source code is publicly available - feel free to study, build and improve it.</string>
+    <string name="about_github">GitHub repository</string>
+    <string name="about_github_url">https://github.com/huang336-cc/lalaledger</string>
+    <string name="about_github_open">Open GitHub</string>
+    <string name="about_github_copied">Repository URL copied - paste it into your browser</string>
+    <string name="about_update_hint">This app runs fully offline and never checks for updates online. To get the latest version, open the GitHub repository and download the APK from its Releases page (installing over the old version keeps your data).</string>
+    <string name="about_body">Version %1$s\n\nA clean, fast and beautiful expense tracker.\n\n· Fully offline (Room database)\n· No login, no ads, no cloud\n· Multi-book / trip splitting / receipts / image export\n· Open source - feel free to build and improve it</string>
     <string name="license_body">This app (lalaledger) is open source under the MIT License: free to use, copy, modify, merge, publish, distribute, sublicense and/or sell copies, provided the copyright and license notice are kept.\n\nTHE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY.\n\nThird-party components (all permissive, MIT-compatible, no copyleft GPL-style licenses; copyrighted by their respective owners):\n- Apache License 2.0: Kotlin, kotlinx.coroutines, AndroidX / Jetpack Compose (incl. Material 3 and icon library), Room, DataStore, Navigation Compose, Lifecycle, Activity Compose, Coil\n- Build-time tools (not shipped in the APK): Android Gradle Plugin, KSP (Apache License 2.0)\n\nSee the LICENSE file at the project root and each component repository for full license texts.</string>
-    <string name="disclaimer_body">1. This app is a personal expense tracker. Data is stored locally only — no network, no tracking, no upload.\n\n2. Amount calculations, settle-up suggestions and transfer plans are for reference only. The developer is not liable for any accounting disputes or financial loss arising from use of this app.\n\n3. Back up your important data (CSV export / summary images); uninstalling the app permanently deletes all bills and photos on this device.\n\n4. This app provides no investment, tax or legal advice. Consult professionals for such purposes.\n\n5. This app is provided "as is" and may contain defects or compatibility issues on certain devices or system versions; it is not guaranteed to run error-free or without interruption, and the developer is not liable for data anomalies or losses caused by such issues.\n\n6. Exported images and CSV files contain personal financial data — keep them safe. Only obtain installation packages of this app from trusted sources.</string>
+    <string name="disclaimer_body">1. This app is a personal expense tracker. Data is stored locally only — no network, no tracking, no upload.\n\n2. Amount calculations, settle-up suggestions and transfer plans are for reference only. The developer is not liable for any accounting disputes or financial loss arising from use of this app.\n\n3. Back up your important data (CSV export / summary images); uninstalling the app permanently deletes all bills and photos on this device.\n\n4. This app provides no investment, tax or legal advice. Consult professionals for such purposes.\n\n5. This app is provided "as is" and may contain defects or compatibility issues on certain devices or system versions; it is not guaranteed to run error-free or without interruption, and the developer is not liable for data anomalies or losses caused by such issues.\n\n6. Exported images and CSV files contain personal financial data — keep them safe. Only obtain installation packages of this app from trusted sources.\n\n7. This app provides no auto-update service and never checks for new versions online. You may be running an outdated build — please visit the Releases page of the GitHub repository (https://github.com/huang336-cc/lalaledger) to confirm and download the latest version. The developer assumes no extra liability for issues caused by using an outdated version.\n\n8. This app is not affiliated with, endorsed by, or partnered with any phone manufacturer, app store, or financial institution.\n\n9. You are responsible for the accuracy and legality of the data you enter. The developer is not liable for data loss caused by your own input errors, accidental deletion of a book, clearing app data, flashing your device, system migration, or device damage.\n\n10. The developer reserves the right to modify, suspend or discontinue the development and distribution of this app without prior notice, and holds final interpretation rights over this disclaimer. If you disagree with any of the terms above, please stop using the app and uninstall it immediately.</string>
+    <string name="disclaimer_open_source">Open Source Notice</string>
+    <string name="disclaimer_open_source_body">1. This app (lalaledger) is an open source project released under the MIT License. The full source code is publicly available at https://github.com/huang336-cc/lalaledger . Anyone may freely inspect, study, copy, modify and redistribute it, provided the original copyright notice and license text are retained.\n\n2. Open source does not mean risk-free, nor does it mean official certification. Public source code only means the implementation can be reviewed; it does not mean the developer makes any promise or warranty regarding your results from using it.\n\n3. Apart from the rights expressly granted by the MIT License, the developer grants no license to any trademarks, names, icons or branding. When redistributing, do not use the same name or icon in a way that misleads others, and do not imply authorization or endorsement by the developer.\n\n4. Any modification, compilation, packaging or redistribution of this project by third parties is an independent act of those third parties and is unrelated to the developer of this project. Please verify the source of any installation package yourself and obtain it only from trusted channels.\n\n5. This project may contain code contributed by third parties. The developer makes no additional guarantee regarding the suitability, safety or legality of third-party code.</string>
+    <string name="disclaimer_derivative">Derivative Works Disclaimer</string>
+    <string name="disclaimer_derivative_body">1. The developer is not responsible for any derivative version. Any individual or organization that modifies, compiles, packages, distributes, operates or commercially exploits this project based on its source code bears full responsibility and all consequences on their own.\n\n2. Any feature changes, data anomalies, accounting errors, privacy leaks, malicious code, injected ads, paid gating or data loss found in a derivative version are unrelated to the developer of this project, and the developer provides no technical support, fixes, refunds or compensation of any kind.\n\n3. Data created by a derivative version may be incompatible with the official version. Using a derivative version may corrupt your data or make it unreadable in the official version; such risks are borne solely by the user.\n\n4. You are strongly advised to use only the official release. The developer is not liable for any loss caused by installing or using repackaged builds of unknown origin.\n\n5. If you use this project for derivative development and distribute it externally, you are responsible for complying with applicable laws and regulations (including but not limited to open source license compliance, privacy protection and data security requirements), and you bear the resulting legal liability yourself.</string>
     <string name="back">Back</string>
     <string name="record_err_save">Save failed, please retry</string>
     <string name="record_category_add">Add category</string>
@@ -287,6 +323,39 @@
     <!-- v1.8.1 fixes -->
     <string name="chlog_181_1">Fixed the big backspace key: tap deletes one digit, long-press clears all (a single tap used to wipe the whole amount)</string>
     <string name="chlog_181_2">Bill subtitle now starts with the time: long notes get truncated first, so the time always stays visible</string>
+    <!-- v1.9.0 about page -->
+    <string name="chlog_190_1">The About page now links straight to the GitHub repository, and makes clear the app is fully offline and that you should grab the newest build yourself from Releases</string>
+    <string name="chlog_190_2">The About page credits developer huang336; the disclaimer grew from 6 to 10 clauses, covering update channels, limits of liability, data loss and changes to the terms</string>
+    <string name="chlog_190_4">About page redesign: centered app icon and version, features shown as a bulleted list, developer and open-source notes merged into an info card, GitHub turned into its own tappable card, and equal-width bottom buttons; the disclaimer is now split into three sections - general terms, open source notice, and derivative works disclaimer</string>
+    <string name="chlog_190_3">Member management gains a "Delete all" action: clears every member in the book at once (the built-in "Public" member is kept). Existing bills survive - only their owner and payer fall back to "Me"</string>
+    <!-- v1.8.15 icon usage choice -->
+    <string name="chlog_1815_1">After picking an icon from "More" you can now choose how to use it: replace a pinned category (icon and name both change), or use it for this bill only - just this entry shows the icon, no category is touched and stats stay the same</string>
+    <string name="chlog_1815_2">Fixed a crash on launch: the database upgrade to v7 was missing its 6-to-7 migration registration, so any install upgrading from an older version crashed immediately. The migration is now registered and every historical upgrade path is verified</string>
+    <!-- v1.8.14 CSV import fixes -->
+    <string name="chlog_1814_1">Three CSV import fixes: shared "public" expenses no longer degrade into a normal member (AA settlement is correct again); headerless CSV files are no longer mistaken for header rows just because a note contains words like date or note; imports now write in a single transaction, so an interrupted run no longer leaves a half-finished batch</string>
+    <string name="chlog_1814_2">Pie chart labels now show a clear hierarchy: the category name keeps its size and medium weight while the percentage is one step smaller and lighter, so the two lines no longer compete</string>
+    <!-- v1.8.13 note focus hit-test fix -->
+    <string name="chlog_1813_1">Fixed the note cursor keeping blinking: focus is released the moment you touch anything outside the note field — empty space, categories, mood picker or photo buttons — so the cursor stops and the keyboard closes with it; tapping the note field itself still focuses normally</string>
+    <!-- v1.8.12 note focus regression fix -->
+    <string name="chlog_1812_1">Fixed the note field not opening: the previous release cleared focus too aggressively and blocked the note field; focus is now released only when tapping empty areas, so the note opens and types normally again</string>
+    <!-- v1.8.11 note focus fix -->
+    <string name="chlog_1811_1">Fixed the note cursor staying active: tapping anywhere else on the page now releases the input focus right away, so the cursor stops blinking and the keyboard closes with it</string>
+    <!-- v1.8.10 member card overflow fix -->
+    <string name="chlog_1810_1">Fixed truncated members with many entries: the owner and payer cards now extend downward as member rows grow, so members beyond nine display fully instead of being clipped</string>
+    <!-- v1.8.9 record page alignment -->
+    <string name="chlog_189_1">Record page alignment fix: the payer title row now matches the owner title in height, so both card titles and member chip rows line up exactly with no vertical offset</string>
+    <!-- v1.8.8 member cards -->
+    <string name="chlog_188_1">Record page member cards: the owner and payer cards now share the same height; member chips switch to a compact style and wrap to a second line when there are many, so every member stays visible without sideways clipping</string>
+    <!-- v1.8.7 record page tweaks -->
+    <string name="chlog_187_1">Record page tweaks: note, camera and album now use a 2:1:1 weighted row (wider note field); the owner and payer cards each get an outlined border, and a fix for the &quot;add member&quot; pill inflating the title row and misaligning the two columns</string>
+    <!-- v1.8.6 record page interaction -->
+    <string name="chlog_186_1">Record page polish: the category &quot;more&quot; button is bigger with a clear outlined border; note, camera and album now share one row in equal thirds; trip books merge the owner and payer pickers into a single two-column row so the whole page fits one screen</string>
+    <!-- v1.8.5 record page layout -->
+    <string name="chlog_185_1">Record page now fits one screen: the &quot;more&quot; entry shrinks into a small round button beside the category label, the note field sits side by side with the camera and album buttons, image thumbnails only take a row when photos exist, and spacing is tightened throughout</string>
+    <!-- v1.8.4 visual polish -->
+    <string name="chlog_184_1">Refined bill list visuals: three-part amount layout (bold integer, dimmed symbol and decimals), dimmer time and clearer note hierarchy in the subtitle, roomier day-group spacing, toned-down icons and thumbnails for a cleaner screen</string>
+    <!-- v1.8.3 search fix -->
+    <string name="chlog_183_1">Fixed search crash: a malformed SQL escape clause crashed the query as soon as you typed; searching by note, location, category or amount now works reliably</string>
     <!-- v1.8.2 about page -->
     <string name="chlog_182_1">About page refined: the license dialog now lists all third-party components (all permissive, MIT-compatible), and the disclaimer grows to six items, synced with the bilingual README</string>
     <string name="chlog_163_1">Fixed tiny slices being untappable: a minimum slice angle keeps them visible &amp; tappable, plus a wider hit band</string>

@@ -1,16 +1,24 @@
 package com.lightledger.app.ui.settings
 
+import android.content.Intent
+import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -18,6 +26,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
+import androidx.compose.material.icons.outlined.Code
 import androidx.compose.material.icons.outlined.DeleteSweep
 import androidx.compose.material.icons.outlined.Contrast
 import androidx.compose.material.icons.outlined.FileUpload
@@ -32,6 +41,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.RadioButtonDefaults
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -42,10 +52,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -320,28 +333,217 @@ fun SettingsScreen(
         )
     }
 
-    // ---------- 关于（含开源许可 / 免责声明入口） ----------
+    // ---------- 关于（含版本 / 开发者 / GitHub 更新入口 / 开源许可 / 免责声明） ----------
     if (showAboutDialog) {
+        val repoUrl = stringResource(R.string.about_github_url)
         AlertDialog(
             onDismissRequest = { showAboutDialog = false },
             shape = MaterialTheme.shapes.large,
             title = { Text(stringResource(R.string.app_name), style = MaterialTheme.typography.titleMedium) },
             text = {
-                Column {
-                    Text(
-                        stringResource(R.string.about_body, APP_VERSION),
-                        style = MaterialTheme.typography.bodyMedium,
-                    )
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 460.dp)
+                        .verticalScroll(rememberScrollState()),
+                ) {
+                    // —— 品牌区：图标 + 标语 + 版本号，居中 ——
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        Image(
+                            painter = painterResource(R.drawable.ic_launcher_foreground),
+                            contentDescription = null,
+                            modifier = Modifier
+                                .size(64.dp)
+                                .clip(MaterialTheme.shapes.large),
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            text = stringResource(R.string.about_tagline),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center,
+                        )
+                        Spacer(Modifier.height(6.dp))
+                        // 版本号做成一块浅色药丸标签，和正文拉开层级
+                        Surface(
+                            shape = MaterialTheme.shapes.small,
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                        ) {
+                            Text(
+                                text = stringResource(R.string.about_version_label, APP_VERSION),
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                            )
+                        }
+                    }
+
+                    Spacer(Modifier.height(16.dp))
+
+                    // —— 功能特性 ——
+                    AboutSectionTitle(stringResource(R.string.about_features_title))
+                    Spacer(Modifier.height(6.dp))
+                    listOf(
+                        R.string.about_feature_1,
+                        R.string.about_feature_2,
+                        R.string.about_feature_3,
+                        R.string.about_feature_4,
+                        R.string.about_feature_5,
+                    ).forEach { res ->
+                        Row(
+                            modifier = Modifier.padding(vertical = 2.dp),
+                            verticalAlignment = Alignment.Top,
+                        ) {
+                            Text(
+                                text = "•",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.primary,
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                text = stringResource(res),
+                                style = MaterialTheme.typography.bodySmall,
+                            )
+                        }
+                    }
+
+                    Spacer(Modifier.height(16.dp))
+
+                    // —— 项目信息卡片：开发者 + 开源说明 ——
+                    AboutCard {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = stringResource(R.string.about_developer),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            Spacer(Modifier.width(12.dp))
+                            Text(
+                                text = stringResource(R.string.about_developer_name),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurface,
+                            )
+                        }
+                        Spacer(Modifier.height(8.dp))
+                        HorizontalDivider(
+                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            text = stringResource(R.string.about_open_source_title),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        Spacer(Modifier.height(2.dp))
+                        Text(
+                            text = stringResource(R.string.about_open_source_body),
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                    }
+
                     Spacer(Modifier.height(12.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        TextButton(onClick = {
-                            showAboutDialog = false
-                            showLicenseDialog = true
-                        }) { Text(stringResource(R.string.settings_license)) }
-                        TextButton(onClick = {
-                            showAboutDialog = false
-                            showDisclaimerDialog = true
-                        }) { Text(stringResource(R.string.settings_disclaimer)) }
+
+                    // —— GitHub 项目地址：整块可点 → 打开浏览器；无浏览器则复制链接兜底 ——
+                    val githubColor = MaterialTheme.colorScheme.primary
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(MaterialTheme.shapes.medium)
+                            .border(
+                                width = 1.dp,
+                                color = githubColor.copy(alpha = 0.4f),
+                                shape = MaterialTheme.shapes.medium,
+                            )
+                            .clickable {
+                                val opened = runCatching {
+                                    context.startActivity(
+                                        Intent(Intent.ACTION_VIEW, Uri.parse(repoUrl))
+                                    )
+                                }.isSuccess
+                                if (!opened) {
+                                    // 设备上没有可用浏览器时，退化为复制链接便于用户手动访问
+                                    val cm = context.getSystemService(
+                                        android.content.Context.CLIPBOARD_SERVICE
+                                    ) as android.content.ClipboardManager
+                                    cm.setPrimaryClip(
+                                        android.content.ClipData.newPlainText(
+                                            context.getString(R.string.about_github),
+                                            repoUrl,
+                                        )
+                                    )
+                                    Toast.makeText(
+                                        context,
+                                        context.getString(R.string.about_github_copied),
+                                        Toast.LENGTH_SHORT,
+                                    ).show()
+                                }
+                            }
+                            .padding(horizontal = 12.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Code,
+                            contentDescription = null,
+                            tint = githubColor,
+                            modifier = Modifier.size(20.dp),
+                        )
+                        Spacer(Modifier.width(10.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = stringResource(R.string.about_github),
+                                style = MaterialTheme.typography.bodyMedium,
+                            )
+                            Spacer(Modifier.height(2.dp))
+                            Text(
+                                // GitHub 地址较长，用等宽小字并允许换行，避免被硬截断
+                                text = repoUrl,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = githubColor,
+                            )
+                        }
+                        Spacer(Modifier.width(6.dp))
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Outlined.KeyboardArrowRight,
+                            contentDescription = stringResource(R.string.about_github_open),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(18.dp),
+                        )
+                    }
+
+                    Spacer(Modifier.height(10.dp))
+
+                    // —— 更新提示：本应用不联网，需用户自行去 Releases 下载 ——
+                    Text(
+                        stringResource(R.string.about_update_hint),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+
+                    Spacer(Modifier.height(12.dp))
+                    HorizontalDivider(
+                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        TextButton(
+                            onClick = {
+                                showAboutDialog = false
+                                showLicenseDialog = true
+                            },
+                            modifier = Modifier.weight(1f),
+                        ) { Text(stringResource(R.string.settings_license)) }
+                        TextButton(
+                            onClick = {
+                                showAboutDialog = false
+                                showDisclaimerDialog = true
+                            },
+                            modifier = Modifier.weight(1f),
+                        ) { Text(stringResource(R.string.settings_disclaimer)) }
                     }
                 }
             },
@@ -370,18 +572,49 @@ fun SettingsScreen(
         )
     }
 
-    // ---------- 免责声明 ----------
+    // ---------- 免责声明（总则 / 开源项目声明 / 二次开发免责） ----------
     if (showDisclaimerDialog) {
         AlertDialog(
             onDismissRequest = { showDisclaimerDialog = false },
             shape = MaterialTheme.shapes.large,
             title = { Text(stringResource(R.string.settings_disclaimer), style = MaterialTheme.typography.titleMedium) },
             text = {
-                Text(
-                    stringResource(R.string.disclaimer_body),
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.verticalScroll(rememberScrollState()),
-                )
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 460.dp)
+                        .verticalScroll(rememberScrollState()),
+                ) {
+                    // 通用条款
+                    DisclaimerBlock(
+                        title = null,
+                        body = stringResource(R.string.disclaimer_body),
+                    )
+
+                    Spacer(Modifier.height(16.dp))
+                    HorizontalDivider(
+                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                    )
+                    Spacer(Modifier.height(16.dp))
+
+                    // 开源项目声明
+                    DisclaimerBlock(
+                        title = stringResource(R.string.disclaimer_open_source),
+                        body = stringResource(R.string.disclaimer_open_source_body),
+                    )
+
+                    Spacer(Modifier.height(16.dp))
+                    HorizontalDivider(
+                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                    )
+                    Spacer(Modifier.height(16.dp))
+
+                    // 二次开发免责
+                    DisclaimerBlock(
+                        title = stringResource(R.string.disclaimer_derivative),
+                        body = stringResource(R.string.disclaimer_derivative_body),
+                    )
+                }
             },
             confirmButton = {
                 TextButton(onClick = { showDisclaimerDialog = false }) { Text(stringResource(R.string.ok)) }
@@ -602,8 +835,146 @@ private fun SettingRow(
     }
 }
 
+/** 关于页：小节标题（前缀一根短色条，视觉上把区块切开） */
+@Composable
+private fun AboutSectionTitle(text: String) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Box(
+            modifier = Modifier
+                .size(width = 3.dp, height = 13.dp)
+                .clip(MaterialTheme.shapes.extraSmall)
+                .background(MaterialTheme.colorScheme.primary),
+        )
+        Spacer(Modifier.width(7.dp))
+        Text(
+            text = text,
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+    }
+}
+
+/** 关于页：信息卡片容器（浅底 + 圆角 + 内边距） */
+@Composable
+private fun AboutCard(content: @Composable ColumnScope.() -> Unit) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.medium,
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
+    ) {
+        Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp)) {
+            content()
+        }
+    }
+}
+
+/** 免责声明：一个条款分区（可选标题 + 正文），标题带左侧色条 */
+@Composable
+private fun DisclaimerBlock(title: String?, body: String) {
+    Column {
+        if (title != null) {
+            AboutSectionTitle(title)
+            Spacer(Modifier.height(6.dp))
+        }
+        Text(
+            text = body,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
 /** 版本变更履历（最新在前），条目走字符串资源支持中英文 */
 private enum class ChangeLog(val version: String, val date: String, val items: List<Int>) {
+    V1_9_0(
+        "1.9.0", "2026-09-10",
+        listOf(
+            R.string.chlog_190_1,
+            R.string.chlog_190_2,
+            R.string.chlog_190_3,
+            R.string.chlog_190_4,
+        ),
+    ),
+    V1_8_15(
+        "1.8.15", "2026-09-10",
+        listOf(
+            R.string.chlog_1815_1,
+            R.string.chlog_1815_2,
+        ),
+    ),
+    V1_8_14(
+        "1.8.14", "2026-09-10",
+        listOf(
+            R.string.chlog_1814_1,
+            R.string.chlog_1814_2,
+        ),
+    ),
+    V1_8_13(
+        "1.8.13", "2026-09-10",
+        listOf(
+            R.string.chlog_1813_1,
+        ),
+    ),
+    V1_8_12(
+        "1.8.12", "2026-09-09",
+        listOf(
+            R.string.chlog_1812_1,
+        ),
+    ),
+    V1_8_11(
+        "1.8.11", "2026-09-09",
+        listOf(
+            R.string.chlog_1811_1,
+        ),
+    ),
+    V1_8_10(
+        "1.8.10", "2026-09-09",
+        listOf(
+            R.string.chlog_1810_1,
+        ),
+    ),
+    V1_8_9(
+        "1.8.9", "2026-09-09",
+        listOf(
+            R.string.chlog_189_1,
+        ),
+    ),
+    V1_8_8(
+        "1.8.8", "2026-09-09",
+        listOf(
+            R.string.chlog_188_1,
+        ),
+    ),
+    V1_8_7(
+        "1.8.7", "2026-09-09",
+        listOf(
+            R.string.chlog_187_1,
+        ),
+    ),
+    V1_8_6(
+        "1.8.6", "2026-09-09",
+        listOf(
+            R.string.chlog_186_1,
+        ),
+    ),
+    V1_8_5(
+        "1.8.5", "2026-09-09",
+        listOf(
+            R.string.chlog_185_1,
+        ),
+    ),
+    V1_8_4(
+        "1.8.4", "2026-09-09",
+        listOf(
+            R.string.chlog_184_1,
+        ),
+    ),
+    V1_8_3(
+        "1.8.3", "2026-09-08",
+        listOf(
+            R.string.chlog_183_1,
+        ),
+    ),
     V1_8_2(
         "1.8.2", "2026-09-08",
         listOf(

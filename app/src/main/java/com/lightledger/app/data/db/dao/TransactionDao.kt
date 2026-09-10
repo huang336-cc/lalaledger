@@ -51,10 +51,10 @@ interface TransactionDao {
         SELECT * FROM transactions
         WHERE bookId = :bookId
           AND (
-            note LIKE '%' || :q || '%' ESCAPE '\\'
-            OR location LIKE '%' || :q || '%' ESCAPE '\\'
-            OR categoryId IN (SELECT id FROM categories WHERE name LIKE '%' || :q || '%' ESCAPE '\\')
-            OR printf('%.2f', amount / 100.0) LIKE '%' || :q || '%' ESCAPE '\\'
+            note LIKE '%' || :q || '%' ESCAPE '\'
+            OR location LIKE '%' || :q || '%' ESCAPE '\'
+            OR categoryId IN (SELECT id FROM categories WHERE name LIKE '%' || :q || '%' ESCAPE '\')
+            OR printf('%.2f', amount / 100.0) LIKE '%' || :q || '%' ESCAPE '\'
           )
         ORDER BY createdAt DESC, id DESC
         LIMIT 500
@@ -64,6 +64,13 @@ interface TransactionDao {
 
     @Insert
     suspend fun insert(tx: TransactionEntity): Long
+
+    /**
+     * 批量写入：Room 在单个事务内执行整批插入，任一失败整体回滚。
+     * 用于 CSV 导入等批量场景，避免中途出错留下半批账单。
+     */
+    @Insert
+    suspend fun insertAll(txs: List<TransactionEntity>): List<Long>
 
     @Update
     suspend fun update(tx: TransactionEntity)

@@ -45,6 +45,8 @@ data class RecordUiState(
     val mood: String? = null,
     /** 账单时间；null = 使用当前时间 */
     val billTime: Long? = null,
+    /** v7：仅本次使用的图标 key；null = 用分类自身图标 */
+    val iconOverride: String? = null,
 ) {
     val canSave: Boolean
         get() = !saving && MoneyFormat.yuanToFen(amountText) != null && selectedCategoryId != null
@@ -72,6 +74,9 @@ class RecordViewModel(
 
     /** 心情 emoji（可空；再点同一表情取消） */
     private val mood = MutableStateFlow<String?>(null)
+
+    /** v7：仅本次使用的图标 key（null = 用分类自身图标） */
+    private val iconOverride = MutableStateFlow<String?>(null)
 
     /** 归属成员（谁消费）：null = 本人；仅旅行账本可修改 */
     private val selectedMemberId = MutableStateFlow<Long?>(null)
@@ -195,6 +200,7 @@ class RecordViewModel(
 
     val uiState: StateFlow<RecordUiState> = combine(
         amountText, type, categories, selectedCategoryId, places, keyboardInputs, memberInputs,
+        iconOverride,
     ) { values ->
         val kb = values[5] as KeyboardInputs
         val mi = values[6] as MemberInputs
@@ -216,6 +222,7 @@ class RecordViewModel(
             selectedMemberId = mi.selectedMemberId,
             selectedPayerId = mi.selectedPayerId,
             billTime = mi.billTime,
+            iconOverride = values[7] as String?,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), RecordUiState())
 
@@ -274,14 +281,36 @@ class RecordViewModel(
 
     fun selectType(t: TransactionType) {
         if (type.value != t) type.value = t
+        // 切换收支后原临时图标不再对应，直接作废
+        iconOverride.value = null
         // 键盘为弹出式：操作非金额区时一律自动收起，避免遮挡
         keyboardOpen.value = false
     }
 
     fun selectCategory(id: Long) {
         selectedCategoryId.value = id
+        // 明确选了常驻分类 → 以分类图标为准，清掉临时图标
+        iconOverride.value = null
         // 选完分类立即收起，露出完整分类区
         keyboardOpen.value = false
+    }
+
+    /**
+     * 仅本次使用某图标：只影响当前这一笔账单的图标展示，不改任何常驻分类。
+     * 统计口径仍按当前选中分类归属，因此这里保证分类一定非空（缺省取第一个）。
+     */
+    fun useIconOnce(iconKey: String) {
+        if (iconKey.isBlank()) return
+        iconOverride.value = iconKey
+        if (selectedCategoryId.value == null) {
+            selectedCategoryId.value = categories.value.firstOrNull()?.id
+        }
+        keyboardOpen.value = false
+    }
+
+    /** 取消「仅本次使用」图标，回到分类自身图标 */
+    fun clearIconOverride() {
+        iconOverride.value = null
     }
 
     fun setLocation(place: String) {
@@ -385,6 +414,7 @@ class RecordViewModel(
             // 无千分位格式回填，保证继续按键追加时长度校验正常
             amountText.value = MoneyFormat.fenToPlain(tx.amount)
             mood.value = tx.mood
+            iconOverride.value = tx.iconOverride
         }
     }
 
@@ -437,6 +467,7 @@ class RecordViewModel(
                     payerMemberId = selectedPayerId.value,
                     mood = mood.value,
                     createdAt = billTime.value ?: System.currentTimeMillis(),
+                    iconOverride = iconOverride.value,
                 )
                 loc?.let { container.placeRepository.recordUsage(it) }
             }.onSuccess {
@@ -447,6 +478,7 @@ class RecordViewModel(
                 images.value = emptyList()
                 billTime.value = null
                 mood.value = null
+                iconOverride.value = null
                 keyboardOpen.value = false
                 saving.value = false
                 onSuccess()
@@ -480,6 +512,7 @@ class RecordViewModel(
                         mood = mood.value?.takeIf { it.isNotBlank() },
                         createdAt = billTime.value ?: base.createdAt,
                         updatedAt = System.currentTimeMillis(),
+                        iconOverride = iconOverride.value,
                     )
                 )
                 // 清理被移除的图片文件

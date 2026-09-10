@@ -83,8 +83,17 @@ class CsvImportViewModel(
         }
         viewModelScope.launch {
             _state.value = State.Importing
-            val count = withContext(Dispatchers.IO) { writeInternal(bookId, preview) }
-            _state.value = State.Done(count)
+            // 写入失败（磁盘满、约束冲突等）转为错误态，不能让异常冒出去把应用带崩
+            val result = runCatching {
+                withContext(Dispatchers.IO) { writeInternal(bookId, preview) }
+            }
+            _state.value = result.fold(
+                onSuccess = { count -> State.Done(count) },
+                onFailure = { e ->
+                    e.printStackTrace()
+                    State.Error(R.string.import_csv_failed)
+                },
+            )
         }
     }
 
@@ -103,11 +112,25 @@ class CsvImportViewModel(
         val table = parseCsv(text)
         if (table.isEmpty()) return State.Error(R.string.import_csv_empty)
 
-        // 表头识别：命中任一已知列名则视为表头行
+        // 表头识别：至少两个字段「精确命中」列名才算表头行。
+        // 此前用子串匹配（alias in h），导入无表头的 CSV 时，首行备注只要含
+        // date / note / place 等词就会被当成表头丢弃，还会导致列映射错位。
         val header = table.first().map { it.trim().lowercase(Locale.ROOT) }
-        val hasHeader = header.any { h -> ALIASES.values.flatten().any { alias -> alias in h } }
+        fun indexOfExact(field: Field): Int {
+            val aliases = ALIASES[field]!!
+            return header.indexOfFirst { h -> aliases.any { alias -> h == alias } }
+        }
+        val hasHeader = Field.entries.count { indexOfExact(it) >= 0 } >= 2
         val colIndex: (Field) -> Int = { field ->
-            if (hasHeader) header.indexOfFirst { h -> ALIASES[field]!!.any { alias -> alias in h } } else -1
+            if (!hasHeader) {
+                -1
+            } else {
+                val exact = indexOfExact(field)
+                // 精确命中优先；全都命中不上才退回子串，兼容「金额（元）」这类带修饰的表头
+                if (exact >= 0) exact else header.indexOfFirst { h ->
+                    ALIASES[field]!!.any { alias -> alias.length >= 2 && alias in h }
+                }
+            }
         }
         val idx = mapOf(
             Field.TIME to colIndex(Field.TIME),
@@ -165,7 +188,8 @@ class CsvImportViewModel(
         val existingMemberNames = existingMembers.map { it.name }.toSet()
         val newMembers = rows.flatMap { listOfNotNull(it.memberName, it.payerName) }
             .distinct()
-            .filter { it !in existingMemberNames }
+            // 公共消费走账本已有的公共成员，不会「新建」，因此不列入新建名单
+            .filter { it !in existingMemberNames && !isPublicLabel(it) }
 
         val bookName = if (bookId > 0) {
             runCatching { container.bookRepository.getById(bookId)?.name }.getOrNull()
@@ -200,38 +224,49 @@ class CsvImportViewModel(
             return id
         }
 
-        // 成员：按 name 匹配，缺失则新建
+        // 成员：按 name 匹配，缺失则新建；「公共」一律指向账本的公共成员
         val memberCache = container.memberRepository.getByBook(bookId)
             .associateBy { it.name }.toMutableMap()
         suspend fun memberId(name: String?): Long? {
-            if (name.isNullOrBlank()) return null
-            memberCache[name]?.let { return it.id }
+            val raw = name?.trim().orEmpty()
+            if (raw.isBlank()) return null
+            // 公共消费：不论导出时的界面语言，都复用账本真正的公共成员。
+            // 否则会被当成普通成员新建，公共消费不再全员均摊，AA 结算直接算错。
+            if (isPublicLabel(raw)) {
+                val publicMember = container.memberRepository.ensurePublicMember(bookId)
+                    ?: return null
+                memberCache[publicMember.name] = publicMember
+                return publicMember.id
+            }
+            memberCache[raw]?.let { return it.id }
             val color = SeedData.memberColors[memberCache.size % SeedData.memberColors.size]
-            val id = container.memberRepository.add(bookId, name, color)
-            memberCache[name] = com.lightledger.app.data.db.entity.MemberEntity(
-                id = id, bookId = bookId, name = name, color = color,
+            val id = container.memberRepository.add(bookId, raw, color)
+            memberCache[raw] = com.lightledger.app.data.db.entity.MemberEntity(
+                id = id, bookId = bookId, name = raw, color = color,
             )
             return id
         }
 
-        var count = 0
-        preview.rows.forEach { row ->
-            container.transactionRepository.add(
+        // 先构建全部账单实体（必要时创建分类/成员），再一次性批量写入：
+        // Room 的批量 insert 在单个事务内执行，中途失败整体回滚，不会留下半批脏数据
+        val entities = ArrayList<com.lightledger.app.data.db.entity.TransactionEntity>(preview.rows.size)
+        for (row in preview.rows) {
+            entities += com.lightledger.app.data.db.entity.TransactionEntity(
                 bookId = bookId,
-                type = row.type,
-                amountFen = row.amountFen,
+                type = row.type.value,
+                amount = row.amountFen,
                 categoryId = categoryId(row.type, row.categoryName),
-                location = row.location,
-                note = row.note,
+                location = row.location?.takeIf { it.isNotBlank() },
+                note = row.note?.takeIf { it.isNotBlank() },
                 images = emptyList(),
                 memberId = memberId(row.memberName),
                 payerMemberId = memberId(row.payerName),
+                mood = row.mood?.takeIf { it.isNotBlank() },
                 createdAt = row.createdAt,
-                mood = row.mood,
             )
-            count++
         }
-        return count
+        container.transactionRepository.addAll(entities)
+        return entities.size
     }
 
     // ---------- CSV / 字段解析 ----------
@@ -255,6 +290,16 @@ class CsvImportViewModel(
         Field.PAYER to listOf("付款", "垫付", "支付", "payer", "paid"),
         Field.MOOD to listOf("心情", "mood"),
     )
+
+    /**
+     * 公共消费成员的导出标签（各语言文案）。
+     * 数据库里公共成员固定存"公共"，但导出时会按界面语言写成「公共 / Public」，
+     * 因此导入时两种写法都要认，才能指回真正的公共成员。
+     */
+    private fun isPublicLabel(raw: String): Boolean {
+        val v = raw.trim()
+        return v == "公共" || v.equals("public", ignoreCase = true)
+    }
 
     /** 支持引号与换行的 CSV 行解析 */
     private fun parseCsv(text: String): List<List<String>> {

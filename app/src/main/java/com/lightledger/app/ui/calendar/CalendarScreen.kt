@@ -263,7 +263,7 @@ fun CalendarScreen(
                             val category = item.category
                             BillRow(
                                 categoryName = category?.name ?: stringResource(R.string.uncategorized),
-                                categoryIcon = category?.icon ?: "star",
+                                categoryIcon = item.tx.iconOverride ?: category?.icon ?: "star",
                                 categoryColor = category?.color?.argb()
                                     ?: MaterialTheme.colorScheme.onSurfaceVariant,
                                 amountFen = item.tx.amount,
@@ -377,7 +377,7 @@ private fun DaySummaryHeader(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 8.dp, vertical = 6.dp),
+            .padding(start = 8.dp, end = 8.dp, top = 12.dp, bottom = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
@@ -387,8 +387,14 @@ private fun DaySummaryHeader(
         )
         Spacer(Modifier.weight(1f))
         if (expenseFen > 0) {
+            // 「支出」标签弱化为灰，仅金额保留语义色，降低整屏红色密度
             Text(
-                text = stringResource(R.string.record_expense) + " ¥" + MoneyFormat.fenToString(expenseFen),
+                text = stringResource(R.string.record_expense),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(
+                text = " ¥" + MoneyFormat.fenToString(expenseFen),
                 style = MaterialTheme.typography.labelMedium,
                 color = SemanticTheme.colors.expense,
             )
@@ -396,7 +402,12 @@ private fun DaySummaryHeader(
         if (incomeFen > 0) {
             Spacer(Modifier.width(10.dp))
             Text(
-                text = stringResource(R.string.record_income) + " ¥" + MoneyFormat.fenToString(incomeFen),
+                text = stringResource(R.string.record_income),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(
+                text = " ¥" + MoneyFormat.fenToString(incomeFen),
                 style = MaterialTheme.typography.labelMedium,
                 color = SemanticTheme.colors.income,
             )

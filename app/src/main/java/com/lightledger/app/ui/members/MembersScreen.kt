@@ -1,5 +1,6 @@
 package com.lightledger.app.ui.members
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -83,6 +84,8 @@ fun MembersScreen(
     var editorTarget by remember { mutableStateOf<MemberEntity?>(null) }
     var showEditor by remember { mutableStateOf(false) }
     var deleteTarget by remember { mutableStateOf<MemberEntity?>(null) }
+    var showDeleteAll by remember { mutableStateOf(false) }
+    val context = LocalContext.current
 
     Column(
         modifier = Modifier
@@ -106,6 +109,17 @@ fun MembersScreen(
             }
             Text(stringResource(R.string.members_title), style = MaterialTheme.typography.titleLarge)
             Spacer(Modifier.weight(1f))
+            // 一键删除：无可删成员时按钮淡出且不可点，避免误触后弹空确认框
+            val deletable = members.count { !it.isPublic }
+            Text(
+                stringResource(R.string.members_delete_all),
+                style = MaterialTheme.typography.labelLarge,
+                color = if (deletable > 0) MaterialTheme.colorScheme.error
+                else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
+                modifier = Modifier
+                    .padding(horizontal = 12.dp, vertical = 6.dp)
+                    .clickable(enabled = deletable > 0) { showDeleteAll = true },
+            )
             Text(
                 stringResource(R.string.members_add),
                 style = MaterialTheme.typography.labelLarge,
@@ -204,7 +218,31 @@ fun MembersScreen(
         )
     }
 
-    // ---------- 删除确认 ----------
+    // ---------- 一键删除全部成员 ----------
+    if (showDeleteAll) {
+        val deletable = members.count { !it.isPublic }
+        ConfirmDialog(
+            title = stringResource(R.string.members_delete_all_title),
+            message = stringResource(R.string.members_delete_all_msg, deletable),
+            onConfirm = {
+                showDeleteAll = false
+                viewModel.deleteAll { removed ->
+                    Toast.makeText(
+                        context,
+                        context.getString(
+                            if (removed > 0) R.string.members_delete_all_done
+                            else R.string.members_delete_all_none,
+                            removed,
+                        ),
+                        Toast.LENGTH_SHORT,
+                    ).show()
+                }
+            },
+            onDismiss = { showDeleteAll = false },
+        )
+    }
+
+    // ---------- 单个删除确认 ----------
     deleteTarget?.let { target ->
         ConfirmDialog(
             title = stringResource(R.string.members_delete_title, target.name),
@@ -311,6 +349,28 @@ class MembersViewModel(
             val target = container.memberRepository.getById(id)
             if (target?.isPublic == true) return@launch
             container.memberRepository.delete(id)
+        }
+    }
+
+    /** 当前可被一键删除的成员数（排除内置「公共」成员） */
+    val deletableCount: Int
+        get() = members.value.count { !it.isPublic }
+
+    /**
+     * 一键删除本账本全部普通成员。
+     * 「公共」成员保留；历史账单保留，归属/垫付由外键 SET NULL 置空显示为「本人」。
+     * 回调返回实际删除条数，供 UI 提示。
+     */
+    fun deleteAll(onResult: (Int) -> Unit) {
+        if (bookId <= 0) {
+            onResult(0)
+            return
+        }
+        viewModelScope.launch {
+            val removed = runCatching {
+                container.memberRepository.deleteAllNormal(bookId)
+            }.getOrDefault(0)
+            onResult(removed)
         }
     }
 }

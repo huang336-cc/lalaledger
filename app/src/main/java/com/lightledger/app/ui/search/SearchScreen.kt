@@ -212,7 +212,7 @@ fun SearchScreen(
                             BillRow(
                                 categoryName = item.category?.name
                                     ?: stringResource(R.string.uncategorized),
-                                categoryIcon = item.category?.icon ?: "star",
+                                categoryIcon = item.tx.iconOverride ?: item.category?.icon ?: "star",
                                 categoryColor = item.category?.color?.argb()
                                     ?: MaterialTheme.colorScheme.onSurfaceVariant,
                                 amountFen = item.tx.amount,

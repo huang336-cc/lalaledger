@@ -26,6 +26,9 @@ class MemberRepository(private val dao: MemberDao) {
 
     suspend fun delete(id: Long) = dao.deleteById(id)
 
+    /** 一键删除本账本全部普通成员（公共成员保留），返回删除条数。历史账单保留，归属置为本人 */
+    suspend fun deleteAllNormal(bookId: Long): Int = dao.deleteAllNormalInBook(bookId)
+
     /**
      * 确保旅行账本存在"公共消费"成员（全员 AA 归属），没有则自动创建。
      * 数据库名字固定存"公共"，所有 UI 显示点按 isPublic 用本地化文案覆盖。

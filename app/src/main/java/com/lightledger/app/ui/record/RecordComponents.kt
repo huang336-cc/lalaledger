@@ -11,6 +11,8 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
@@ -69,11 +71,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -388,96 +393,130 @@ fun TimePlaceRow(
     }
 }
 /**
- * 图片上传区：拍照 / 相册按钮 + 已选缩略图（可删除）。
+ * 备注 + 拍照 + 相册：一行加权分布（备注 2 : 拍照 1 : 相册 1，同高 48dp），
+ * 备注保持可读宽度，按钮仍有充足触摸区。
  */
 @Composable
-fun PhotoSection(
-    images: List<String>,
+fun NotePhotoRow(
+    note: String,
+    onNoteChange: (String) -> Unit,
     onTakePhoto: () -> Unit,
     onPickAlbum: () -> Unit,
-    onRemove: (String) -> Unit,
+    onNoteFocus: () -> Unit,
     modifier: Modifier = Modifier,
+    // 备注输入框的布局信息回传给调用方：用于判断「一次点击是否落在备注框内」，
+    // 从而决定要不要释放输入焦点（避免重演 v1.8.11 / v1.8.12 的焦点问题）
+    onNotePlaced: (LayoutCoordinates) -> Unit = {},
 ) {
-    Column(modifier = modifier.fillMaxWidth()) {
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            PhotoAction(
-                icon = Icons.Outlined.CameraAlt,
-                text = stringResource(R.string.record_photo),
-                modifier = Modifier.weight(1f),
-                onClick = onTakePhoto,
-            )
-            PhotoAction(
-                icon = Icons.Outlined.PhotoLibrary,
-                text = stringResource(R.string.record_album),
-                modifier = Modifier.weight(1f),
-                onClick = onPickAlbum,
-            )
-        }
-        if (images.isNotEmpty()) {
-            Spacer(Modifier.height(10.dp))
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                items(images, key = { it }) { path ->
-                    Box(modifier = Modifier.size(84.dp)) {
-                        AsyncImage(
-                            model = path,
-                            contentDescription = "小票图片",
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .clip(MaterialTheme.shapes.small),
-                        )
-                        // 删除角标
-                        Box(
-                            modifier = Modifier
-                                .align(Alignment.TopEnd)
-                                .padding(4.dp)
-                                .size(20.dp)
-                                .background(Color.Black.copy(alpha = 0.55f), CircleShape)
-                                .clickable { onRemove(path) },
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Icon(
-                                Icons.Outlined.Close,
-                                contentDescription = "删除图片",
-                                tint = Color.White,
-                                modifier = Modifier.size(12.dp),
-                            )
-                        }
-                    }
-                }
-            }
-        }
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        OutlinedTextField(
+            value = note,
+            onValueChange = onNoteChange,
+            placeholder = {
+                Text(
+                    text = stringResource(R.string.record_note_hint),
+                    style = MaterialTheme.typography.bodyMedium,
+                    maxLines = 1,
+                )
+            },
+            modifier = Modifier
+                .weight(2f)
+                .height(48.dp)
+                .onGloballyPositioned(onNotePlaced)
+                // 聚焦备注框（系统输入法弹出）时，自定义数字键盘必须让位
+                .onFocusChanged { if (it.isFocused) onNoteFocus() },
+            shape = MaterialTheme.shapes.small,
+            singleLine = true,
+            textStyle = MaterialTheme.typography.bodyMedium,
+        )
+        PhotoIconButton(
+            icon = Icons.Outlined.CameraAlt,
+            description = stringResource(R.string.record_photo),
+            onClick = onTakePhoto,
+            modifier = Modifier.weight(1f),
+        )
+        PhotoIconButton(
+            icon = Icons.Outlined.PhotoLibrary,
+            description = stringResource(R.string.record_album),
+            onClick = onPickAlbum,
+            modifier = Modifier.weight(1f),
+        )
     }
 }
 
+/** 拍照 / 相册：方形图标按钮（48dp 高，图标 22dp，宽度由布局三等分决定） */
 @Composable
-private fun PhotoAction(
+private fun PhotoIconButton(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
-    text: String,
+    description: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Surface(
         onClick = onClick,
-        modifier = modifier.height(44.dp),
+        modifier = modifier.height(48.dp),
         shape = MaterialTheme.shapes.small,
         color = MaterialTheme.colorScheme.surface,
         border = androidx.compose.foundation.BorderStroke(
             1.dp, MaterialTheme.colorScheme.outline
         ),
     ) {
-        Row(
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
+        Box(contentAlignment = Alignment.Center) {
             Icon(
-                icon,
-                contentDescription = null,
+                imageVector = icon,
+                contentDescription = description,
                 tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(20.dp),
+                modifier = Modifier.size(22.dp),
             )
-            Spacer(Modifier.width(6.dp))
-            Text(text, style = MaterialTheme.typography.labelLarge)
+        }
+    }
+}
+
+/**
+ * 已选图片缩略图行：独立成行且有图时才渲染，无图时不占纵向空间。
+ */
+@Composable
+fun ImageThumbRow(
+    images: List<String>,
+    onRemove: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    LazyRow(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        items(images, key = { it }) { path ->
+            Box(modifier = Modifier.size(72.dp)) {
+                AsyncImage(
+                    model = path,
+                    contentDescription = "小票图片",
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clip(MaterialTheme.shapes.small),
+                )
+                // 删除角标
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(4.dp)
+                        .size(20.dp)
+                        .background(Color.Black.copy(alpha = 0.55f), CircleShape)
+                        .clickable { onRemove(path) },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        Icons.Outlined.Close,
+                        contentDescription = "删除图片",
+                        tint = Color.White,
+                        modifier = Modifier.size(12.dp),
+                    )
+                }
+            }
         }
     }
 }
@@ -491,6 +530,12 @@ fun CategorySection(
     categories: List<CategoryEntity>,
     selectedId: Long?,
     moreLabel: String,
+    /** v7：仅本次使用的图标 key；null = 未启用（用分类自身图标） */
+    oneOffIcon: String? = null,
+    /** v7：临时图标的显示名（跟随界面语言） */
+    oneOffName: String = "",
+    /** v7：取消临时图标，回到分类自身图标 */
+    onClearOneOff: () -> Unit = {},
     onSelect: (Long) -> Unit,
     onLongPress: (CategoryEntity) -> Unit,
     onMore: () -> Unit,
@@ -503,87 +548,101 @@ fun CategorySection(
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+            // 「更多」紧随分类标签右侧：带描边的圆形按钮（与拍照/相册同风格，可点击感明确）
+            Spacer(Modifier.width(8.dp))
+            Box(
+                modifier = Modifier
+                    .size(32.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.surface)
+                    .border(
+                        width = 1.dp,
+                        color = MaterialTheme.colorScheme.outline,
+                        shape = CircleShape,
+                    )
+                    .combinedClickable(onClick = onMore),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.MoreHoriz,
+                    contentDescription = moreLabel,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(20.dp),
+                )
+            }
+            // v7：临时图标胶囊——「仅本次使用」生效时显示，点 × 作废回到分类图标
+            if (oneOffIcon != null) {
+                Spacer(Modifier.width(8.dp))
+                Row(
+                    modifier = Modifier
+                        .height(30.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.primaryContainer)
+                        .padding(start = 8.dp, end = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(
+                        imageVector = IconLibrary.of(oneOffIcon),
+                        contentDescription = oneOffName,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(16.dp),
+                    )
+                    Spacer(Modifier.width(4.dp))
+                    Text(
+                        text = stringResource(R.string.icon_once_chip, oneOffName),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.widthIn(max = 120.dp),
+                    )
+                    Spacer(Modifier.width(2.dp))
+                    Box(
+                        modifier = Modifier
+                            .size(22.dp)
+                            .clip(CircleShape)
+                            .clickable(onClick = onClearOneOff),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Close,
+                            contentDescription = stringResource(R.string.icon_once_clear),
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(14.dp),
+                        )
+                    }
+                }
+            }
             Spacer(Modifier.weight(1f))
-            Text(
-                text = stringResource(R.string.record_category_edit_hint),
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-            )
+            if (oneOffIcon == null) {
+                Text(
+                    text = stringResource(R.string.record_category_edit_hint),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                )
+            }
         }
         Spacer(Modifier.height(6.dp))
-        // 末尾追加 null 占位 = 「更多」格
-        val cells: List<Any?> = categories + null
-        val rows = cells.chunked(5)
-        rows.forEach { rowItems ->
+        // 网格只放分类（无「更多」格），行数随分类数量收敛
+        categories.chunked(5).forEach { rowItems ->
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
             ) {
                 rowItems.forEach { item ->
-                    when (item) {
-                        is CategoryEntity -> CategoryCell(
-                            category = item,
-                            selected = item.id == selectedId,
-                            onClick = { onSelect(item.id) },
-                            onLongClick = { onLongPress(item) },
-                            modifier = Modifier.weight(1f),
-                        )
-                        else -> MoreCell(
-                            label = moreLabel,
-                            onClick = onMore,
-                            modifier = Modifier.weight(1f),
-                        )
-                    }
+                    CategoryCell(
+                        category = item,
+                        selected = item.id == selectedId,
+                        onClick = { onSelect(item.id) },
+                        onLongClick = { onLongPress(item) },
+                        modifier = Modifier.weight(1f),
+                    )
                 }
                 // 末行不满 5 列时空位补齐
                 repeat(5 - rowItems.size) { Spacer(Modifier.weight(1f)) }
             }
             Spacer(Modifier.height(6.dp))
         }
-    }
-}
-
-/** 「更多」格：与分类格同尺寸的虚位入口，点开全量图标选择 */
-@Composable
-private fun MoreCell(
-    label: String,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Column(
-        modifier = modifier
-            .clip(MaterialTheme.shapes.small)
-            .background(Color.Transparent)
-            .combinedClickable(onClick = onClick)
-            .padding(vertical = 4.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Box(
-            modifier = Modifier
-                .size(34.dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.surfaceVariant)
-                .border(
-                    width = 1.dp,
-                    color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
-                    shape = CircleShape,
-                ),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                imageVector = Icons.Outlined.MoreHoriz,
-                contentDescription = label,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(18.dp),
-            )
-        }
-        Spacer(Modifier.height(4.dp))
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 1,
-        )
     }
 }
 
@@ -654,6 +713,120 @@ fun IconPickerDialog(
             }
         },
     )
+}
+
+/**
+ * v7：选完图标后的用途二选一。
+ * - 替换常驻分类：进入分类列表，把某个分类的图标与名称一起换掉（老行为）
+ * - 仅本次使用：只在这一笔账单上用该图标，不动任何分类
+ */
+@Composable
+fun IconUseChoiceDialog(
+    iconKey: String,
+    iconName: String,
+    useZh: Boolean,
+    onDismiss: () -> Unit,
+    onReplaceCategory: () -> Unit,
+    onUseOnce: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        shape = MaterialTheme.shapes.large,
+        title = {
+            Text(
+                stringResource(R.string.icon_use_choice_title),
+                style = MaterialTheme.typography.titleMedium,
+            )
+        },
+        text = {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                // 已选图标预览
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(44.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.surfaceVariant),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(
+                            imageVector = IconLibrary.of(iconKey),
+                            contentDescription = IconLibrary.displayName(iconKey, useZh),
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(24.dp),
+                        )
+                    }
+                    Spacer(Modifier.width(12.dp))
+                    Column {
+                        Text(
+                            text = IconLibrary.displayName(iconKey, useZh),
+                            style = MaterialTheme.typography.titleSmall,
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
+                        Text(
+                            text = stringResource(R.string.icon_use_choice_subtitle),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+                Spacer(Modifier.height(14.dp))
+                ChoiceRow(
+                    title = stringResource(R.string.icon_use_replace),
+                    subtitle = stringResource(R.string.icon_use_replace_desc),
+                    onClick = onReplaceCategory,
+                )
+                Spacer(Modifier.height(8.dp))
+                ChoiceRow(
+                    title = stringResource(R.string.icon_use_once),
+                    subtitle = stringResource(R.string.icon_use_once_desc),
+                    onClick = onUseOnce,
+                )
+            }
+        },
+        confirmButton = {},
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.cancel))
+            }
+        },
+    )
+}
+
+/** 二选一弹窗中的单个选项行：主标题 + 灰色说明，整行可点 */
+@Composable
+private fun ChoiceRow(
+    title: String,
+    subtitle: String,
+    onClick: () -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(MaterialTheme.shapes.medium)
+            .border(
+                width = 1.dp,
+                color = MaterialTheme.colorScheme.outline,
+                shape = MaterialTheme.shapes.medium,
+            )
+            .clickable(onClick = onClick)
+            .padding(horizontal = 12.dp, vertical = 10.dp),
+    ) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.primary,
+        )
+        Spacer(Modifier.height(2.dp))
+        Text(
+            text = subtitle,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
 }
 
 /**
@@ -732,74 +905,151 @@ fun CategoryPickDialog(
 }
 
 /**
- * 成员选择行（归属 / 垫付共用）：标题 + 提示 + 「本人 + 成员」胶囊横排。
- * 「+ 成员」按钮全局唯一：仅显示在归属行标题栏右上角（onAddMember 传入时显示），
- * 垫付行传 null 不再重复显示。
+ * 归属 + 垫付合并双列行（旅行账本专用）：「这笔归谁」「谁垫付」左右各一个描边卡片，
+ * 卡片内为小标题 + 成员胶囊横排（可横向滚动），视觉分区明确、不易错位。
+ * 「+ 成员」入口仅显示在归属卡片标题右侧（用 Box+clickable 实现，避免 Surface(onClick)
+ * 的最小触摸尺寸把标题行撑到 48dp 造成两列错位）。
  * [publicLabel] 非空时，成员列表中的 isPublic 成员按该本地化文案显示（公共消费 = 全员 AA）。
- * 旅行账本专用；非旅行账本不渲染。
  */
 @Composable
-fun MemberPickerRow(
-    title: String,
-    hint: String,
+fun OwnerPayerRow(
+    ownerTitle: String,
+    payerTitle: String,
+    selfLabel: String,
+    members: List<MemberEntity>,
+    selectedOwnerId: Long?,
+    selectedPayerId: Long?,
+    publicLabel: String?,
+    addLabel: String,
+    onSelectOwner: (Long?) -> Unit,
+    onSelectPayer: (Long?) -> Unit,
+    onAddMember: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth(),
+            // 不用 IntrinsicSize.Min：FlowRow 的固有高度测量偏小会裁掉多行成员；
+            // 两卡片标题行已等高且渲染同一成员列表，自然包裹内容即天然等高，
+            // 成员换行时边框随内容自动向下延伸
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        // 左卡片：这笔归谁（含「+ 成员」入口）
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .clip(MaterialTheme.shapes.small)
+                .background(MaterialTheme.colorScheme.surface)
+                .border(1.dp, MaterialTheme.colorScheme.outline, MaterialTheme.shapes.small)
+                .padding(horizontal = 10.dp, vertical = 8.dp),
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = ownerTitle,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                )
+                Spacer(Modifier.weight(1f))
+                AddMemberChip(label = addLabel, onClick = onAddMember)
+            }
+            Spacer(Modifier.height(6.dp))
+            MemberChipsRow(
+                selfLabel = selfLabel,
+                members = members,
+                selectedId = selectedOwnerId,
+                publicLabel = publicLabel,
+                onSelect = onSelectOwner,
+            )
+        }
+        // 右卡片：谁垫付
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .clip(MaterialTheme.shapes.small)
+                .background(MaterialTheme.colorScheme.surface)
+                .border(1.dp, MaterialTheme.colorScheme.outline, MaterialTheme.shapes.small)
+                .padding(horizontal = 10.dp, vertical = 8.dp),
+        ) {
+            Text(
+                text = payerTitle,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                // 等高对齐：左卡片标题行被「+ 成员」胶囊撑高（labelSmall 行高 14sp + 3dp×2），
+                // 此处补 labelMedium(16sp) + 2dp×2 = 同高，两卡片标题与成员行基线完全对齐
+                modifier = Modifier.padding(vertical = 2.dp),
+            )
+            Spacer(Modifier.height(6.dp))
+            MemberChipsRow(
+                selfLabel = selfLabel,
+                members = members,
+                selectedId = selectedPayerId,
+                publicLabel = publicLabel,
+                onSelect = onSelectPayer,
+            )
+        }
+    }
+}
+
+/**
+ * 「+ 成员」小胶囊：Box + clickable 实现（布局高度不膨胀），
+ * 视觉与 MemberChip 同风格，避免 Surface(onClick) 的 48dp 最小布局尺寸。
+ */
+@Composable
+private fun AddMemberChip(label: String, onClick: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(50))
+            .background(MaterialTheme.colorScheme.primaryContainer)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 8.dp, vertical = 3.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.primary,
+            maxLines = 1,
+        )
+    }
+}
+
+/**
+ * 成员胶囊流式布局：「本人」固定在最左；宽度不足时自动换行（一般两行内放下），
+ * 使用紧凑模式胶囊（更小内边距与字号），不再横向滚动裁切。
+ * isPublic 成员显示为公共文案。
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun MemberChipsRow(
     selfLabel: String,
     members: List<MemberEntity>,
     selectedId: Long?,
     publicLabel: String?,
-    addLabel: String,
     onSelect: (Long?) -> Unit,
-    onAddMember: (() -> Unit)?,
-    modifier: Modifier = Modifier,
 ) {
-    Column(modifier = modifier.fillMaxWidth()) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Spacer(Modifier.weight(1f))
-            Text(
-                text = hint,
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-            )
-            if (onAddMember != null) {
-                Spacer(Modifier.width(8.dp))
-                Surface(
-                    onClick = onAddMember,
-                    shape = RoundedCornerShape(50),
-                    color = MaterialTheme.colorScheme.primaryContainer,
-                ) {
-                    Text(
-                        text = addLabel,
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp),
-                    )
-                }
-            }
-        }
-        Spacer(Modifier.height(8.dp))
-        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            item(key = "self") {
+    FlowRow(
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        MemberChip(
+            name = selfLabel,
+            color = MaterialTheme.colorScheme.primary,
+            selected = selectedId == null,
+            onClick = { onSelect(null) },
+            compact = true,
+        )
+        members.forEach { member ->
+            val isPublic = member.isPublic && publicLabel != null
+            if (!member.isPublic || publicLabel != null) {
                 MemberChip(
-                    name = selfLabel,
-                    color = MaterialTheme.colorScheme.primary,
-                    selected = selectedId == null,
-                    onClick = { onSelect(null) },
+                    name = if (isPublic) publicLabel!! else member.name,
+                    color = Color(member.color),
+                    selected = selectedId == member.id,
+                    onClick = { onSelect(member.id) },
+                    compact = true,
                 )
-            }
-            items(members, key = { it.id }) { member ->
-                val isPublic = member.isPublic && publicLabel != null
-                if (!member.isPublic || publicLabel != null) {
-                    MemberChip(
-                        name = if (isPublic) publicLabel!! else member.name,
-                        color = Color(member.color),
-                        selected = selectedId == member.id,
-                        onClick = { onSelect(member.id) },
-                    )
-                }
             }
         }
     }

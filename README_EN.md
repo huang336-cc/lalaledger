@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="docs/ic_launcher.png" width="120" height="120" alt="lalaledger icon" style="border-radius:24px;display:inline-block"/>
+<img src="docs/ic_launcher.png" alt="lalaledger" width="120" style="border-radius:24px;display:inline-block" />
 
 # lalaledger · 拉拉记账
 
@@ -10,10 +10,10 @@ No login · No ads · No cloud · No tracking — all data stays on your phone
 
 `Android 10+` · `Kotlin 2.0` · `Jetpack Compose` · `Material 3` · `MIT License`
 
-Current version **v1.8.2** · 中文文档：[README.md](README.md)
+Current version **v1.9.0** · 中文文档：[README.md](README.md)
 
 <p>
-  <a href="https://github.com/huang336-cc/lalaledger/releases"><img src="https://img.shields.io/badge/Download%20Release-v1.8.2-2E7D32?style=for-the-badge&logo=github" alt="Go to Releases"/></a>
+  <a href="https://github.com/huang336-cc/lalaledger/releases"><img src="https://img.shields.io/badge/Download%20Release-v1.9.0-2E7D32?style=for-the-badge&logo=github" alt="Go to Releases"/></a>
   <br/>
   <strong>Click the button above to open the GitHub Releases page and download the latest APK</strong>
 </p>
@@ -22,7 +22,7 @@ Current version **v1.8.2** · 中文文档：[README.md](README.md)
 
 ---
 
-> **Installation tip**: every release (APK + source) lives on the **[Releases](https://github.com/huang336-cc/lalaledger/releases)** page — expand a version tag (e.g. `v1.8.2`) and download `lalaledger-v1.8.2.apk` from **Assets** to install. Hit the button above to jump there.
+> **Installation tip**: every release (APK + source) lives on the **[Releases](https://github.com/huang336-cc/lalaledger/releases)** page — expand a version tag (e.g. `v1.9.0`) and download `lalaledger-v1.9.0.apk` from **Assets** to install. Hit the button above to jump there.
 
 ## Screenshots
 
@@ -228,7 +228,7 @@ app/src/main/java/com/lightledger/app/
 # Requirements: JDK 17 + Android SDK (compileSdk 35 / build-tools 35.0.0) + Gradle 9.3
 # Debug build
 gradle assembleDebug
-# Release build (R8 + signing, output app/build/outputs/apk/release/lalaledger-v1.8.2.apk)
+# Release build (R8 + signing, output app/build/outputs/apk/release/lalaledger-v1.9.0.apk)
 gradle assembleRelease
 ```
 

@@ -24,10 +24,13 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -46,6 +49,18 @@ private val PieRadius = 74.dp
 
 /** 同侧标签的最小垂直间距（两行小字高 + 余量） */
 private val LabelMinGap = 27.dp
+
+/** 引导线标签：分类名（主，稍大且加粗） */
+private val LabelNameSize = 10.sp
+
+/** 引导线标签：百分比（次，明显小一号 + 常规字重 + 更淡，与分类名拉开主次） */
+private val LabelPctSize = 8.sp
+
+/** 引导线标签行高（容纳小一号的百分比后仍能对齐） */
+private val LabelLineHeight = 13.sp
+
+/** 百分比相对分类名的淡化程度（叠加在标签整体弱化之上） */
+private const val LabelPctAlpha = 0.62f
 
 /**
  * 最小扇区角度：占比极小的分类（如 0.5% ≈ 1.8°）在环上只有几个 dp 宽，
@@ -133,12 +148,26 @@ fun CategoryPieChart(
             LabelSource(seg, name, String.format(Locale.US, "%.1f%%", seg.ratio * 100))
         }
         val list = raws.map { raw ->
+            // 分类名与百分比拆成两段样式：名称主、百分比次（小一号 + 常规字重 + 更淡），
+            // 一眼分主次，不再像两行等大的小字。
+            val text = buildAnnotatedString {
+                withStyle(
+                    SpanStyle(fontSize = LabelNameSize, fontWeight = FontWeight.Medium)
+                ) { append(raw.name) }
+                append("\n")
+                withStyle(
+                    SpanStyle(
+                        fontSize = LabelPctSize,
+                        fontWeight = FontWeight.Normal,
+                        color = labelColor.copy(alpha = LabelPctAlpha),
+                    )
+                ) { append(raw.pct) }
+            }
             val layout = textMeasurer.measure(
-                raw.name + "\n" + raw.pct,
+                text,
                 TextStyle(
-                    fontSize = 10.sp,
-                    lineHeight = 13.sp,
-                    fontWeight = FontWeight.Medium,
+                    fontSize = LabelNameSize,
+                    lineHeight = LabelLineHeight,
                     textAlign = TextAlign.Left,
                 ),
             )
@@ -289,7 +318,9 @@ fun CategoryPieChart(
                 drawLine(segLine, p1, elbow, strokeWidth = 1.dp.toPx())
                 drawText(
                     l.layout,
-                    color = labelColor.copy(alpha = if (isDimmed) 0.45f else 1f),
+                    // 弱化走 alpha：选中他人时整体变淡，百分比自身的淡色逐级叠加仍保持更次一级
+                    color = labelColor,
+                    alpha = if (isDimmed) 0.45f else 1f,
                     topLeft = Offset(labelX, labelY - textH / 2f),
                 )
             }

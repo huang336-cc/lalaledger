@@ -110,7 +110,19 @@ object Migrations {
         }
     }
 
+    /**
+     * v6 -> v7：账单临时图标
+     * transactions 新增 iconOverride（可空）：「更多 → 全量图标 → 仅本次使用」时写入，
+     * 只影响这一笔账单的图标展示，不改动任何分类。历史账单为 null。
+     */
+    val MIGRATION_6_7 = object : Migration(6, 7) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("ALTER TABLE transactions ADD COLUMN iconOverride TEXT")
+        }
+    }
+
     val ALL: Array<Migration> = arrayOf(
         MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6,
+        MIGRATION_6_7,
     )
 }

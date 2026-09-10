@@ -47,6 +47,8 @@ class TransactionRepository(private val dao: TransactionDao) {
         payerMemberId: Long? = null,
         mood: String? = null,
         createdAt: Long = System.currentTimeMillis(),
+        /** v7：仅本次使用的图标 key；null = 用分类自身图标 */
+        iconOverride: String? = null,
     ): Long = dao.insert(
         TransactionEntity(
             bookId = bookId,
@@ -60,8 +62,12 @@ class TransactionRepository(private val dao: TransactionDao) {
             payerMemberId = payerMemberId,
             mood = mood?.takeIf { it.isNotBlank() },
             createdAt = createdAt,
+            iconOverride = iconOverride,
         )
     )
+
+    /** 批量写入（单事务：任一失败整体回滚），用于 CSV 导入等批量场景 */
+    suspend fun addAll(txs: List<TransactionEntity>): List<Long> = dao.insertAll(txs)
 
     suspend fun update(tx: TransactionEntity) = dao.update(tx)
 

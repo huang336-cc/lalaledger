@@ -36,7 +36,6 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -50,8 +49,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -204,14 +206,20 @@ fun RecordScreen(
     // 保存成功后的「再记一笔」浮层：确定 = 返回上一页；再记一笔 = 留在当前页继续输入
     var showSaveAgain by remember { mutableStateOf(false) }
 
-    // 全量图标选择（更多入口）：先选图标 → 再选要替换的常驻分类
+    // 全量图标选择（更多入口）：先选图标 → 再选用途（替换常驻分类 / 仅本次使用）
     var showIconPicker by remember { mutableStateOf(false) }
     var pickedIcon by remember { mutableStateOf<String?>(null) }
+    var showIconUseChoice by remember { mutableStateOf(false) }
     var showCategoryPick by remember { mutableStateOf(false) }
     // 图标名显示语言（跟随界面语言）
     val useZh = LocaleHelper.normalize(appViewModel.language.value) == LocaleHelper.ZH
 
+    // 焦点管理：点备注框以外的任何位置都释放备注输入焦点（光标停止闪烁、系统键盘随焦点收起）
+    val focusManager = LocalFocusManager.current
+
     fun handleSave() {
+        // 保存前先释放备注焦点：收起系统输入法，避免「再记一笔」时光标仍在闪
+        focusManager.clearFocus()
         viewModel.save(
             onSuccess = {
                 if (isEditMode) {
@@ -229,6 +237,11 @@ fun RecordScreen(
     // 键盘浮层动画：graphicsLayer 绘制层平移，不触发 measure/layout，避免卡顿
     val keyboardShown = remember { mutableStateOf(false) }
     val keyboardSlide = remember { Animatable(1f) } // 1f = 完全收起（屏幕外），0f = 展开
+    // 备注输入框的布局信息（由 NotePhotoRow 回传）；滚动时 LayoutCoordinates 实例不变，
+    // 但 boundsInRoot() 是实时值，因此下面的命中判断始终跟着界面滚动走，不会失效
+    var noteFieldCoords by remember { mutableStateOf<LayoutCoordinates?>(null) }
+    // 可滚动手势区的布局信息：用于把按下坐标换算到 root，与备注框的 root 边界统一比较
+    var scrollAreaCoords by remember { mutableStateOf<LayoutCoordinates?>(null) }
     LaunchedEffect(state.keyboardOpen) {
         if (state.keyboardOpen) {
             keyboardShown.value = true
@@ -277,20 +290,40 @@ fun RecordScreen(
         // ---------- 可滚动内容区 ----------
         // 手势策略：主界面「点按或滑动」均收起数字键盘（滑动手势位移超阈值即视为滑动）；
         // 点金额卡打开键盘的这次点击由 onTapMainArea 的 120ms 时间窗保护，不会误关。
+        // 释放备注焦点按「按下坐标是否命中备注输入框」判定：
+        //   · 命中备注框（含在框内拖动选词）→ 保留焦点，否则会重演 v1.8.11「备注点不开」；
+        //   · 未命中（空白、分类、类型、心情、拍照按钮等任何其它区域）→ 释放焦点，光标立即停止闪烁。
+        // 这里不能用 clickable 代替：clickable 只响应未被子控件消费的点击，
+        // 而分类/心情/按钮等都消费了事件，正是 v1.8.12「点了别处光标不灭」的根因。
         Column(
             modifier = Modifier
                 .weight(1f)
                 .verticalScroll(rememberScrollState())
+                .onGloballyPositioned { scrollAreaCoords = it }
                 .pointerInput(Unit) {
                     awaitEachGesture {
                         val down = awaitFirstDown(requireUnconsumed = false)
+                        // 把按下点换算到备注框自身的坐标系，判断是否命中备注框
+                        val areaCoords = scrollAreaCoords
+                        val noteCoords = noteFieldCoords
+                        val hitNoteField = if (areaCoords != null && noteCoords != null) {
+                            val p = noteCoords.localPositionOf(areaCoords, down.position)
+                            p.x >= 0f && p.y >= 0f &&
+                                p.x <= noteCoords.size.width.toFloat() &&
+                                p.y <= noteCoords.size.height.toFloat()
+                        } else {
+                            // 布局信息尚不可用时保守处理：不动焦点，避免误伤备注框
+                            true
+                        }
                         while (true) {
                             val event = awaitPointerEvent()
                             val change = event.changes.firstOrNull { it.id == down.id } ?: break
                             if (!change.pressed) break
                         }
-                        // 手势结束（点按或滑动）统一收起键盘
+                        // 手势结束（点按或滑动）统一收起数字键盘
                         viewModel.onTapMainArea()
+                        // 备注框之外一律释放输入焦点，光标停止闪烁、系统输入法同步收起
+                        if (!hitNoteField) focusManager.clearFocus()
                     }
                 }
                 .padding(horizontal = 16.dp),
@@ -301,7 +334,7 @@ fun RecordScreen(
                 onClick = viewModel::openKeyboard,
             )
 
-            Spacer(Modifier.height(10.dp))
+            Spacer(Modifier.height(8.dp))
 
             TypeSwitch(
                 current = state.type,
@@ -310,18 +343,21 @@ fun RecordScreen(
 
             // ---------- 分类（视觉第二重点：金额 → 类型 → 分类 → 其他） ----------
             // 分类平铺全量列出；长按编辑；末尾「更多」点开全量图标选择（替换图标与名称）
-            Spacer(Modifier.height(10.dp))
+            Spacer(Modifier.height(8.dp))
             CategorySection(
                 categories = state.categories,
                 selectedId = state.selectedCategoryId,
                 moreLabel = stringResource(R.string.category_more),
+                oneOffIcon = state.iconOverride,
+                oneOffName = state.iconOverride?.let { IconLibrary.displayName(it, useZh) }.orEmpty(),
+                onClearOneOff = viewModel::clearIconOverride,
                 onSelect = viewModel::selectCategory,
                 onLongPress = { viewModel.openCategoryEditor(it, isNew = false) },
                 onMore = { showIconPicker = true },
             )
 
             // ---------- 时间 + 地点（合并一行，压缩纵向空间） ----------
-            Spacer(Modifier.height(10.dp))
+            Spacer(Modifier.height(8.dp))
             TimePlaceRow(
                 selectedMillis = billTime,
                 displayText = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
@@ -358,10 +394,12 @@ fun RecordScreen(
                 },
             )
 
-            Spacer(Modifier.height(10.dp))
+            Spacer(Modifier.height(8.dp))
 
-            PhotoSection(
-                images = state.images,
+            // ---------- 备注 + 相册（并排一行，压缩纵向空间，保证一屏可见） ----------
+            NotePhotoRow(
+                note = state.note,
+                onNoteChange = viewModel::setNote,
                 onTakePhoto = {
                     // 收起自定义键盘再拉起相机，避免叠加
                     viewModel.closeKeyboard()
@@ -373,60 +411,42 @@ fun RecordScreen(
                         PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
                     )
                 },
-                onRemove = viewModel::removeImage,
+                onNoteFocus = { viewModel.closeKeyboard() },
+                onNotePlaced = { noteFieldCoords = it },
             )
 
-            Spacer(Modifier.height(10.dp))
-
-            OutlinedTextField(
-                value = state.note,
-                onValueChange = viewModel::setNote,
-                placeholder = {
-                    Text(stringResource(R.string.record_note_hint), style = MaterialTheme.typography.bodyMedium)
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(52.dp)
-                    // 聚焦备注框（系统输入法弹出）时，自定义数字键盘必须让位
-                    .onFocusChanged { if (it.isFocused) viewModel.closeKeyboard() },
-                shape = MaterialTheme.shapes.small,
-                singleLine = true,
-                textStyle = MaterialTheme.typography.bodyMedium,
-            )
+            // 已选图片：有图时才多占一行
+            if (state.images.isNotEmpty()) {
+                Spacer(Modifier.height(8.dp))
+                ImageThumbRow(
+                    images = state.images,
+                    onRemove = viewModel::removeImage,
+                )
+            }
 
             // ---------- 心情 emoji（可选中/再点取消，随账单保存） ----------
-            Spacer(Modifier.height(10.dp))
+            Spacer(Modifier.height(8.dp))
             MoodPickerRow(
                 selected = state.mood,
                 onSelect = viewModel::selectMood,
             )
 
-            // ---------- 归属 / 垫付（旅行账本；置于最底部，优先保证金额 + 分类一屏可见） ----------
-            // 「+ 成员」按钮全局唯一，固定在归属行右上角；归属行额外提供「公共」= 全员 AA
+            // ---------- 归属 / 垫付（旅行账本；合并为一排双列，保证一屏可见） ----------
+            // 「+ 成员」按钮固定在「这笔归谁」列标题右侧；「公共」= 全员 AA
             if (state.isTripBook) {
-                Spacer(Modifier.height(10.dp))
-                MemberPickerRow(
-                    title = stringResource(R.string.record_owner_title),
-                    hint = stringResource(R.string.record_owner_hint),
+                Spacer(Modifier.height(8.dp))
+                OwnerPayerRow(
+                    ownerTitle = stringResource(R.string.record_owner_title),
+                    payerTitle = stringResource(R.string.record_payer_title),
                     selfLabel = stringResource(R.string.record_self),
                     members = state.members,
-                    selectedId = state.selectedMemberId,
+                    selectedOwnerId = state.selectedMemberId,
+                    selectedPayerId = state.selectedPayerId,
                     publicLabel = stringResource(R.string.member_public),
                     addLabel = stringResource(R.string.record_add_member),
-                    onSelect = viewModel::selectMember,
+                    onSelectOwner = viewModel::selectMember,
+                    onSelectPayer = viewModel::selectPayer,
                     onAddMember = { showQuickMember = true },
-                )
-                Spacer(Modifier.height(10.dp))
-                MemberPickerRow(
-                    title = stringResource(R.string.record_payer_title),
-                    hint = stringResource(R.string.record_payer_hint),
-                    selfLabel = stringResource(R.string.record_self),
-                    members = state.members,
-                    selectedId = state.selectedPayerId,
-                    publicLabel = null,
-                    addLabel = stringResource(R.string.record_add_member),
-                    onSelect = viewModel::selectPayer,
-                    onAddMember = null,
                 )
             }
 
@@ -515,10 +535,39 @@ fun RecordScreen(
             onPick = { key ->
                 pickedIcon = key
                 showIconPicker = false
-                // 选完图标进入「替换到哪个常驻分类」
-                showCategoryPick = true
+                // 选完图标先问用途：替换常驻分类 / 仅本次使用
+                showIconUseChoice = true
             },
         )
+    }
+
+    // ---------- 图标用途二选一（替换常驻分类 / 仅本次使用） ----------
+    if (showIconUseChoice) {
+        val icon = pickedIcon
+        if (icon != null) {
+            IconUseChoiceDialog(
+                iconKey = icon,
+                iconName = IconLibrary.displayName(icon, useZh),
+                useZh = useZh,
+                onDismiss = { showIconUseChoice = false },
+                onReplaceCategory = {
+                    showIconUseChoice = false
+                    showCategoryPick = true
+                },
+                onUseOnce = {
+                    showIconUseChoice = false
+                    viewModel.useIconOnce(icon)
+                    Toast.makeText(
+                        context,
+                        context.getString(
+                            R.string.icon_use_once_done,
+                            IconLibrary.displayName(icon, useZh),
+                        ),
+                        Toast.LENGTH_SHORT,
+                    ).show()
+                },
+            )
+        }
     }
 
     // ---------- 选择要替换图标的常驻分类 ----------

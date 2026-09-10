@@ -227,7 +227,11 @@ fun BillDetailScreen(
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     state.category?.let {
-                        CategoryIcon(iconKey = it.icon, color = it.color.argb(), size = 52)
+                        CategoryIcon(
+                            iconKey = tx.iconOverride ?: it.icon,
+                            color = it.color.argb(),
+                            size = 52,
+                        )
                         Spacer(Modifier.height(10.dp))
                         Text(it.name, style = MaterialTheme.typography.titleMedium)
                         Spacer(Modifier.height(6.dp))

@@ -52,6 +52,12 @@ data class TransactionEntity(
     val payerMemberId: Long? = null,
     /** v6：心情 emoji（如 "😀"）；null = 未标记 */
     val mood: String? = null,
+    /**
+     * v7：仅本次使用的图标 key（IconLibrary）；null = 用分类自身图标。
+     * 用于「更多 → 全量图标 → 仅本次使用」：账单列表/详情显示该图标，
+     * 但不动任何常驻分类的图标与名称，统计口径仍按 categoryId 归属分类。
+     */
+    val iconOverride: String? = null,
     val createdAt: Long = System.currentTimeMillis(),
     /** v1 -> v2 新增字段，示例迁移见 [com.lightledger.app.data.db.Migrations] */
     val updatedAt: Long = System.currentTimeMillis(),

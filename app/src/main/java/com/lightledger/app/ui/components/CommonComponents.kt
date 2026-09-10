@@ -41,8 +41,12 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -53,7 +57,7 @@ import com.lightledger.app.ui.theme.SemanticTheme
 import com.lightledger.app.util.DateUtils
 import com.lightledger.app.util.MoneyFormat
 
-/** 金额文本：自动带正负号与语义色 */
+/** 金额文本：三段式排版——货币符号与小数弱化缩小、整数部分突出，自动带正负号与语义色 */
 @Composable
 fun MoneyText(
     fen: Long,
@@ -72,12 +76,33 @@ fun MoneyText(
         type == TransactionType.EXPENSE -> "-"
         else -> "+"
     }
-    Text(
-        text = "$sign¥${MoneyFormat.fenToString(fen)}",
-        style = style,
-        color = color,
-        modifier = modifier,
+    val full = MoneyFormat.fenToString(fen)
+    val intPart = full.substringBeforeLast('.')
+    val decPart = full.substringAfterLast('.')
+    val smallStyle = style.copy(
+        fontSize = style.fontSize * 0.72f,
+        fontWeight = FontWeight.Medium,
     )
+    Row(modifier = modifier, verticalAlignment = Alignment.Bottom) {
+        Text(
+            text = "$sign¥",
+            style = smallStyle,
+            color = color.copy(alpha = 0.8f),
+            modifier = Modifier.alignByBaseline(),
+        )
+        Text(
+            text = intPart,
+            style = style,
+            color = color,
+            modifier = Modifier.alignByBaseline(),
+        )
+        Text(
+            text = ".$decPart",
+            style = smallStyle,
+            color = color.copy(alpha = 0.72f),
+            modifier = Modifier.alignByBaseline(),
+        )
+    }
 }
 
 /** 圆形分类图标 */
@@ -116,6 +141,8 @@ fun MemberChip(
     modifier: Modifier = Modifier,
     selected: Boolean = false,
     onClick: (() -> Unit)? = null,
+    /** 紧凑模式：更小的内边距 / 色点 / 字号，用于成员选择卡片等空间受限处 */
+    compact: Boolean = false,
 ) {
     val bg = if (selected) color
     else color.copy(alpha = if (MaterialTheme.colorScheme.surface.luminance() > 0.5f) 0.13f else 0.22f)
@@ -127,21 +154,24 @@ fun MemberChip(
             .then(
                 if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier
             )
-            .padding(horizontal = 9.dp, vertical = 4.dp),
+            .padding(
+                horizontal = if (compact) 7.dp else 9.dp,
+                vertical = if (compact) 2.dp else 4.dp,
+            ),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(
             modifier = Modifier
-                .size(6.dp)
+                .size(if (compact) 5.dp else 6.dp)
                 .background(
                     if (selected) Color.White.copy(alpha = 0.9f) else color,
                     CircleShape,
                 ),
         )
-        Spacer(Modifier.width(4.dp))
+        Spacer(Modifier.width(if (compact) 3.dp else 4.dp))
         Text(
             text = name,
-            style = MaterialTheme.typography.labelMedium,
+            style = if (compact) MaterialTheme.typography.labelSmall else MaterialTheme.typography.labelMedium,
             color = contentColor,
             maxLines = 1,
         )
@@ -176,15 +206,15 @@ fun BillRow(
         modifier = modifier
             .fillMaxWidth()
             .combinedClickable(onClick = onClick, onLongClick = onLongPress)
-            .padding(horizontal = 4.dp, vertical = 10.dp),
+            .padding(horizontal = 4.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (selectionMode) {
             SelectCircle(selected = selected)
             Spacer(Modifier.width(10.dp))
         }
-        CategoryIcon(iconKey = categoryIcon, color = categoryColor)
-        Spacer(Modifier.width(14.dp))
+        CategoryIcon(iconKey = categoryIcon, color = categoryColor, size = 40)
+        Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {
             // 主标题：分类名
             Text(
@@ -193,18 +223,27 @@ fun BillRow(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            // 副行：时间固定在最左（长备注被截断时时间仍可见），心情与备注跟在后面
+            // 副行：时间固定在最左且更淡（扫读锚点），心情跟其后；备注颜色稍深承载信息
             val noteText = note?.trim()?.takeIf { it.isNotBlank() }
             val moodText = mood?.trim()?.takeIf { it.isNotBlank() }
             val timeText = DateUtils.formatBillTime(time)
+            val dimColor = MaterialTheme.colorScheme.onSurfaceVariant
             Text(
-                text = buildString {
-                    append(timeText)
-                    if (moodText != null) append(" · ").append(moodText)
-                    if (noteText != null) append(" · ").append(noteText)
+                text = buildAnnotatedString {
+                    withStyle(SpanStyle(color = dimColor.copy(alpha = 0.66f))) {
+                        append(timeText)
+                        if (moodText != null) {
+                            append(" · ")
+                            append(moodText)
+                        }
+                    }
+                    if (noteText != null) {
+                        append(" · ")
+                        append(noteText)
+                    }
                 },
                 style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = dimColor,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
@@ -216,8 +255,13 @@ fun BillRow(
                 contentDescription = "小票缩略图",
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
-                    .size(width = 44.dp, height = 36.dp)
+                    .size(width = 40.dp, height = 32.dp)
                     .clip(MaterialTheme.shapes.small)
+                    .border(
+                        width = 1.dp,
+                        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.45f),
+                        shape = MaterialTheme.shapes.small,
+                    )
                     .clickable(enabled = onThumbnailClick != null) { onThumbnailClick?.invoke() },
             )
         }

@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="docs/ic_launcher.png" width="120" height="120" alt="拉拉记账图标" style="border-radius:24px;display:inline-block"/>
+<img src="docs/ic_launcher.png" alt="拉拉记账" width="120" style="border-radius:24px;display:inline-block" />
 
 # 拉拉记账 · lalaledger
 
@@ -10,10 +10,10 @@
 
 `Android 10+` · `Kotlin 2.0` · `Jetpack Compose` · `Material 3` · `MIT License`
 
-当前版本 **v1.8.2** · [English](README_EN.md)
+当前版本 **v1.9.0** · [English](README_EN.md)
 
 <p>
-  <a href="https://github.com/huang336-cc/lalaledger/releases"><img src="https://img.shields.io/badge/下载最近版本-v1.8.2-2E7D32?style=for-the-badge&logo=github" alt="前往 Release 下载"/></a>
+  <a href="https://github.com/huang336-cc/lalaledger/releases"><img src="https://img.shields.io/badge/下载最近版本-v1.9.0-2E7D32?style=for-the-badge&logo=github" alt="前往 Release 下载"/></a>
   <br/>
   <strong>点击上方按钮 → 前往 GitHub Releases 页下载最新 APK</strong>
 </p>
@@ -22,7 +22,7 @@
 
 ---
 
-> **安装提示**：所有版本（`APK 安装包` + `源码包`）都发布在 **[Releases](https://github.com/huang336-cc/lalaledger/releases)** 页 —— 展开对应版本标签（如 `v1.8.2`），在 **Assets** 下下载 `lalaledger-v1.8.2.apk` 直接安装即可；点击上方按钮可一键前往。
+> **安装提示**：所有版本（`APK 安装包` + `源码包`）都发布在 **[Releases](https://github.com/huang336-cc/lalaledger/releases)** 页 —— 展开对应版本标签（如 `v1.9.0`），在 **Assets** 下下载 `lalaledger-v1.9.0.apk` 直接安装即可；点击上方按钮可一键前往。
 
 ## 截图
 
@@ -228,7 +228,7 @@ app/src/main/java/com/lightledger/app/
 # 环境：JDK 17 + Android SDK（compileSdk 35 / build-tools 35.0.0）+ Gradle 9.3
 # Debug 构建
 gradle assembleDebug
-# Release 构建（R8 + 签名，产物 app/build/outputs/apk/release/lalaledger-v1.8.2.apk）
+# Release 构建（R8 + 签名，产物 app/build/outputs/apk/release/lalaledger-v1.9.0.apk）
 gradle assembleRelease
 ```
 
