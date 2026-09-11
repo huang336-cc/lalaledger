@@ -2,7 +2,7 @@
 
 <img src="docs/ic_launcher.png" alt="lalaledger" width="120" style="border-radius:24px;display:inline-block" />
 
-# lalaledger · 拉拉记账
+# lalaledger · 拉了记账
 
 **A fully offline Android expense-tracking app — clean, fast, and beautiful**
 
@@ -22,7 +22,7 @@ Current version **v1.9.0** · 中文文档：[README.md](README.md)
 
 ---
 
-> **Installation tip**: every release (APK + source) lives on the **[Releases](https://github.com/huang336-cc/lalaledger/releases)** page — expand a version tag (e.g. `v1.9.0`) and download `lalaledger-v1.9.0.apk` from **Assets** to install. Hit the button above to jump there.
+> **Installation tip**: every release (APK + source) lives on the **[Releases](https://github.com/huang336-cc/lalaledger/releases)** page — expand a version tag and download `lalaledger-v1.9.0.apk` from **Assets** to install. Hit the button above to jump there.
 
 ## Screenshots
 

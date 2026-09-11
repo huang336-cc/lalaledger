@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- 通用 -->
-    <string name="app_name">拉拉记账</string>
+    <string name="app_name">拉了记账</string>
     <string name="ok">好的</string>
     <string name="cancel">取消</string>
     <string name="save">保存</string>
@@ -50,9 +50,9 @@
     <string name="home_delete_bills_title">删除选中的 %1$d 笔账单？</string>
     <string name="home_delete_bills_msg">删除后无法恢复，关联的小票图片也会一并清理。</string>
     <string name="home_deleted_n">已删除 %1$d 笔账单</string>
-    <string name="export_saved">已保存到相册 Pictures/拉拉记账</string>
+    <string name="export_saved">已保存到相册 Pictures/拉了记账</string>
     <string name="export_failed">生成失败，请重试</string>
-    <string name="export_csv_saved">已保存到 Download/拉拉记账</string>
+    <string name="export_csv_saved">已保存到 Download/拉了记账</string>
     <string name="export_csv_empty">当前筛选没有可导出的账单</string>
     <string name="stats_export_choose">选择导出方式</string>
     <string name="stats_export_image">导出统计图片</string>
@@ -97,6 +97,9 @@
     <string name="icon_use_once">仅本次使用</string>
     <string name="icon_use_once_desc">只在这一笔账单上用这个图标，分类保持不变</string>
     <string name="icon_use_once_done">本次将使用「%1$s」图标</string>
+    <string name="icon_search_hint">搜索图标名称</string>
+    <string name="icon_search_empty">没有匹配的图标，换个关键词试试</string>
+    <string name="icon_search_clear">清空搜索</string>
     <string name="icon_once_chip">仅本次 · %1$s</string>
     <string name="icon_once_clear">取消临时图标</string>
     <string name="record_location">地点</string>
@@ -271,10 +274,10 @@
     <string name="about_github_copied">已复制项目地址，可粘贴到浏览器打开</string>
     <string name="about_update_hint">本应用为纯本地离线软件，不会自动联网检查更新。如需获取最新版本，请前往 GitHub 项目地址，在 Releases 页面自行下载安装包更新（覆盖安装不会丢失数据）。</string>
     <string name="about_body">版本 %1$s\n\n一款简洁、极速、好看的日常记账 App。\n\n· 纯本地离线存储（Room 数据库）\n· 无登录、无广告、无云端服务\n· 多账本 / 旅行分账 / 拍照小票 / 汇总图片导出\n· 开源项目，欢迎自行构建与改进</string>
-    <string name="license_body">本应用（拉拉记账 / lalaledger）基于 MIT License 开源：可自由使用、复制、修改、合并、出版发行、散布、再授权及贩售软件及副本，但须保留版权与许可声明。\n\n软件按"原样"提供，不作任何明示或暗示的担保，包括但不限于适销性、特定用途适用性和非侵权性。作者或版权持有人不对任何索赔、损害或其他责任负责。\n\n第三方组件（均为宽松协议、MIT 兼容，无 GPL 类传染性协议，版权归各自持有者）：\n· Apache License 2.0 —— Kotlin、kotlinx.coroutines、AndroidX / Jetpack Compose（含 Material 3 与图标库）、Room、DataStore、Navigation Compose、Lifecycle、Activity Compose、Coil\n· 构建期工具（不分发进安装包）—— Android Gradle Plugin、KSP（Apache License 2.0）\n\n完整许可文本见工程根目录 LICENSE 与各组件官方仓库。</string>
+    <string name="license_body">本应用（拉了记账 / lalaledger）基于 MIT License 开源：可自由使用、复制、修改、合并、出版发行、散布、再授权及贩售软件及副本，但须保留版权与许可声明。\n\n软件按"原样"提供，不作任何明示或暗示的担保，包括但不限于适销性、特定用途适用性和非侵权性。作者或版权持有人不对任何索赔、损害或其他责任负责。\n\n第三方组件（均为宽松协议、MIT 兼容，无 GPL 类传染性协议，版权归各自持有者）：\n· Apache License 2.0 —— Kotlin、kotlinx.coroutines、AndroidX / Jetpack Compose（含 Material 3 与图标库）、Room、DataStore、Navigation Compose、Lifecycle、Activity Compose、Coil\n· 构建期工具（不分发进安装包）—— Android Gradle Plugin、KSP（Apache License 2.0）\n\n完整许可文本见工程根目录 LICENSE 与各组件官方仓库。</string>
     <string name="disclaimer_body">1. 本应用为个人记账工具，仅在本机存储数据，不联网、不采集、不上传任何信息。\n\n2. 应用内的金额计算、AA 结算与转账方案仅供参考，请自行核对后使用；因使用本应用产生的任何账目争议或经济损失，开发者不承担责任。\n\n3. 请自行备份重要数据（CSV 导出 / 汇总长图）；卸载应用将彻底删除本机全部账单与图片，且无法恢复。\n\n4. 本应用不提供任何投资、税务、法律建议，相关用途请咨询专业人士。\n\n5. 本应用按"现状"提供，可能存在缺陷或与特定机型、系统版本的兼容性问题，不保证完全无错误、不间断运行；开发者不对因此造成的数据异常或损失负责。\n\n6. 导出的图片与 CSV 含个人财务信息，请自行妥善保管、谨防泄露；请仅从可信渠道获取本应用安装包。\n\n7. 本应用不提供自动更新服务，也不会联网检查版本。您可能正在使用旧版本，请自行前往 GitHub 项目地址（https://github.com/huang336-cc/lalaledger）的 Releases 页面确认并下载最新版；因使用过时版本产生的问题，开发者不承担额外责任。\n\n8. 本应用与任何手机厂商、应用商店、金融机构均无关联，也不构成任何形式的背书或合作。\n\n9. 您应确保录入的账目信息真实合法。因您自行录入错误、误删账本、清理应用数据、刷机、系统迁移或设备损坏造成的数据丢失，开发者不承担责任。\n\n10. 开发者保留在不事先通知的情况下修改、暂停或终止本应用开发与分发的权利；本免责声明的最终解释权归开发者所有。若您不同意上述任一条款，请立即停止使用并卸载本应用。</string>
     <string name="disclaimer_open_source">开源项目声明</string>
-    <string name="disclaimer_open_source_body">1. 本应用（拉拉记账 / lalaledger）为开源项目，基于 MIT License 发布，完整源码公开于 https://github.com/huang336-cc/lalaledger ，任何人可自由查阅、学习、复制、修改与再分发，但须保留原始版权声明与许可文本。\n\n2. 开源不等于无风险、也不等于官方认证。源码公开仅代表实现可被审查，不代表开发者对您的使用结果作出任何承诺或担保。\n\n3. 除 MIT License 明确授予的权利外，开发者未授予任何商标、名称、图标或品牌相关的使用许可。二次分发时请勿使用相同名称与图标误导他人，也请勿暗示获得开发者授权或背书。\n\n4. 第三方如基于本项目源码进行修改、编译、打包或再分发，均属第三方独立行为，与本项目开发者无关。请自行甄别安装包来源，仅从可信渠道获取。\n\n5. 本项目可能包含由第三方贡献者提交的代码，开发者不对第三方代码的适用性、安全性或合法性作出额外保证。</string>
+    <string name="disclaimer_open_source_body">1. 本应用（拉了记账 / lalaledger）为开源项目，基于 MIT License 发布，完整源码公开于 https://github.com/huang336-cc/lalaledger ，任何人可自由查阅、学习、复制、修改与再分发，但须保留原始版权声明与许可文本。\n\n2. 开源不等于无风险、也不等于官方认证。源码公开仅代表实现可被审查，不代表开发者对您的使用结果作出任何承诺或担保。\n\n3. 除 MIT License 明确授予的权利外，开发者未授予任何商标、名称、图标或品牌相关的使用许可。二次分发时请勿使用相同名称与图标误导他人，也请勿暗示获得开发者授权或背书。\n\n4. 第三方如基于本项目源码进行修改、编译、打包或再分发，均属第三方独立行为，与本项目开发者无关。请自行甄别安装包来源，仅从可信渠道获取。\n\n5. 本项目可能包含由第三方贡献者提交的代码，开发者不对第三方代码的适用性、安全性或合法性作出额外保证。</string>
     <string name="disclaimer_derivative">二次开发免责声明</string>
     <string name="disclaimer_derivative_body">1. 开发者不对任何二次开发版本负责。任何个人或组织基于本项目源码进行的修改、编译、打包、分发、运营或商业使用，均由其自行承担全部责任与后果。\n\n2. 二次开发版本中出现的任何功能变更、数据异常、账目错误、隐私泄露、恶意代码、广告植入、收费行为或数据丢失，均与本项目开发者无关，开发者不提供任何形式的技术支持、修复、退款或赔偿。\n\n3. 二次开发版本产生的账单数据格式可能与官方版本不兼容。使用二次开发版本可能造成数据错乱或无法在官方版本中正常读取，此类风险由使用者自行承担。\n\n4. 强烈建议仅使用官方发布的版本。因安装、使用来源不明的二次打包版本而导致的一切损失，开发者不承担责任。\n\n5. 若您将本项目用于二次开发并对外分发，您应自行确保符合当地法律法规（包括但不限于开源许可合规、隐私保护与数据安全要求），并自行承担由此产生的法律责任。</string>
     <string name="back">返回</string>
@@ -326,6 +329,13 @@
     <!-- v1.9.0 关于页完善 + 版本号 -->
     <string name="chlog_190_1">关于页新增 GitHub 项目地址入口（点击直达仓库），并提示本应用不联网、需自行前往 Releases 下载最新版</string>
     <string name="chlog_190_2">关于页显示开发者 huang336；免责声明由 6 条扩充至 10 条，补齐更新渠道、责任边界、数据丢失与条款变更等说明</string>
+    <string name="chlog_190_11">修复点击「关于」闪退：图标资源改用独立 drawable，避开自适应图标无法解析的问题</string>
+    <string name="chlog_190_10">账单条目不再显示定位，保持列表简洁；详情页仍可查看完整地点</string>
+    <string name="chlog_190_8">用户备注输入时键盘不再遮挡输入框，可随键盘自动上推</string>
+    <string name="chlog_190_9">「仅本次使用」图标改为作用在选中分类格子上：只替换图标、保留下方分类名</string>
+    <string name="chlog_190_5">应用更名为「拉了记账」，图标、标题、导出目录与文件名全站同步</string>
+    <string name="chlog_190_6">修复深色模式关于页图标看不清：改用带浅色底的完整应用图标</string>
+    <string name="chlog_190_7">修复关于页 GitHub 卡片出现两个箭头：入口图标改为 GitHub 标识</string>
     <string name="chlog_190_4">关于页改版：顶部图标与版本号居中、功能特性改为要点列表、开发者与开源说明合并为信息卡片、GitHub 入口独立成可点击卡片、底部按钮等宽并排；免责声明拆为「总则 / 开源项目声明 / 二次开发免责」三个分区</string>
     <string name="chlog_190_3">管理成员新增「一键删除」：一次性清空本账本全部成员（内置「公共」保留），历史账单不受影响，仅归属与垫付回到「本人」</string>
     <!-- v1.8.15 图标用途二选一 -->

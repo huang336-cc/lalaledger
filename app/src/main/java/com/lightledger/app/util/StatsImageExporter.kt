@@ -16,7 +16,7 @@ import java.util.Locale
  * 统计页长图导出：
  * - android.graphics Canvas 手绘 1080px 宽 PNG 长图（汇总卡 + 分类排行比例条 + 成员明细 + AA 结算）
  * - 配色复用 SummaryImageExporter 的双主题 Palette，保存复用其相册写入逻辑
- * - 保存到相册 Pictures/拉拉记账（Android 10+ 免存储权限）
+ * - 保存到相册 Pictures/拉了记账（Android 10+ 免存储权限）
  */
 object StatsImageExporter {
 
@@ -79,7 +79,7 @@ object StatsImageExporter {
 
     private const val WIDTH = 1080
     private const val PAD = 60
-    private const val SAVE_DIR = "Pictures/拉拉记账"
+    private const val SAVE_DIR = "Pictures/拉了记账"
 
     /** 生成并保存统计长图，成功返回相册 Uri，失败返回 null。 */
     suspend fun export(
@@ -304,7 +304,7 @@ object StatsImageExporter {
         paint.color = p.sub
         paint.textSize = 34f
         paint.textAlign = Paint.Align.CENTER
-        canvas.drawText("由 拉拉记账 生成 · 纯本地离线", WIDTH / 2f, height - PAD / 1.5f, paint)
+        canvas.drawText("由 拉了记账 生成 · 纯本地离线", WIDTH / 2f, height - PAD / 1.5f, paint)
         paint.textAlign = Paint.Align.LEFT
 
         return bitmap

@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
@@ -54,6 +55,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -352,13 +354,25 @@ fun SettingsScreen(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
-                        Image(
-                            painter = painterResource(R.drawable.ic_launcher_foreground),
-                            contentDescription = null,
+                        // 用独立的 drawable 图标（自带浅色底），而非：
+                        // 1) 透明的前景层——深色主题下与背景融为一体看不清；
+                        // 2) R.mipmap.ic_launcher_round——该资源在 anydpi-v26 下是
+                        //    adaptive-icon XML，painterResource 无法解析，会直接闪退。
+                        Box(
                             modifier = Modifier
                                 .size(64.dp)
-                                .clip(MaterialTheme.shapes.large),
-                        )
+                                .clip(CircleShape)
+                                .background(Color(0xFFF8F8F8)),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Image(
+                                painter = painterResource(R.drawable.ic_app_logo),
+                                contentDescription = null,
+                                modifier = Modifier
+                                    .size(64.dp)
+                                    .clip(CircleShape),
+                            )
+                        }
                         Spacer(Modifier.height(8.dp))
                         Text(
                             text = stringResource(R.string.about_tagline),
@@ -485,10 +499,11 @@ fun SettingsScreen(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Icon(
-                            imageVector = Icons.Outlined.Code,
+                            // 用 GitHub 标识而非 Code（< >）图标：后者与右侧箭头视觉上像两个箭头
+                            painter = painterResource(R.drawable.ic_github),
                             contentDescription = null,
                             tint = githubColor,
-                            modifier = Modifier.size(20.dp),
+                            modifier = Modifier.size(22.dp),
                         )
                         Spacer(Modifier.width(10.dp))
                         Column(modifier = Modifier.weight(1f)) {
@@ -893,6 +908,13 @@ private enum class ChangeLog(val version: String, val date: String, val items: L
             R.string.chlog_190_2,
             R.string.chlog_190_3,
             R.string.chlog_190_4,
+            R.string.chlog_190_5,
+            R.string.chlog_190_6,
+            R.string.chlog_190_7,
+            R.string.chlog_190_8,
+            R.string.chlog_190_9,
+            R.string.chlog_190_10,
+            R.string.chlog_190_11,
         ),
     ),
     V1_8_15(

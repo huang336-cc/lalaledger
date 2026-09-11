@@ -45,6 +45,7 @@ import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material.icons.outlined.MoreHoriz
 import androidx.compose.material.icons.outlined.PhotoLibrary
 import androidx.compose.material.icons.outlined.Schedule
+import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
@@ -630,8 +631,16 @@ fun CategorySection(
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
             ) {
                 rowItems.forEach { item ->
+                    // v7：仅本次使用的图标只作用于「当前选中的分类格子」——
+                    // 格子图标换成临时图标，但格子下方文字仍显示分类原名。
+                    val effectiveIcon = if (oneOffIcon != null && item.id == selectedId) {
+                        oneOffIcon
+                    } else {
+                        item.icon
+                    }
                     CategoryCell(
                         category = item,
+                        iconOverrideKey = effectiveIcon,
                         selected = item.id == selectedId,
                         onClick = { onSelect(item.id) },
                         onLongClick = { onLongPress(item) },
@@ -648,6 +657,7 @@ fun CategorySection(
 
 /**
  * 全量图标选择弹窗：网格列出图标库全部图标，每个图标下方带名称。
+ * 顶部带搜索框，可按中文名 / 英文名 / key 实时过滤。
  * 点击图标后回调 [onPick]，用于替换常驻分类图标等场景。
  */
 @Composable
@@ -657,6 +667,20 @@ fun IconPickerDialog(
     onDismiss: () -> Unit,
     onPick: (String) -> Unit,
 ) {
+    var query by remember { mutableStateOf("") }
+    val keyword = query.trim()
+    // 按当前语言过滤：中文界面匹配中文名，英文界面匹配英文名；同时都支持匹配 key 本身
+    val filtered = remember(keyword, useZh) {
+        if (keyword.isEmpty()) {
+            IconLibrary.keys
+        } else {
+            val lower = keyword.lowercase()
+            IconLibrary.keys.filter { key ->
+                key.lowercase().contains(lower) ||
+                    IconLibrary.displayName(key, useZh).lowercase().contains(lower)
+            }
+        }
+    }
     AlertDialog(
         onDismissRequest = onDismiss,
         shape = MaterialTheme.shapes.large,
@@ -664,44 +688,95 @@ fun IconPickerDialog(
             Text(title, style = MaterialTheme.typography.titleMedium)
         },
         text = {
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(4),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(max = 360.dp),
-            ) {
-                items(IconLibrary.keys) { key ->
-                    Column(
-                        modifier = Modifier
-                            .clip(MaterialTheme.shapes.small)
-                            .clickable { onPick(key) }
-                            .padding(4.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(40.dp)
-                                .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.surfaceVariant),
-                            contentAlignment = Alignment.Center,
-                        ) {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                // 搜索框：即时过滤，无需点按钮
+                OutlinedTextField(
+                    value = query,
+                    onValueChange = { query = it },
+                    placeholder = {
+                        Text(
+                            stringResource(R.string.icon_search_hint),
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                    },
+                    singleLine = true,
+                    shape = MaterialTheme.shapes.small,
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Outlined.Search,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp),
+                        )
+                    },
+                    trailingIcon = {
+                        if (query.isNotEmpty()) {
                             Icon(
-                                imageVector = IconLibrary.of(key),
-                                contentDescription = IconLibrary.displayName(key, useZh),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(22.dp),
+                                imageVector = Icons.Outlined.Close,
+                                contentDescription = stringResource(R.string.icon_search_clear),
+                                modifier = Modifier
+                                    .size(18.dp)
+                                    .clickable { query = "" },
                             )
                         }
-                        Spacer(Modifier.height(4.dp))
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Spacer(Modifier.height(10.dp))
+                if (filtered.isEmpty()) {
+                    // 空状态：给出明确反馈，避免看起来像"加载失败"
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(120.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
                         Text(
-                            text = IconLibrary.displayName(key, useZh),
-                            style = MaterialTheme.typography.labelSmall,
+                            text = stringResource(R.string.icon_search_empty),
+                            style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
                         )
+                    }
+                } else {
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(4),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(max = 300.dp),
+                    ) {
+                        items(filtered) { key ->
+                            Column(
+                                modifier = Modifier
+                                    .clip(MaterialTheme.shapes.small)
+                                    .clickable { onPick(key) }
+                                    .padding(4.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(40.dp)
+                                        .clip(CircleShape)
+                                        .background(MaterialTheme.colorScheme.surfaceVariant),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    Icon(
+                                        imageVector = IconLibrary.of(key),
+                                        contentDescription = IconLibrary.displayName(key, useZh),
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.size(22.dp),
+                                    )
+                                }
+                                Spacer(Modifier.height(4.dp))
+                                Text(
+                                    text = IconLibrary.displayName(key, useZh),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -1062,6 +1137,12 @@ private fun CategoryCell(
     onClick: () -> Unit,
     onLongClick: () -> Unit,
     modifier: Modifier = Modifier,
+    /**
+     * 实际渲染用的图标 key。默认等于分类自身图标；
+     * 「仅本次使用」生效且本格是选中分类时，由调用方传入临时图标 key，
+     * 此时只换图标、保留下方分类原名不变。
+     */
+    iconOverrideKey: String = category.icon,
 ) {
     val borderColor by animateColorAsState(
         if (selected) category.color.argb() else Color.Transparent,
@@ -1083,9 +1164,11 @@ private fun CategoryCell(
             .padding(vertical = 4.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        CategoryIcon(iconKey = category.icon, color = category.color.argb(), size = 34)
+        CategoryIcon(iconKey = iconOverrideKey, color = category.color.argb(), size = 34)
         Spacer(Modifier.height(4.dp))
         Text(
+            // 注意：这里始终显示分类原名，不用临时图标的名字——
+            // 「仅本次使用」只改图标外观，不改这个格子代表的分类
             text = category.name,
             style = MaterialTheme.typography.labelSmall,
             color = if (selected) category.color.argb() else MaterialTheme.colorScheme.onSurface,

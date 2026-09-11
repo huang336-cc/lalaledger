@@ -24,7 +24,7 @@ import kotlin.math.min
  * 账单汇总长图导出：
  * - android.graphics Canvas 手绘 1080px 宽 PNG 长图（汇总卡 + 账单清单 + 小票缩略图）
  * - 配色跟随深浅主题（isDark）
- * - 通过 MediaStore 保存到相册 Pictures/拉拉记账（Android 10+ 免存储权限）
+ * - 通过 MediaStore 保存到相册 Pictures/拉了记账（Android 10+ 免存储权限）
  * - 使用 RGB_565 与 100 条上限控制长图内存占用
  */
 object SummaryImageExporter {
@@ -116,7 +116,7 @@ object SummaryImageExporter {
     private const val PAD = 60
     private const val ROW_H = 150
     private const val MAX_ROWS = 100
-    private const val SAVE_DIR = "Pictures/拉拉记账"
+    private const val SAVE_DIR = "Pictures/拉了记账"
 
     /**
      * 生成并保存汇总长图，成功返回相册 Uri，失败返回 null。
@@ -221,7 +221,7 @@ object SummaryImageExporter {
         paint.color = p.sub
         paint.textSize = 34f
         paint.textAlign = Paint.Align.CENTER
-        canvas.drawText("由 拉拉记账 生成 · 纯本地离线", WIDTH / 2f, height - PAD / 1.5f, paint)
+        canvas.drawText("由 拉了记账 生成 · 纯本地离线", WIDTH / 2f, height - PAD / 1.5f, paint)
         paint.textAlign = Paint.Align.LEFT
 
         return bitmap
@@ -479,7 +479,7 @@ object SummaryImageExporter {
         paint.color = p.sub
         paint.textSize = 34f
         paint.textAlign = Paint.Align.CENTER
-        canvas.drawText("由 拉拉记账 生成 · 纯本地离线", WIDTH / 2f, height - PAD / 1.5f, paint)
+        canvas.drawText("由 拉了记账 生成 · 纯本地离线", WIDTH / 2f, height - PAD / 1.5f, paint)
         paint.textAlign = Paint.Align.LEFT
 
         return bitmap
@@ -518,7 +518,7 @@ object SummaryImageExporter {
 
     internal fun saveToGallery(context: Context, bitmap: Bitmap, prefix: String = "汇总"): Uri? {
         val resolver = context.contentResolver
-        val name = "拉拉记账_${prefix}_${SimpleDateFormat("yyyyMMdd_HHmmss", Locale.CHINA).format(Date())}.png"
+        val name = "拉了记账_${prefix}_${SimpleDateFormat("yyyyMMdd_HHmmss", Locale.CHINA).format(Date())}.png"
         val values = ContentValues().apply {
             put(MediaStore.Images.Media.DISPLAY_NAME, name)
             put(MediaStore.Images.Media.MIME_TYPE, "image/png")

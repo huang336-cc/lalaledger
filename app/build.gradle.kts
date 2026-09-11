@@ -15,7 +15,7 @@ android {
         // 兼容 Android 10 及以上
         minSdk = 29
         targetSdk = 35
-        versionCode = 41
+        versionCode = 44
         versionName = "1.9.0"
         vectorDrawables { useSupportLibrary = true }
         // APK 瘦身：仅保留中英资源

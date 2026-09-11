@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
@@ -295,10 +296,14 @@ fun RecordScreen(
         //   · 未命中（空白、分类、类型、心情、拍照按钮等任何其它区域）→ 释放焦点，光标立即停止闪烁。
         // 这里不能用 clickable 代替：clickable 只响应未被子控件消费的点击，
         // 而分类/心情/按钮等都消费了事件，正是 v1.8.12「点了别处光标不灭」的根因。
+        // 键盘（IME）弹起时给内容区补足底部内边距，内容被压缩后即可滚动到备注框，
+        // 避免备注输入框被软键盘挡住看不见已输入内容
+        val contentScrollState = rememberScrollState()
         Column(
             modifier = Modifier
                 .weight(1f)
-                .verticalScroll(rememberScrollState())
+                .imePadding()
+                .verticalScroll(contentScrollState)
                 .onGloballyPositioned { scrollAreaCoords = it }
                 .pointerInput(Unit) {
                     awaitEachGesture {

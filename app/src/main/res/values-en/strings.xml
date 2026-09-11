@@ -50,7 +50,7 @@
     <string name="home_delete_bills_title">Delete %1$d selected bills?</string>
     <string name="home_delete_bills_msg">This cannot be undone. Linked receipt photos will be removed too.</string>
     <string name="home_deleted_n">%1$d bills deleted</string>
-    <string name="export_saved">Saved to Pictures/拉拉记账</string>
+    <string name="export_saved">Saved to Pictures/拉了记账</string>
     <string name="export_failed">Export failed, please retry</string>
     <string name="export_csv_saved">Saved to Download/lalaledger</string>
     <string name="export_csv_empty">No bills to export with current filters</string>
@@ -97,6 +97,9 @@
     <string name="icon_use_once">Use for this bill only</string>
     <string name="icon_use_once_desc">Only this bill shows the icon; your categories stay unchanged</string>
     <string name="icon_use_once_done">This bill will use the \"%1$s\" icon</string>
+    <string name="icon_search_hint">Search icons by name</string>
+    <string name="icon_search_empty">No matching icons - try another keyword</string>
+    <string name="icon_search_clear">Clear search</string>
     <string name="icon_once_chip">Once · %1$s</string>
     <string name="icon_once_clear">Clear temporary icon</string>
     <string name="record_location">Location</string>
@@ -326,6 +329,13 @@
     <!-- v1.9.0 about page -->
     <string name="chlog_190_1">The About page now links straight to the GitHub repository, and makes clear the app is fully offline and that you should grab the newest build yourself from Releases</string>
     <string name="chlog_190_2">The About page credits developer huang336; the disclaimer grew from 6 to 10 clauses, covering update channels, limits of liability, data loss and changes to the terms</string>
+    <string name="chlog_190_11">Fixed a crash when opening About: the icon now uses a standalone drawable, sidestepping the unparsable adaptive-icon resource</string>
+    <string name="chlog_190_10">Bill rows no longer show the location, keeping lists tidy; the detail page still shows the full place</string>
+    <string name="chlog_190_8">The keyboard no longer covers the note field while typing - content now scrolls up with the IME</string>
+    <string name="chlog_190_9">"Use once" now applies to the selected category tile: only the icon changes, the category name below stays</string>
+    <string name="chlog_190_5">App renamed to 拉了记账 (lalaledger), with the icon, titles, export folders and file names updated across the board</string>
+    <string name="chlog_190_6">Fixed the About page icon being invisible in dark mode by using the full app icon with its light backing</string>
+    <string name="chlog_190_7">Fixed the GitHub card on the About page showing two arrows; the leading icon is now the GitHub mark</string>
     <string name="chlog_190_4">About page redesign: centered app icon and version, features shown as a bulleted list, developer and open-source notes merged into an info card, GitHub turned into its own tappable card, and equal-width bottom buttons; the disclaimer is now split into three sections - general terms, open source notice, and derivative works disclaimer</string>
     <string name="chlog_190_3">Member management gains a "Delete all" action: clears every member in the book at once (the built-in "Public" member is kept). Existing bills survive - only their owner and payer fall back to "Me"</string>
     <!-- v1.8.15 icon usage choice -->

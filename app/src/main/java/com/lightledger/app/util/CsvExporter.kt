@@ -14,7 +14,7 @@ import java.util.Locale
 /**
  * CSV 账单导出：
  * - UTF-8 + BOM，Excel 打开中文不乱码
- * - MediaStore 保存到 Download/拉拉记账（Android 10+ 免存储权限）
+ * - MediaStore 保存到 Download/拉了记账（Android 10+ 免存储权限）
  * - 表头与 [CsvImporter] 共用，保证"导出 → 导入"闭环
  */
 object CsvExporter {
@@ -57,13 +57,13 @@ object CsvExporter {
     ): Uri? = withContext(Dispatchers.IO) {
         if (rows.isEmpty()) return@withContext null
         val resolver = context.contentResolver
-        val name = "拉拉记账_${fileNamePrefix}_${
+        val name = "拉了记账_${fileNamePrefix}_${
             SimpleDateFormat("yyyyMMdd_HHmmss", Locale.CHINA).format(Date())
         }.csv"
         val values = ContentValues().apply {
             put(MediaStore.Downloads.DISPLAY_NAME, name)
             put(MediaStore.Downloads.MIME_TYPE, "text/csv")
-            put(MediaStore.Downloads.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS + "/拉拉记账")
+            put(MediaStore.Downloads.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS + "/拉了记账")
             put(MediaStore.Downloads.IS_PENDING, 1)
         }
         val uri = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values) ?: return@withContext null
