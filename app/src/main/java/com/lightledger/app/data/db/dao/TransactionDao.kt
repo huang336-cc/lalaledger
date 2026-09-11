@@ -32,6 +32,24 @@ interface TransactionDao {
     )
     fun observeRecent(bookId: Long, limit: Int): Flow<List<TransactionEntity>>
 
+    /**
+     * 按时间下界查询账单（首页「最近账单」的时间范围筛选用）。
+     * startMillis 为 0 时等价于不限下界；limit 传 Int.MAX_VALUE 时取该范围全部。
+     */
+    @Query(
+        """
+        SELECT * FROM transactions
+        WHERE bookId = :bookId AND createdAt >= :startMillis
+        ORDER BY createdAt DESC, id DESC
+        LIMIT :limit
+        """
+    )
+    fun observeByRangeDesc(
+        bookId: Long,
+        startMillis: Long,
+        limit: Int,
+    ): Flow<List<TransactionEntity>>
+
     @Query("SELECT * FROM transactions WHERE id = :id")
     fun observeById(id: Long): Flow<TransactionEntity?>
 

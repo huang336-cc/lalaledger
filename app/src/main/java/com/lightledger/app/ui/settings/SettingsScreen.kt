@@ -901,6 +901,28 @@ private fun DisclaimerBlock(title: String?, body: String) {
 
 /** 版本变更履历（最新在前），条目走字符串资源支持中英文 */
 private enum class ChangeLog(val version: String, val date: String, val items: List<Int>) {
+    V2_2_1(
+        "2.2.1", "2026-09-11",
+        listOf(
+            R.string.chlog_221_1,
+        ),
+    ),
+    V2_2_0(
+        "2.2.0", "2026-09-11",
+        listOf(
+            R.string.chlog_220_1,
+            R.string.chlog_220_2,
+        ),
+    ),
+    V2_1_0(
+        "2.1.0", "2026-09-11",
+        listOf(
+            R.string.chlog_210_1,
+            R.string.chlog_210_2,
+            R.string.chlog_210_3,
+            R.string.chlog_210_4,
+        ),
+    ),
     V2_0_0(
         "2.0.0", "2026-09-11",
         listOf(

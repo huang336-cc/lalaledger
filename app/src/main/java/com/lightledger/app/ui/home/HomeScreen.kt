@@ -1,11 +1,5 @@
 package com.lightledger.app.ui.home
 
-import android.widget.Toast
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -17,11 +11,11 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -32,7 +26,6 @@ import androidx.compose.material.icons.outlined.Group
 import androidx.compose.material.icons.outlined.LightMode
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.SettingsBackupRestore
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
@@ -43,12 +36,10 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -57,6 +48,7 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -67,13 +59,13 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.lightledger.app.LightLedgerApp
 import com.lightledger.app.R
+import com.lightledger.app.data.prefs.SettingsDataStore
 import com.lightledger.app.domain.model.IconLibrary
 import com.lightledger.app.domain.model.ThemeMode
 import com.lightledger.app.domain.model.TransactionType
 import com.lightledger.app.ui.app.AppViewModel
 import com.lightledger.app.ui.components.AppCard
 import com.lightledger.app.ui.components.BillRow
-import com.lightledger.app.ui.components.ConfirmDialog
 import com.lightledger.app.ui.components.EmptyState
 import com.lightledger.app.ui.components.ImagePreviewDialog
 import com.lightledger.app.ui.components.SectionTitle
@@ -81,16 +73,14 @@ import com.lightledger.app.ui.theme.SemanticTheme
 import com.lightledger.app.ui.theme.argb
 import com.lightledger.app.util.DateUtils
 import com.lightledger.app.util.MoneyFormat
-import com.lightledger.app.util.SummaryImageExporter
-
-import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 
 /**
  * 首页：账本切换 + 主题快捷入口 + 记一笔按钮 + 三张支出统计卡 + 最近账单。
- * 账单列表支持多选模式：圆形勾选框 + 全选 + 实时统计 + 生成汇总图片 / 批量删除。
+ * 最近账单支持时间范围筛选（当天/本周/本月/全部，选择后记忆）；
+ * 多选批量操作（导出汇总图 / 批量删除）统一收敛在日历页。
  */
 @Composable
 fun HomeScreen(
@@ -110,104 +100,41 @@ fun HomeScreen(
 
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val guideTripDone by viewModel.guideTripDone.collectAsStateWithLifecycle()
-    val guideMultiDone by viewModel.guideMultiDone.collectAsStateWithLifecycle()
     val books by appViewModel.books.collectAsStateWithLifecycle()
     val currentBook by appViewModel.currentBook.collectAsStateWithLifecycle()
     val themeMode by appViewModel.themeMode.collectAsStateWithLifecycle()
     val currentBookId by appViewModel.currentBookId.collectAsStateWithLifecycle()
 
-    val context = LocalContext.current
-    val scope = rememberCoroutineScope()
     var bookMenuOpen by remember { mutableStateOf(false) }
+    // 最近账单的时间范围下拉菜单开关
+    var rangeMenuOpen by remember { mutableStateOf(false) }
 
-    // ---------- 多选模式状态 ----------
-    var selectionMode by remember { mutableStateOf(false) }
-    var selectedIds by remember { mutableStateOf(emptySet<Long>()) }
-    var confirmDeleteBills by remember { mutableStateOf(false) }
-    var exportingImage by remember { mutableStateOf(false) }
-    // 导出分享图前询问是否隐藏金额（打码分享）
-    var showExportMaskChoice by remember { mutableStateOf(false) }
+    // 缩略图预览状态
     var previewImages by remember { mutableStateOf<List<String>?>(null) }
     var previewIndex by remember { mutableStateOf(0) }
 
     // ---------- 日期分组折叠状态（记录已折叠的日期） ----------
     var collapsedDays by remember { mutableStateOf(emptySet<LocalDate>()) }
 
-    val selfLabel = stringResource(R.string.record_self)
-    val publicLabel = stringResource(R.string.member_public)
+    // 四个范围的本地化文案预先取出（stringResource 只能在 @Composable 上下文调用）
+    val rangeTodayLabel = stringResource(R.string.recent_range_today)
+    val rangeWeekLabel = stringResource(R.string.recent_range_week)
+    val rangeMonthLabel = stringResource(R.string.recent_range_month)
+    val rangeAllLabel = stringResource(R.string.recent_range_all)
+    val recentRangeLabel: (String) -> String = { range ->
+        when (range) {
+            SettingsDataStore.RECENT_RANGE_TODAY -> rangeTodayLabel
+            SettingsDataStore.RECENT_RANGE_WEEK -> rangeWeekLabel
+            SettingsDataStore.RECENT_RANGE_MONTH -> rangeMonthLabel
+            else -> rangeAllLabel
+        }
+    }
 
     val systemDark = isSystemInDarkTheme()
     val isDark = when (themeMode) {
         ThemeMode.LIGHT -> false
         ThemeMode.DARK -> true
         ThemeMode.SYSTEM -> systemDark
-    }
-
-    // ---------- 选中项实时统计 ----------
-    val selItems = state.recent.filter { it.tx.id in selectedIds }
-    val selExpense = selItems
-        .filter { it.tx.type == TransactionType.EXPENSE.value }
-        .sumOf { it.tx.amount }
-    val selIncome = selItems
-        .filter { it.tx.type == TransactionType.INCOME.value }
-        .sumOf { it.tx.amount }
-    val selNet = selExpense - selIncome
-    val allSelected = state.recent.isNotEmpty() && selectedIds.size == state.recent.size
-
-    fun exitSelection() {
-        selectionMode = false
-        selectedIds = emptySet()
-    }
-
-    // ---------- 导出选中账单汇总图（mask=true 时所有金额打码为「¥***」） ----------
-    fun doExportSummary(mask: Boolean) {
-        val bookName = currentBook?.name ?: context.getString(R.string.default_book)
-        val fallbackColor = 0xFF9A968D.toInt()
-        val maskText = "¥***"
-        val rows = selItems.map { item ->
-            SummaryImageExporter.Row(
-                title = item.tx.note?.takeIf { it.isNotBlank() }
-                    ?: (item.category?.name ?: context.getString(R.string.uncategorized)),
-                categoryName = item.category?.name
-                    ?: context.getString(R.string.uncategorized),
-                categoryColor = item.category?.color ?: fallbackColor,
-                amountText = if (mask) maskText
-                else (if (item.tx.type == TransactionType.EXPENSE.value) "-" else "+") +
-                    MoneyFormat.fenToPlain(item.tx.amount),
-                isExpense = item.tx.type == TransactionType.EXPENSE.value,
-                timeText = com.lightledger.app.util.DateUtils.formatBillTime(item.tx.createdAt),
-                thumbnailPath = item.tx.images.firstOrNull(),
-                memberName = if (state.isTrip) {
-                    item.member?.let { if (it.isPublic) publicLabel else it.name } ?: selfLabel
-                } else null,
-                memberColor = if (state.isTrip && item.member == null) 0xFF6C7A9C.toInt()
-                else item.member?.color ?: 0xFF5BB3A2.toInt(),
-                payerName = if (state.isTrip) {
-                    item.payer?.let { if (it.isPublic) publicLabel else it.name } ?: selfLabel
-                } else null,
-                payerColor = if (state.isTrip && item.payer == null) 0xFF6C7A9C.toInt()
-                else item.payer?.color ?: 0xFF5BB3A2.toInt(),
-            )
-        }
-        val summary = SummaryImageExporter.Summary(
-            bookName = bookName,
-            count = selItems.size,
-            expenseText = if (mask) maskText else MoneyFormat.fenToString(selExpense),
-            incomeText = if (mask) maskText else MoneyFormat.fenToString(selIncome),
-            netText = if (mask) maskText else MoneyFormat.fenToString(selNet),
-        )
-        scope.launch {
-            exportingImage = true
-            val uri = SummaryImageExporter.export(context, summary, rows, isDark)
-            exportingImage = false
-            Toast.makeText(
-                context,
-                context.getString(
-                    if (uri != null) R.string.export_saved else R.string.export_failed
-                ),
-                Toast.LENGTH_SHORT,
-            ).show()
-        }
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -379,6 +306,16 @@ fun HomeScreen(
                 contentAlignment = Alignment.Center,
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
+                    // 应用图标：PNG 自带浅色圆底，必须关闭 Icon 默认 tint，否则整图被染成单色
+                    Icon(
+                        painter = painterResource(R.drawable.ic_app_logo),
+                        contentDescription = stringResource(R.string.home_add_bill),
+                        tint = Color.Unspecified,
+                        modifier = Modifier
+                            .size(54.dp)
+                            .clip(CircleShape),
+                    )
+                    Spacer(Modifier.width(14.dp))
                     Column {
                         Text(
                             text = stringResource(R.string.home_add_bill),
@@ -456,122 +393,84 @@ fun HomeScreen(
 
             Spacer(Modifier.height(20.dp))
 
-            // ---------- 最近账单标题 + 多选入口 ----------
+            // ---------- 最近账单标题 + 时间范围筛选 ----------
             SectionTitle(
                 stringResource(R.string.home_recent),
                 trailing = {
-                    Text(
-                        text = if (selectionMode) stringResource(R.string.home_exit_select)
-                        else stringResource(R.string.home_select),
-                        style = MaterialTheme.typography.labelLarge,
-                        color = if (selectionMode) {
-                            SemanticTheme.colors.expense
-                        } else {
-                            MaterialTheme.colorScheme.primary
-                        },
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(50))
-                            .clickable {
-                                if (selectionMode) exitSelection() else selectionMode = true
-                            }
-                            .padding(horizontal = 10.dp, vertical = 4.dp),
-                    )
-                },
-            )
-
-            // ---------- 多选功能说明（一次性） ----------
-            AnimatedVisibility(visible = selectionMode && !guideMultiDone) {
-                AppCard(modifier = Modifier.padding(top = 8.dp)) {
-                    Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                stringResource(R.string.guide_multi_title),
-                                style = MaterialTheme.typography.titleSmall,
-                                modifier = Modifier.weight(1f),
-                            )
-                            Text(
-                                stringResource(R.string.got_it),
-                                style = MaterialTheme.typography.labelLarge,
-                                color = MaterialTheme.colorScheme.primary,
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        // 时间范围下拉：当天 / 本周 / 本月 / 全部（选择后记忆，下次进入仍生效）
+                        Box {
+                            Row(
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(50))
-                                    .clickable { viewModel.markGuideMultiDone() }
-                                    .padding(horizontal = 10.dp, vertical = 4.dp),
-                            )
-                        }
-                        Spacer(Modifier.height(4.dp))
-                        Text(
-                            stringResource(R.string.guide_multi_body),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                }
-            }
-
-            // ---------- 多选实时统计条 ----------
-            AnimatedVisibility(visible = selectionMode) {
-                AppCard(modifier = Modifier.padding(top = 8.dp)) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 14.dp, vertical = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Column {
-                            SelectionStat(
-                                stringResource(R.string.sel_count),
-                                stringResource(R.string.home_bills_n, selItems.size),
-                                MaterialTheme.colorScheme.onSurface,
-                            )
-                            Spacer(Modifier.height(4.dp))
-                            SelectionStat(
-                                stringResource(R.string.sel_expense),
-                                "¥${MoneyFormat.fenToString(selExpense)}",
-                                SemanticTheme.colors.expense,
-                            )
-                        }
-                        Spacer(Modifier.width(16.dp))
-                        Column {
-                            SelectionStat(
-                                stringResource(R.string.sel_income),
-                                "¥${MoneyFormat.fenToString(selIncome)}",
-                                SemanticTheme.colors.income,
-                            )
-                            Spacer(Modifier.height(4.dp))
-                            SelectionStat(
-                                stringResource(R.string.sel_net),
-                                "¥${MoneyFormat.fenToString(selNet)}",
-                                MaterialTheme.colorScheme.onSurface,
-                            )
-                        }
-                        Spacer(Modifier.weight(1f))
-                        Text(
-                            text = if (allSelected) stringResource(R.string.home_clear_all)
-                            else stringResource(R.string.home_select_all),
-                            style = MaterialTheme.typography.labelLarge,
-                            color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(50))
-                                .clickable {
-                                    selectedIds = if (allSelected) {
-                                        emptySet()
-                                    } else {
-                                        state.recent.map { it.tx.id }.toSet()
-                                    }
+                                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f))
+                                    .clickable { rangeMenuOpen = true }
+                                    .padding(start = 12.dp, end = 4.dp, top = 4.dp, bottom = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text(
+                                    text = recentRangeLabel(state.recentRange),
+                                    style = MaterialTheme.typography.labelLarge,
+                                    color = MaterialTheme.colorScheme.primary,
+                                )
+                                Icon(
+                                    imageVector = Icons.Outlined.ArrowDropDown,
+                                    contentDescription = stringResource(R.string.recent_range_all),
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(18.dp),
+                                )
+                            }
+                            DropdownMenu(
+                                expanded = rangeMenuOpen,
+                                onDismissRequest = { rangeMenuOpen = false },
+                                shape = MaterialTheme.shapes.medium,
+                            ) {
+                                RecentRangeOption(
+                                    label = stringResource(R.string.recent_range_today),
+                                    selected = state.recentRange == SettingsDataStore.RECENT_RANGE_TODAY,
+                                ) {
+                                    viewModel.setRecentRange(SettingsDataStore.RECENT_RANGE_TODAY)
+                                    rangeMenuOpen = false
                                 }
-                                .padding(horizontal = 8.dp, vertical = 6.dp),
-                        )
+                                RecentRangeOption(
+                                    label = stringResource(R.string.recent_range_week),
+                                    selected = state.recentRange == SettingsDataStore.RECENT_RANGE_WEEK,
+                                ) {
+                                    viewModel.setRecentRange(SettingsDataStore.RECENT_RANGE_WEEK)
+                                    rangeMenuOpen = false
+                                }
+                                RecentRangeOption(
+                                    label = stringResource(R.string.recent_range_month),
+                                    selected = state.recentRange == SettingsDataStore.RECENT_RANGE_MONTH,
+                                ) {
+                                    viewModel.setRecentRange(SettingsDataStore.RECENT_RANGE_MONTH)
+                                    rangeMenuOpen = false
+                                }
+                                RecentRangeOption(
+                                    label = stringResource(R.string.recent_range_all),
+                                    selected = state.recentRange == SettingsDataStore.RECENT_RANGE_ALL,
+                                ) {
+                                    viewModel.setRecentRange(SettingsDataStore.RECENT_RANGE_ALL)
+                                    rangeMenuOpen = false
+                                }
+                            }
+                        }
                     }
-                }
-            }
+                },
+            )
 
             Spacer(Modifier.height(8.dp))
 
             // ---------- 账单列表（按日期分组，组头显示当日收支合计，可折叠） ----------
             AppCard {
                 if (state.recent.isEmpty()) {
-                    EmptyState(stringResource(R.string.home_empty))
+                    // 有筛选范围且范围内为空时，提示切换范围而非「还没有账单」
+                    val isFiltered = state.recentRange != SettingsDataStore.RECENT_RANGE_ALL
+                    EmptyState(
+                        stringResource(
+                            if (isFiltered) R.string.recent_range_empty else R.string.home_empty
+                        )
+                    )
                 } else {
                     Column(Modifier.padding(vertical = 6.dp)) {
                         val zone = remember { ZoneId.systemDefault() }
@@ -615,24 +514,7 @@ fun HomeScreen(
                                             previewImages = item.tx.images
                                             previewIndex = 0
                                         },
-                                        selectionMode = selectionMode,
-                                        selected = item.tx.id in selectedIds,
-                                        onClick = {
-                                            if (selectionMode) {
-                                                selectedIds = if (item.tx.id in selectedIds) {
-                                                    selectedIds - item.tx.id
-                                                } else {
-                                                    selectedIds + item.tx.id
-                                                }
-                                            } else {
-                                                onOpenDetail(item.tx.id)
-                                            }
-                                        },
-                                        // 长按账单：快速进入多选模式并选中该条
-                                        onLongPress = {
-                                            selectionMode = true
-                                            selectedIds = setOf(item.tx.id)
-                                        },
+                                        onClick = { onOpenDetail(item.tx.id) },
                                     )
                                 }
                             }
@@ -641,123 +523,8 @@ fun HomeScreen(
                 }
             }
 
-            // 多选模式底部操作栏的空间占位
-            AnimatedVisibility(visible = selectionMode) {
-                Spacer(Modifier.height(96.dp))
-            }
-
             Spacer(Modifier.height(16.dp))
         }
-
-        // ---------- 多选模式底部操作栏 ----------
-        AnimatedVisibility(
-            visible = selectionMode,
-            enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
-            exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(),
-            modifier = Modifier.align(Alignment.BottomCenter),
-        ) {
-            Surface(
-                color = MaterialTheme.colorScheme.surface,
-                shadowElevation = 12.dp,
-                shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .navigationBarsPadding()
-                        .padding(horizontal = 16.dp, vertical = 14.dp),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    SelectionAction(
-                        text = if (exportingImage) stringResource(R.string.action_exporting)
-                        else stringResource(R.string.action_export_image),
-                        filled = true,
-                        enabled = selectedIds.isNotEmpty() && !exportingImage,
-                        modifier = Modifier.weight(1.2f),
-                        onClick = { showExportMaskChoice = true },
-                    )
-                    SelectionAction(
-                        text = stringResource(R.string.action_batch_delete),
-                        filled = false,
-                        danger = true,
-                        enabled = selectedIds.isNotEmpty(),
-                        modifier = Modifier.weight(1f),
-                        onClick = { confirmDeleteBills = true },
-                    )
-                    SelectionAction(
-                        text = stringResource(R.string.cancel),
-                        filled = false,
-                        enabled = true,
-                        modifier = Modifier.weight(0.8f),
-                        onClick = { exitSelection() },
-                    )
-                }
-            }
-        }
-    }
-
-    // ---------- 批量删除二次确认 ----------
-    if (confirmDeleteBills) {
-        ConfirmDialog(
-            title = stringResource(R.string.home_delete_bills_title, selectedIds.size),
-            message = stringResource(R.string.home_delete_bills_msg),
-            confirmText = stringResource(R.string.delete),
-            onConfirm = {
-                val ids = selectedIds.toList()
-                scope.launch {
-                    val n = viewModel.deleteBills(ids)
-                    Toast.makeText(
-                        context, context.getString(R.string.home_deleted_n, n), Toast.LENGTH_SHORT
-                    ).show()
-                }
-                exitSelection()
-            },
-            onDismiss = { confirmDeleteBills = false },
-        )
-    }
-
-    // ---------- 导出分享图：是否隐藏金额（打码分享） ----------
-    if (showExportMaskChoice) {
-        AlertDialog(
-            onDismissRequest = { showExportMaskChoice = false },
-            title = {
-                Text(
-                    stringResource(R.string.action_export_image),
-                    style = MaterialTheme.typography.titleMedium,
-                )
-            },
-            text = {
-                Column {
-                    Text(
-                        stringResource(R.string.export_mask_ask),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    Spacer(Modifier.height(12.dp))
-                    TextButton(
-                        onClick = {
-                            showExportMaskChoice = false
-                            doExportSummary(mask = false)
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                    ) { Text(stringResource(R.string.export_with_amount)) }
-                    TextButton(
-                        onClick = {
-                            showExportMaskChoice = false
-                            doExportSummary(mask = true)
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                    ) { Text(stringResource(R.string.export_mask_amount)) }
-                }
-            },
-            confirmButton = {},
-            dismissButton = {
-                TextButton(onClick = { showExportMaskChoice = false }) {
-                    Text(stringResource(R.string.cancel))
-                }
-            },
-        )
     }
 
     // ---------- 缩略图预览 ----------
@@ -828,83 +595,28 @@ private fun DayGroupHeader(
     }
 }
 
-/** 多选统计条里的单项（标签弱化 + 数值语义色） */
+/** 最近账单时间范围下拉项：当前选中项以主题色高亮 + 打勾 */
 @Composable
-private fun SelectionStat(label: String, value: String, valueColor: Color) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Spacer(Modifier.width(6.dp))
-        Text(
-            text = value,
-            style = MaterialTheme.typography.labelLarge,
-            color = valueColor,
-        )
-    }
-}
-
-/** 底部操作栏按钮：主操作填充渐变色，次要操作描边样式 */
-@Composable
-private fun SelectionAction(
-    text: String,
-    filled: Boolean,
-    enabled: Boolean,
+private fun RecentRangeOption(
+    label: String,
+    selected: Boolean,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    danger: Boolean = false,
 ) {
-    val shape = RoundedCornerShape(50)
-    if (filled) {
-        Box(
-            modifier = modifier
-                .height(46.dp)
-                .clip(shape)
-                .background(
-                    brush = Brush.horizontalGradient(
-                        listOf(
-                            if (enabled) MaterialTheme.colorScheme.primary
-                            else MaterialTheme.colorScheme.surfaceVariant,
-                            if (enabled) MaterialTheme.colorScheme.secondary
-                            else MaterialTheme.colorScheme.surfaceVariant,
-                        )
-                    )
-                )
-                .clickable(enabled = enabled, onClick = onClick),
-            contentAlignment = Alignment.Center,
-        ) {
+    DropdownMenuItem(
+        text = {
             Text(
-                text = text,
-                style = MaterialTheme.typography.labelLarge,
-                color = if (enabled) MaterialTheme.colorScheme.onPrimary
-                else MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
+                text = label,
+                color = if (selected) MaterialTheme.colorScheme.primary
+                else MaterialTheme.colorScheme.onSurface,
             )
-        }
-    } else {
-        val contentColor = when {
-            !enabled -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-            danger -> SemanticTheme.colors.expense
-            else -> MaterialTheme.colorScheme.onSurface
-        }
-        Box(
-            modifier = modifier
-                .height(46.dp)
-                .clip(shape)
-                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f))
-                .clickable(enabled = enabled, onClick = onClick),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(
-                text = text,
-                style = MaterialTheme.typography.labelLarge,
-                color = contentColor,
-                maxLines = 1,
-            )
-        }
-    }
+        },
+        trailingIcon = {
+            if (selected) {
+                Text("✓", color = MaterialTheme.colorScheme.primary)
+            }
+        },
+        onClick = onClick,
+    )
 }
 
 /** 首页小统计卡：标题弱化、数字突出 */

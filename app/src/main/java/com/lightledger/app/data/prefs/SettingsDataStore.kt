@@ -24,7 +24,10 @@ class SettingsDataStore(private val context: Context) {
         val CURRENT_BOOK = longPreferencesKey("current_book_id")
         val LANGUAGE = stringPreferencesKey("language")
         val GUIDE_TRIP_DONE = booleanPreferencesKey("guide_trip_done")
-        val GUIDE_MULTI_DONE = booleanPreferencesKey("guide_multi_done")
+        /** 首页「最近账单」的时间范围（TODAY/WEEK/MONTH/ALL），记忆用户上次选择 */
+        val RECENT_RANGE = stringPreferencesKey("recent_range")
+        /** 日历页多选说明是否已读 */
+        val GUIDE_CALENDAR_MULTI_DONE = booleanPreferencesKey("guide_calendar_multi_done")
     }
 
     val themeMode: Flow<ThemeMode> = context.dataStore.data.map { prefs ->
@@ -62,16 +65,43 @@ class SettingsDataStore(private val context: Context) {
         prefs[Keys.GUIDE_TRIP_DONE] ?: false
     }
 
-    /** 多选功能说明是否已读（首次进入多选时展示） */
-    val guideMultiDone: Flow<Boolean> = context.dataStore.data.map { prefs ->
-        prefs[Keys.GUIDE_MULTI_DONE] ?: false
-    }
-
     suspend fun setGuideTripDone() {
         context.dataStore.edit { it[Keys.GUIDE_TRIP_DONE] = true }
     }
 
-    suspend fun setGuideMultiDone() {
-        context.dataStore.edit { it[Keys.GUIDE_MULTI_DONE] = true }
+    /**
+     * 首页「最近账单」的时间范围：TODAY / WEEK / MONTH / ALL。
+     * 默认 ALL（与旧行为一致：无范围限制，展示最近若干条）。
+     */
+    val recentRange: Flow<String> = context.dataStore.data.map { prefs ->
+        val v = prefs[Keys.RECENT_RANGE] ?: RECENT_RANGE_ALL
+        if (v in RECENT_RANGES) v else RECENT_RANGE_ALL
+    }
+
+    suspend fun setRecentRange(range: String) {
+        val v = if (range in RECENT_RANGES) range else RECENT_RANGE_ALL
+        context.dataStore.edit { it[Keys.RECENT_RANGE] = v }
+    }
+
+    /** 日历页多选说明是否已读 */
+    val guideCalendarMultiDone: Flow<Boolean> = context.dataStore.data.map { prefs ->
+        prefs[Keys.GUIDE_CALENDAR_MULTI_DONE] ?: false
+    }
+
+    suspend fun setGuideCalendarMultiDone() {
+        context.dataStore.edit { it[Keys.GUIDE_CALENDAR_MULTI_DONE] = true }
+    }
+
+    companion object {
+        const val RECENT_RANGE_TODAY = "TODAY"
+        const val RECENT_RANGE_WEEK = "WEEK"
+        const val RECENT_RANGE_MONTH = "MONTH"
+        const val RECENT_RANGE_ALL = "ALL"
+        val RECENT_RANGES = setOf(
+            RECENT_RANGE_TODAY,
+            RECENT_RANGE_WEEK,
+            RECENT_RANGE_MONTH,
+            RECENT_RANGE_ALL,
+        )
     }
 }

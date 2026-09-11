@@ -6,6 +6,7 @@ import com.lightledger.app.AppContainer
 import com.lightledger.app.data.db.entity.CategoryEntity
 import com.lightledger.app.data.db.entity.MemberEntity
 import com.lightledger.app.data.db.entity.TransactionEntity
+import com.lightledger.app.data.prefs.SettingsDataStore
 import com.lightledger.app.domain.model.TransactionType
 import com.lightledger.app.util.DateUtils
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -34,6 +35,8 @@ data class HomeUiState(
     val recent: List<HomeBillItem> = emptyList(),
     /** 当前账本是否旅行账本（决定显示成员标签与引导卡） */
     val isTrip: Boolean = false,
+    /** 最近账单的时间范围（TODAY / WEEK / MONTH / ALL），可在首页切换并记忆 */
+    val recentRange: String = SettingsDataStore.RECENT_RANGE_ALL,
 )
 
 /**
@@ -68,13 +71,30 @@ class HomeViewModel(
         }
     }
 
-    private val recent = currentBookId.flatMapLatest { bookId ->
-        if (bookId <= 0) {
-            kotlinx.coroutines.flow.flowOf(emptyList<TransactionEntity>())
-        } else {
-            container.transactionRepository.observeRecent(bookId, 20)
+    /**
+     * 最近账单：按用户选择的时间范围筛选（当天 / 本周 / 本月 / 全部），
+     * 「全部」时仍限制最近 20 条以避免长列表卡顿；其余范围取该区间全部。
+     */
+    private val recent = combine(
+        currentBookId,
+        container.settings.recentRange,
+    ) { bookId, range -> bookId to range }
+        .flatMapLatest { (bookId, range) ->
+            if (bookId <= 0) {
+                kotlinx.coroutines.flow.flowOf(emptyList<TransactionEntity>())
+            } else {
+                val (start, limit) = when (range) {
+                    SettingsDataStore.RECENT_RANGE_TODAY ->
+                        DateUtils.startOfDayMillis() to Int.MAX_VALUE
+                    SettingsDataStore.RECENT_RANGE_WEEK ->
+                        DateUtils.startOfWeekMillis() to Int.MAX_VALUE
+                    SettingsDataStore.RECENT_RANGE_MONTH ->
+                        DateUtils.startOfMonthMillis() to Int.MAX_VALUE
+                    else -> 0L to 20
+                }
+                container.transactionRepository.observeByRangeDesc(bookId, start, limit)
+            }
         }
-    }
 
     private val categoryMap = container.categoryRepository.observeIdMap()
 
@@ -97,18 +117,44 @@ class HomeViewModel(
         }
     }
 
+    // 最近账单相关上下文（账单 + 分类 + 成员 + 当前账本 + 范围）先合成一个中间对象，
+    // 避免直接把 6 个流塞进 combine 造成 Kotlin 类型推断失败。
+    private data class RecentContext(
+        val bills: List<TransactionEntity>,
+        val cats: Map<Long, CategoryEntity>,
+        val members: Map<Long, MemberEntity>,
+        val isTrip: Boolean,
+        val range: String,
+    )
+
+    private val recentContext = combine(
+        recent,
+        categoryMap,
+        memberMap,
+        currentBook,
+        container.settings.recentRange,
+    ) { bills, cats, members, book, range ->
+        RecentContext(
+            bills = bills,
+            cats = cats,
+            members = members,
+            isTrip = book?.isTrip == true,
+            range = range,
+        )
+    }
+
     val uiState: StateFlow<HomeUiState> =
-        combine(stats, recent, categoryMap, memberMap, currentBook) { s, bills, cats, members, book ->
-            val trip = book?.isTrip == true
+        combine(stats, recentContext) { s, ctx ->
             s.copy(
-                recent = bills.map {
+                recent = ctx.bills.map {
                     HomeBillItem(
-                        it, cats[it.categoryId],
-                        member = members[it.memberId],
-                        payer = members[it.payerMemberId],
+                        it, ctx.cats[it.categoryId],
+                        member = ctx.members[it.memberId],
+                        payer = ctx.members[it.payerMemberId],
                     )
                 },
-                isTrip = trip,
+                isTrip = ctx.isTrip,
+                recentRange = ctx.range,
             )
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HomeUiState())
 
@@ -116,29 +162,12 @@ class HomeViewModel(
     val guideTripDone: StateFlow<Boolean> = container.settings.guideTripDone
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), true)
 
-    /** 多选功能说明是否已读 */
-    val guideMultiDone: StateFlow<Boolean> = container.settings.guideMultiDone
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), true)
-
     fun markGuideTripDone() {
         viewModelScope.launch { container.settings.setGuideTripDone() }
     }
 
-    fun markGuideMultiDone() {
-        viewModelScope.launch { container.settings.setGuideMultiDone() }
-    }
-
-    /**
-     * 多选批量删除：先清理关联小票图片文件，再删记录，返回实际删除条数。
-     */
-    suspend fun deleteBills(ids: List<Long>): Int {
-        var deleted = 0
-        for (id in ids) {
-            val tx = container.transactionRepository.getById(id) ?: continue
-            tx.images.forEach { com.lightledger.app.util.ImageStore.deleteFile(it) }
-            container.transactionRepository.delete(id)
-            deleted++
-        }
-        return deleted
+    /** 切换「最近账单」的时间范围（当天 / 本周 / 本月 / 全部），并持久化记忆 */
+    fun setRecentRange(range: String) {
+        viewModelScope.launch { container.settings.setRecentRange(range) }
     }
 }

@@ -37,6 +37,17 @@
     <string name="home_exit_select">Exit</string>
     <string name="home_select_all">All</string>
     <string name="home_clear_all">None</string>
+    <!-- Recent bills time-range filter (remembered) -->
+    <string name="recent_range_today">Today</string>
+    <string name="recent_range_week">This week</string>
+    <string name="recent_range_month">This month</string>
+    <string name="recent_range_all">All</string>
+    <string name="recent_range_empty">No bills in this range</string>
+    <!-- Calendar page multi-select -->
+    <string name="calendar_select">Select</string>
+    <string name="calendar_multi_hint">Pick one or more bills to export them as a single summary image</string>
+    <string name="guide_calendar_multi_title">Multi-select works here too</string>
+    <string name="guide_calendar_multi_body">Tap "Select" or long-press any bill to enter multi-select: once checked, you can export a summary image (with an option to hide amounts) or delete in bulk. Check only one member\'s bills to total and settle up for them alone.</string>
     <string name="home_empty">No bills yet — tap "Add a bill" above to start</string>
     <string name="home_manage_books">Manage books</string>
     <string name="home_manage_members">Manage members</string>
@@ -326,6 +337,16 @@
     <!-- v1.8.1 fixes -->
     <string name="chlog_181_1">Fixed the big backspace key: tap deletes one digit, long-press clears all (a single tap used to wipe the whole amount)</string>
     <string name="chlog_181_2">Bill subtitle now starts with the time: long notes get truncated first, so the time always stays visible</string>
+    <!-- v2.2.1 add-bill icon tint fix -->
+    <string name="chlog_221_1">Fixed the app icon on the home \"Add a bill\" card rendering as a solid black circle - Compose\'s default tint recolored the whole image; it now renders in full color so the puppy logo is clearly visible</string>
+    <!-- v2.2.0 add-bill icon + home multi-select removal -->
+    <string name="chlog_220_1">The home \"Add a bill\" card now shows the app icon on a rounded white tile, next to the title and the note icon, so the entry is instantly recognizable</string>
+    <string name="chlog_220_2">Multi-select was removed from home Recent bills for a cleaner look; exporting summary images and bulk deleting now live in the calendar\'s monthly list, while the time-range filter (today/week/month/all) stays unchanged</string>
+    <!-- v2.1.0 calendar multi-select + recent-bill time range -->
+    <string name="chlog_210_1">The calendar\'s monthly bill list now supports multi-select: check one or more bills to export a summary image or delete in bulk, with a live bar showing count, total expense, total income and net spend (scoped to what\'s visible)</string>
+    <string name="chlog_210_2">A small hint under the calendar list explains that you can multi-select a single bill to export it as an image; a one-time guide appears the first time you enter multi-select</string>
+    <string name="chlog_210_3">Recent bills on the home screen can now be filtered by time range - today, this week, this month or all - and your choice is remembered for next time; switching month or day exits multi-select automatically so selections never span ranges</string>
+    <string name="chlog_210_4">Summary images exported from the calendar carry the same owner and payer member tags as the home screen for trip books</string>
     <!-- v2.0.0 milestone: overall UI and experience polish -->
     <string name="chlog_200_1">Version bumped to 2.0.0, a milestone release that rolls up the accumulated UI and experience improvements</string>
     <string name="chlog_200_2">Fixed a crash when opening About: the icon now uses a standalone drawable, sidestepping the fatal unparsable adaptive-icon resource</string>

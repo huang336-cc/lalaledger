@@ -17,6 +17,16 @@ class TransactionRepository(private val dao: TransactionDao) {
     fun observeRecent(bookId: Long, limit: Int = 20): Flow<List<TransactionEntity>> =
         dao.observeRecent(bookId, limit)
 
+    /**
+     * 按时间下界 + 条数上限查询（首页最近账单的范围筛选）。
+     * startMillis=0 表示不限下界；limit=Int.MAX_VALUE 表示不限条数。
+     */
+    fun observeByRangeDesc(
+        bookId: Long,
+        startMillis: Long,
+        limit: Int,
+    ): Flow<List<TransactionEntity>> = dao.observeByRangeDesc(bookId, startMillis, limit)
+
     fun observeById(id: Long): Flow<TransactionEntity?> = dao.observeById(id)
 
     suspend fun getById(id: Long): TransactionEntity? = dao.getById(id)

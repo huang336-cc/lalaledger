@@ -37,6 +37,17 @@
     <string name="home_exit_select">退出多选</string>
     <string name="home_select_all">全选</string>
     <string name="home_clear_all">取消全选</string>
+    <!-- 最近账单时间范围筛选（可记忆） -->
+    <string name="recent_range_today">当天</string>
+    <string name="recent_range_week">本周</string>
+    <string name="recent_range_month">本月</string>
+    <string name="recent_range_all">全部</string>
+    <string name="recent_range_empty">所选范围内没有账单</string>
+    <!-- 日历页多选 -->
+    <string name="calendar_select">多选</string>
+    <string name="calendar_multi_hint">可勾选一笔或多笔账单，一键导出为汇总图片</string>
+    <string name="guide_calendar_multi_title">本月账单也能多选</string>
+    <string name="guide_calendar_multi_body">点「多选」或长按任意一笔账单进入多选：勾选后可生成汇总长图（可选择是否隐藏金额）或批量删除。只勾选某位成员的账单，即可单独统计与结算。</string>
     <string name="home_empty">还没有账单，点上方"记一笔"开始吧</string>
     <string name="home_manage_books">管理账本</string>
     <string name="home_manage_members">管理成员</string>
@@ -326,6 +337,16 @@
     <!-- v1.8.1 修复 -->
     <string name="chlog_181_1">修复退格大键：点击逐位删除一个数字，长按才清空全部（此前点击直接清空）</string>
     <string name="chlog_181_2">账单副行时间前置：时间固定显示在最左，长备注被截断也不再隐藏时间</string>
+    <!-- v2.2.1 记一笔图标染色修复 -->
+    <string name="chlog_221_1">修复首页「记一笔」入口的应用图标显示为黑色圆块：图标被 Compose 默认着色逻辑整体染色，现改为按原图彩色渲染，小狗图标清晰可见</string>
+    <!-- v2.2.0 记一笔图标 + 首页多选收敛 -->
+    <string name="chlog_220_1">首页「记一笔」入口卡加入应用图标：白底圆角承载，与文字、笔形图标并列，一眼认出记账入口</string>
+    <string name="chlog_220_2">首页「最近账单」移除多选模式，界面更清爽；多选导出汇总图与批量删除统一在日历页「本月账单」进行，原有时间范围筛选（当天/本周/本月/全部）保持不变</string>
+    <!-- v2.1.0 日历多选 + 最近账单时间范围 -->
+    <string name="chlog_210_1">日历页「本月账单」新增多选：勾选一笔或多笔账单即可导出汇总图片或批量删除，统计条实时显示条数、总支出、总收入与净花费（作用于当前可见范围）</string>
+    <string name="chlog_210_2">日历页账单列表新增小字说明，提示可直接多选单笔账单导出图片；首次进入多选时展示一次性功能引导</string>
+    <string name="chlog_210_3">首页「最近账单」新增时间范围切换：当天 / 本周 / 本月 / 全部，选择后自动记忆，下次打开仍保持；切换月份或日期时自动退出多选，避免跨范围选中造成统计困惑</string>
+    <string name="chlog_210_4">日历页多选生成汇总图片时，旅行账本会带上归属与垫付成员标签，与首页导出口径一致</string>
     <!-- v2.0.0 里程碑：界面与体验整体打磨 -->
     <string name="chlog_200_1">版本号升级至 2.0.0，作为阶段性里程碑版本，汇总此前累积的界面与体验改进</string>
     <string name="chlog_200_2">修复点击「关于」闪退：图标资源改用独立 drawable，避开自适应图标无法解析的致命问题</string>

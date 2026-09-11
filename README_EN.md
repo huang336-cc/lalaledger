@@ -10,10 +10,10 @@ No login · No ads · No cloud · No tracking — all data stays on your phone
 
 `Android 10+` · `Kotlin 2.0` · `Jetpack Compose` · `Material 3` · `MIT License`
 
-Current version **v2.0.0** · 中文文档：[README.md](README.md)
+Current version **v2.2.1** · 中文文档：[README.md](README.md)
 
 <p>
-  <a href="https://github.com/huang336-cc/lalaledger/releases"><img src="https://img.shields.io/badge/Download%20Release-v2.0.0-2E7D32?style=for-the-badge&logo=github" alt="Go to Releases"/></a>
+  <a href="https://github.com/huang336-cc/lalaledger/releases"><img src="https://img.shields.io/badge/Download%20Release-v2.2.1-2E7D32?style=for-the-badge&logo=github" alt="Go to Releases"/></a>
   <br/>
   <strong>Click the button above to open the GitHub Releases page and download the latest APK</strong>
 </p>
@@ -22,7 +22,7 @@ Current version **v2.0.0** · 中文文档：[README.md](README.md)
 
 ---
 
-> **Installation tip**: every release (APK + source) lives on the **[Releases](https://github.com/huang336-cc/lalaledger/releases)** page — expand a version tag and download `lalaledger-v2.0.0.apk` from **Assets** to install. Hit the button above to jump there.
+> **Installation tip**: every release (APK + source) lives on the **[Releases](https://github.com/huang336-cc/lalaledger/releases)** page — expand a version tag and download `lalaledger-v2.2.1.apk` from **Assets** to install. Hit the button above to jump there.
 
 ## Screenshots
 
