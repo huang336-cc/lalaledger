@@ -390,7 +390,7 @@
     <string name="chlog_143_3">分类/账本图标扩充至 130+，全量网格展示</string>
     <string name="chlog_142_1">英文名统一为小写 lalaledger（中文名不变）</string>
     <string name="chlog_141_1">修复：切换语言立即生效（此前需切换两次才显示目标语言）</string>
-    <string name="chlog_141_2">应用更名为「拉拉记账」</string>
+    <string name="chlog_141_2">应用更名为「拉了记账」</string>
     <string name="chlog_140_1">多语言：界面支持简体中文 / English 一键切换</string>
     <string name="chlog_140_2">记账可选日期时间（默认当前时间），支持补记</string>
     <string name="chlog_140_3">记账可选归属成员（谁消费）与付款人（谁垫付）</string>

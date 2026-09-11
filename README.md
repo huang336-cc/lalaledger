@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="docs/ic_launcher.png" alt="拉拉记账" width="120" style="border-radius:24px;display:inline-block" />
+<img src="docs/ic_launcher.png" alt="拉了记账" width="120" style="border-radius:24px;display:inline-block" />
 
 # 拉了记账 · lalaledger
 

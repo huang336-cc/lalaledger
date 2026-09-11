@@ -390,7 +390,7 @@
     <string name="chlog_143_3">Expand icon library to 130+ icons in a grid</string>
     <string name="chlog_142_1">English name unified to lowercase lalaledger (Chinese name unchanged)</string>
     <string name="chlog_141_1">Fix: language switch now applies instantly (previously took two tries)</string>
-    <string name="chlog_141_2">App renamed to 拉拉记账 (lalaledger)</string>
+    <string name="chlog_141_2">App renamed to 拉了记账 (lalaledger)</string>
     <string name="chlog_140_1">Language: switch between Simplified Chinese and English in-app</string>
     <string name="chlog_140_2">Pick date &amp; time when recording (defaults to now) for back-filling</string>
     <string name="chlog_140_3">Choose owner (who consumed) and payer (who advanced the money)</string>
