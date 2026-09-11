@@ -326,6 +326,16 @@
     <!-- v1.8.1 fixes -->
     <string name="chlog_181_1">Fixed the big backspace key: tap deletes one digit, long-press clears all (a single tap used to wipe the whole amount)</string>
     <string name="chlog_181_2">Bill subtitle now starts with the time: long notes get truncated first, so the time always stays visible</string>
+    <!-- v2.0.0 milestone: overall UI and experience polish -->
+    <string name="chlog_200_1">Version bumped to 2.0.0, a milestone release that rolls up the accumulated UI and experience improvements</string>
+    <string name="chlog_200_2">Fixed a crash when opening About: the icon now uses a standalone drawable, sidestepping the fatal unparsable adaptive-icon resource</string>
+    <string name="chlog_200_3">App renamed to 拉了记账 (lalaledger), with the icon, titles, export folders and file names updated across the board</string>
+    <string name="chlog_200_4">About page redesign: centered app icon and version, features shown as a bulleted list, developer and open-source notes merged into an info card, and GitHub turned into its own tappable card; the disclaimer is now split into three sections - general terms, open source notice, and derivative works disclaimer</string>
+    <string name="chlog_200_5">Fixed the About page icon being invisible in dark mode by using the full app icon with its light backing; the GitHub card\'s leading icon is now the GitHub mark, so it no longer shows two arrows</string>
+    <string name="chlog_200_6">The full icon picker now has search, filtering by Chinese name or English keyword; \"Use once\" now changes only the icon and keeps the category name below</string>
+    <string name="chlog_200_7">The keyboard no longer covers the note field while typing - content scrolls up with the IME so what you typed stays visible</string>
+    <string name="chlog_200_8">Bill rows no longer show the location, keeping lists tidy; the detail page still shows the full place</string>
+    <string name="chlog_200_9">Member management gains a \"Delete all\" action: clears every member in the book at once (the built-in \"Public\" member is kept). Existing bills survive</string>
     <!-- v1.9.0 about page -->
     <string name="chlog_190_1">The About page now links straight to the GitHub repository, and makes clear the app is fully offline and that you should grab the newest build yourself from Releases</string>
     <string name="chlog_190_2">The About page credits developer huang336; the disclaimer grew from 6 to 10 clauses, covering update channels, limits of liability, data loss and changes to the terms</string>

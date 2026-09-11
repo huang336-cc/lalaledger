@@ -10,10 +10,10 @@
 
 `Android 10+` · `Kotlin 2.0` · `Jetpack Compose` · `Material 3` · `MIT License`
 
-当前版本 **v1.9.0** · [English](README_EN.md)
+当前版本 **v2.0.0** · [English](README_EN.md)
 
 <p>
-  <a href="https://github.com/huang336-cc/lalaledger/releases"><img src="https://img.shields.io/badge/下载最近版本-v1.9.0-2E7D32?style=for-the-badge&logo=github" alt="前往 Release 下载"/></a>
+  <a href="https://github.com/huang336-cc/lalaledger/releases"><img src="https://img.shields.io/badge/下载最近版本-v2.0.0-2E7D32?style=for-the-badge&logo=github" alt="前往 Release 下载"/></a>
   <br/>
   <strong>点击上方按钮 → 前往 GitHub Releases 页下载最新 APK</strong>
 </p>
@@ -22,7 +22,7 @@
 
 ---
 
-> **安装提示**：所有版本（`APK 安装包` + `源码包`）都发布在 **[Releases](https://github.com/huang336-cc/lalaledger/releases)** 页 —— 展开对应版本标签，在 **Assets** 下下载 `lalaledger-v1.9.0.apk` 直接安装即可；点击上方按钮可一键前往。
+> **安装提示**：所有版本（`APK 安装包` + `源码包`）都发布在 **[Releases](https://github.com/huang336-cc/lalaledger/releases)** 页 —— 展开对应版本标签，在 **Assets** 下下载 `lalaledger-v2.0.0.apk` 直接安装即可；点击上方按钮可一键前往。
 
 ## 截图
 
