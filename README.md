@@ -9,7 +9,7 @@
 无登录 · 无广告 · 无云端 · 无追踪，所有数据只存在你的手机里
 
 `Android 10+` · `Kotlin 2.0` · `Jetpack Compose` · `Material 3` · `MIT License`
-当前版本 **v2.2.1** · [English](README_EN.md)
+当前版本 **v2.2.1** · 中文 | [English](README_EN.md)
 
 <p>
   <a href="https://github.com/huang336-cc/lalaledger/releases"><img src="https://img.shields.io/badge/下载最近版本-v2.2.1-2E7D32?style=for-the-badge&logo=github" alt="前往 Release 下载"/></a>

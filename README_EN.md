@@ -10,7 +10,7 @@ No login · No ads · No cloud · No tracking — all data stays on your phone
 
 `Android 10+` · `Kotlin 2.0` · `Jetpack Compose` · `Material 3` · `MIT License`
 
-Current version **v2.2.1** · 中文文档：[README.md](README.md)
+Current version **v2.2.1** · [中文](README.md) | English
 
 <p>
   <a href="https://github.com/huang336-cc/lalaledger/releases"><img src="https://img.shields.io/badge/Download%20Release-v2.2.1-2E7D32?style=for-the-badge&logo=github" alt="Go to Releases"/></a>
