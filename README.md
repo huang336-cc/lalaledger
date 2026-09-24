@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="docs/ic_launcher.png" alt="拉了记账" width="120" style="border-radius:24px;display:inline-block" />
+<img src="docs/icon.png" alt="拉了记账" width="120" />
 
 # 拉了记账 · lalaledger
 
@@ -9,29 +9,10 @@
 无登录 · 无广告 · 无云端 · 无追踪，所有数据只存在你的手机里
 
 `Android 10+` · `Kotlin 2.0` · `Jetpack Compose` · `Material 3` · `MIT License`
-当前版本 **v2.2.1** · 
-中文 | [English](README_EN.md)
 
-<p>
-  <a href="https://github.com/huang336-cc/lalaledger/releases"><img src="https://img.shields.io/badge/下载最近版本-v2.2.1-2E7D32?style=for-the-badge&logo=github" alt="前往 Release 下载"/></a>
-  <br/>
-  <strong>点击上方按钮 → 前往 GitHub Releases 页下载最新 APK</strong>
-</p>
+当前版本 **v2.3.0** · 中文 | [English](README_EN.md)
 
 </div>
-
----
-
-> **安装提示**：所有版本（`APK 安装包` + `源码包`）都发布在 **[Releases](https://github.com/huang336-cc/lalaledger/releases)** 页 —— 展开对应版本标签，在 **Assets** 下下载 `lalaledger-v2.2.1.apk` 直接安装即可；点击上方按钮可一键前往。
-
-## 截图
-
-<p>
-  <img src="docs/screenshots/home.jpg" width="23%" alt="首页" />
-  <img src="docs/screenshots/record.jpg" width="23%" alt="记账" />
-  <img src="docs/screenshots/stats.jpg" width="23%" alt="统计" />
-  <img src="docs/screenshots/profile.jpg" width="23%" alt="我的" />
-</p>
 
 ---
 

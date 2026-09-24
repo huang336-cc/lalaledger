@@ -121,8 +121,24 @@ object Migrations {
         }
     }
 
+    /**
+     * v7 -> v8：账单列表查询复合索引
+     * 新增 (bookId, createdAt) 复合索引：账单列表的取数条件恒为
+     * 「WHERE bookId = ? ORDER BY createdAt DESC, id DESC」，
+     * 只有单列索引时 SQLite 需先按 bookId 过滤再建临时表排序；
+     * 复合索引可使过滤与排序共用同一次索引扫描，提升列表首帧速度。
+     */
+    val MIGRATION_7_8 = object : Migration(7, 8) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                "CREATE INDEX IF NOT EXISTS index_transactions_bookId_createdAt " +
+                    "ON transactions (bookId, createdAt)"
+            )
+        }
+    }
+
     val ALL: Array<Migration> = arrayOf(
         MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6,
-        MIGRATION_6_7,
+        MIGRATION_6_7, MIGRATION_7_8,
     )
 }

@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="docs/ic_launcher.png" alt="lalaledger" width="120" style="border-radius:24px;display:inline-block" />
+<img src="docs/icon.png" alt="lalaledger" width="120" />
 
 # lalaledger · 拉了记账
 
@@ -10,28 +10,9 @@ No login · No ads · No cloud · No tracking — all data stays on your phone
 
 `Android 10+` · `Kotlin 2.0` · `Jetpack Compose` · `Material 3` · `MIT License`
 
-Current version **v2.2.1** · [中文](README.md) | English
-
-<p>
-  <a href="https://github.com/huang336-cc/lalaledger/releases"><img src="https://img.shields.io/badge/Download%20Release-v2.2.1-2E7D32?style=for-the-badge&logo=github" alt="Go to Releases"/></a>
-  <br/>
-  <strong>Click the button above to open the GitHub Releases page and download the latest APK</strong>
-</p>
+Current version **v2.3.0** · [中文](README.md) | English
 
 </div>
-
----
-
-> **Installation tip**: every release (APK + source) lives on the **[Releases](https://github.com/huang336-cc/lalaledger/releases)** page — expand a version tag and download `lalaledger-v2.2.1.apk` from **Assets** to install. Hit the button above to jump there.
-
-## Screenshots
-
-<p>
-  <img src="docs/screenshots/home.jpg" width="23%" alt="Home" />
-  <img src="docs/screenshots/record.jpg" width="23%" alt="Record" />
-  <img src="docs/screenshots/stats.jpg" width="23%" alt="Stats" />
-  <img src="docs/screenshots/profile.jpg" width="23%" alt="Profile" />
-</p>
 
 ---
 

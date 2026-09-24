@@ -32,7 +32,17 @@ import androidx.room.PrimaryKey
             onDelete = ForeignKey.SET_NULL
         )
     ],
-    indices = [Index("bookId"), Index("categoryId"), Index("createdAt"), Index("memberId"), Index("payerMemberId")]
+    indices = [
+        Index("bookId"),
+        Index("categoryId"),
+        Index("createdAt"),
+        Index("memberId"),
+        Index("payerMemberId"),
+        // v8：账单列表统一以「WHERE bookId=? ORDER BY createdAt DESC, id DESC」取数，
+        // 单列索引无法同时覆盖过滤与排序，SQLite 需建临时 B 树排序。
+        // 复合索引让过滤 + 排序走同一次索引扫描，列表首帧不再因排序阻塞。
+        Index("bookId", "createdAt"),
+    ]
 )
 data class TransactionEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0L,

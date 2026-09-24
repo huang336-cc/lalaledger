@@ -338,6 +338,9 @@
     <string name="chlog_181_1">Fixed the big backspace key: tap deletes one digit, long-press clears all (a single tap used to wipe the whole amount)</string>
     <string name="chlog_181_2">Bill subtitle now starts with the time: long notes get truncated first, so the time always stays visible</string>
     <!-- v2.2.1 add-bill icon tint fix -->
+    <string name="chlog_230_1">Bill lists now load on demand: the home and calendar pages no longer render every bill up front, so switching pages and scrolling feel noticeably smoother</string>
+    <string name="chlog_230_2">Optimized date and amount formatting and added a composite index for bill queries, so long lists open faster</string>
+    <string name="chlog_230_3">Fixed the calendar recomputing each day\'s totals on every redraw, making month switching smoother</string>
     <string name="chlog_221_1">Fixed the app icon on the home \"Add a bill\" card rendering as a solid black circle - Compose\'s default tint recolored the whole image; it now renders in full color so the puppy logo is clearly visible</string>
     <!-- v2.2.0 add-bill icon + home multi-select removal -->
     <string name="chlog_220_1">The home \"Add a bill\" card now shows the app icon on a rounded white tile, next to the title and the note icon, so the entry is instantly recognizable</string>
