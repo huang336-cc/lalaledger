@@ -1,6 +1,7 @@
 package com.lightledger.app
 
 import android.content.Intent
+import android.content.res.Configuration
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -9,6 +10,7 @@ import androidx.activity.viewModels
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -50,17 +52,26 @@ class MainActivity : ComponentActivity() {
         setContent {
             val themeMode by appViewModel.themeMode.collectAsStateWithLifecycle()
 
-            // 状态栏图标颜色随主题模式切换
+            // 状态栏/导航栏图标颜色：
+            //  - 竖屏走 Scaffold + bottomBar，系统栏区域落在 surface 色上；
+            //  - 横屏走侧边栏外壳，系统栏区域落在 background 色上。
+            // 两者深浅与主题模式一致，因此统一用「实际生效的明暗」判断，
+            // 不用系统暗色设置（跟随系统时会算错，横屏时间/电量看不清就是这个问题）。
             val view = LocalView.current
-            val systemDark = isSystemInDarkTheme()
-            LaunchedEffect(themeMode, systemDark) {
+            val configuration = LocalConfiguration.current
+            val isLandscape =
+                configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+            val darkTheme = when (themeMode) {
+                ThemeMode.LIGHT -> false
+                ThemeMode.DARK -> true
+                ThemeMode.SYSTEM -> isSystemInDarkTheme()
+            }
+            LaunchedEffect(darkTheme, isLandscape) {
                 val window = (view.context as? android.app.Activity)?.window ?: return@LaunchedEffect
                 val controller = WindowCompat.getInsetsController(window, view)
-                controller.isAppearanceLightStatusBars = when (themeMode) {
-                    ThemeMode.LIGHT -> true
-                    ThemeMode.DARK -> false
-                    ThemeMode.SYSTEM -> !systemDark
-                }
+                // 浅色主题 → 系统栏内容是深色（isAppearanceLight*Bars = true）
+                controller.isAppearanceLightStatusBars = !darkTheme
+                controller.isAppearanceLightNavigationBars = !darkTheme
             }
 
             LightLedgerTheme(themeMode = themeMode) {

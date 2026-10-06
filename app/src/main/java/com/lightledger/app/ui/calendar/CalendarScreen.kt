@@ -1,6 +1,8 @@
 package com.lightledger.app.ui.calendar
 
+import android.content.res.Configuration
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -15,6 +17,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -47,6 +50,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -62,18 +66,24 @@ import com.lightledger.app.LightLedgerApp
 import com.lightledger.app.R
 import com.lightledger.app.data.db.entity.CategoryEntity
 import com.lightledger.app.data.db.entity.TransactionEntity
+import com.lightledger.app.domain.model.IconLibrary
+import com.lightledger.app.domain.model.SELF_ID
 import com.lightledger.app.domain.model.ThemeMode
 import com.lightledger.app.domain.model.TransactionType
+import com.lightledger.app.domain.model.normalizeOwnerIds
 import com.lightledger.app.ui.app.AppViewModel
 import com.lightledger.app.ui.components.AppCard
 import com.lightledger.app.ui.components.BillRow
 import com.lightledger.app.ui.components.ConfirmDialog
 import com.lightledger.app.ui.components.EmptyState
 import com.lightledger.app.ui.components.ImagePreviewDialog
-import com.lightledger.app.ui.components.SectionTitle
+import com.lightledger.app.ui.members.BatchOwnerDialog
+import com.lightledger.app.ui.theme.BrandGradientEnd
+import com.lightledger.app.ui.theme.BrandGradientStart
 import com.lightledger.app.ui.theme.SemanticTheme
 import com.lightledger.app.ui.theme.argb
 import com.lightledger.app.util.DateUtils
+import com.lightledger.app.util.LocaleHelper
 import com.lightledger.app.util.MoneyFormat
 import com.lightledger.app.util.SummaryImageExporter
 import kotlinx.coroutines.launch
@@ -98,6 +108,9 @@ fun CalendarScreen(
     appViewModel: AppViewModel,
     onOpenDetail: (Long) -> Unit,
 ) {
+    // 临时图标名的显示语言（跟随界面语言）
+    val useZh = LocaleHelper.normalize(appViewModel.language.value) == LocaleHelper.ZH
+
     val container = (LocalContext.current.applicationContext as LightLedgerApp).container
     val viewModel: CalendarViewModel = viewModel(
         factory = viewModelFactory {
@@ -106,6 +119,11 @@ fun CalendarScreen(
     )
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val guideMultiDone by viewModel.guideCalendarMultiDone.collectAsStateWithLifecycle()
+
+    // 横屏 / 平板：月历与账单左右分栏（竖屏布局保持原样）
+    val isWide = with(LocalConfiguration.current) {
+        orientation == Configuration.ORIENTATION_LANDSCAPE || screenWidthDp >= 600
+    }
 
     var yearMonth by remember { mutableStateOf(YearMonth.now()) }
     var selectedDay by remember { mutableStateOf<LocalDate?>(null) }
@@ -128,6 +146,7 @@ fun CalendarScreen(
     var selectionMode by remember { mutableStateOf(false) }
     var selectedIds by remember { mutableStateOf(emptySet<Long>()) }
     var confirmDeleteBills by remember { mutableStateOf(false) }
+    var showBatchOwner by remember { mutableStateOf(false) }
     var exportingImage by remember { mutableStateOf(false) }
     var showExportMaskChoice by remember { mutableStateOf(false) }
     var previewImages by remember { mutableStateOf<List<String>?>(null) }
@@ -237,6 +256,20 @@ fun CalendarScreen(
         if (selectionMode) exitSelection()
     }
 
+    /**
+     * 系统返回键：多选态下先退出多选，而不是直接退出日历页。
+     *
+     * 没有这个拦截，返回事件会冒泡到 NavController 把日历页弹出、跳回首页，
+     * 用户会丢失当前选中的账单集合。
+     *
+     * enabled 上排除了弹窗打开的情形：那些弹窗自带返回键处理（先关弹窗），
+     * 若这里也响应就会「一次返回同时关弹窗又退多选」，层级顺序反了。
+     */
+    BackHandler(enabled = selectionMode && !confirmDeleteBills && !showBatchOwner &&
+        !showExportMaskChoice && previewImages == null) {
+        exitSelection()
+    }
+
     // ---------- 导出选中账单汇总图（mask=true 时所有金额打码为「¥***」） ----------
     fun doExportSummary(mask: Boolean) {
         val bookName = appViewModel.currentBook.value?.name
@@ -247,7 +280,9 @@ fun CalendarScreen(
             SummaryImageExporter.Row(
                 title = item.tx.note?.takeIf { it.isNotBlank() }
                     ?: (item.category?.name ?: context.getString(R.string.uncategorized)),
-                categoryName = item.category?.name
+                // 临时图标生效时标题同步为图标名
+                categoryName = item.tx.iconOverride?.let { IconLibrary.displayName(it, useZh) }
+                    ?: item.category?.name
                     ?: context.getString(R.string.uncategorized),
                 categoryColor = item.category?.color ?: fallbackColor,
                 amountText = if (mask) maskText
@@ -256,13 +291,24 @@ fun CalendarScreen(
                 isExpense = item.tx.type == TransactionType.EXPENSE.value,
                 timeText = DateUtils.formatBillTime(item.tx.createdAt),
                 thumbnailPath = item.tx.images.firstOrNull(),
-                memberName = if (state.isTrip) {
-                    state.members[item.tx.memberId]
-                        ?.let { if (it.isPublic) publicLabel else it.name } ?: selfLabel
-                } else null,
-                memberColor = if (state.isTrip && state.members[item.tx.memberId] == null) {
-                    0xFF6C7A9C.toInt()
-                } else state.members[item.tx.memberId]?.color ?: 0xFF5BB3A2.toInt(),
+                // 归属读 memberIds（含本人哨兵 SELF_ID）；老账单 memberId 兜底。
+                // 本人在导出图里用「本人」标签，紧跟其后的才是真实成员。
+                memberNames = if (state.isTrip) {
+                    val ids = normalizeOwnerIds(item.tx.memberIds, item.tx.memberId)
+                    buildList {
+                        if (SELF_ID in ids) add(selfLabel)
+                        addAll(
+                            ids.filter { it != SELF_ID }
+                                .mapNotNull { state.members[it] }
+                                .map { if (it.isPublic) publicLabel else it.name }
+                        )
+                    }
+                } else emptyList(),
+                memberColor = if (state.isTrip) {
+                    val firstReal = normalizeOwnerIds(item.tx.memberIds, item.tx.memberId)
+                        .firstOrNull { it != SELF_ID }
+                    state.members[firstReal]?.color ?: 0xFF6C7A9C.toInt()
+                } else 0xFF5BB3A2.toInt(),
                 payerName = if (state.isTrip) {
                     state.members[item.tx.payerMemberId]
                         ?.let { if (it.isPublic) publicLabel else it.name } ?: selfLabel
@@ -295,10 +341,17 @@ fun CalendarScreen(
 
     val listState = rememberLazyListState()
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    // 铺主题背景：横屏外壳没有 Scaffold 兜底，不铺会透出窗口浅米色（深色模式下花屏）
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background),
+    ) {
         LazyColumn(
             state = listState,
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxHeight()
+                .fillMaxWidth(if (isWide) 0.56f else 1f),
             contentPadding = androidx.compose.foundation.layout.PaddingValues(
                 start = 16.dp,
                 end = 16.dp,
@@ -367,89 +420,26 @@ fun CalendarScreen(
 
             // ---------- 月历卡片 ----------
             item(key = "calendar") {
-                AppCard {
-                    Column(Modifier.padding(horizontal = 10.dp, vertical = 12.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            weekLabels.forEach { label ->
-                                Text(
-                                    text = label,
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    textAlign = TextAlign.Center,
-                                    modifier = Modifier.weight(1f),
-                                )
-                            }
-                        }
-                        Spacer(Modifier.height(6.dp))
-                        repeat(rows) { row ->
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                repeat(7) { col ->
-                                    val dayNum = row * 7 + col - leadingBlanks + 1
-                                    if (dayNum in 1..daysInMonth) {
-                                        val date = yearMonth.atDay(dayNum)
-                                        // 查预计算结果，不再逐格遍历账单
-                                        val totals = dayTotals[date]
-                                        DayCell(
-                                            date = date,
-                                            expenseFen = totals?.get(0) ?: 0L,
-                                            incomeFen = totals?.get(1) ?: 0L,
-                                            isToday = date == today,
-                                            isSelected = date == selectedDay,
-                                            onClick = {
-                                                selectedDay = if (date == selectedDay) null else date
-                                                resetSelection()
-                                            },
-                                            modifier = Modifier.weight(1f),
-                                        )
-                                    } else {
-                                        Spacer(Modifier.weight(1f))
-                                    }
-                                }
-                            }
-                        }
-                        Spacer(Modifier.height(2.dp))
-                        Text(
-                            text = stringResource(R.string.calendar_tap_hint),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                            modifier = Modifier.padding(start = 4.dp),
-                        )
-                    }
-                }
-                Spacer(Modifier.height(14.dp))
+                CalendarMonthCard(
+                    yearMonth = yearMonth,
+                    rows = rows,
+                    leadingBlanks = leadingBlanks,
+                    dayTotals = dayTotals,
+                    selectedDay = selectedDay,
+                    today = today,
+                    onSelectDay = { d -> selectedDay = if (selectedDay == d) null else d },
+                )
             }
 
-            // ---------- 账单列表标题 + 多选入口 ----------
-            item(key = "list_title") {
-                Column {
-                    SectionTitle(
-                        text = selectedDay?.let {
-                            stringResource(R.string.calendar_bills_of_day, DateUtils.formatGroupDate(it))
-                        } ?: stringResource(R.string.calendar_bills_month),
-                        trailing = {
-                            Text(
-                                text = if (selectionMode) stringResource(R.string.home_exit_select)
-                                else stringResource(R.string.calendar_select),
-                                style = MaterialTheme.typography.labelLarge,
-                                color = if (selectionMode) {
-                                    SemanticTheme.colors.expense
-                                } else {
-                                    MaterialTheme.colorScheme.primary
-                                },
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(50))
-                                    .clickable {
-                                        if (selectionMode) exitSelection() else selectionMode = true
-                                    }
-                                    .padding(horizontal = 10.dp, vertical = 4.dp),
-                            )
+            // ---------- 账单列表标题 + 多选入口（竖屏在本列；横屏随右栏） ----------
+            if (!isWide) {
+                item(key = "list_title") {
+                    CalendarListHeader(
+                        selectedDay = selectedDay,
+                        selectionMode = selectionMode,
+                        onToggleSelectMode = {
+                            if (selectionMode) exitSelection() else selectionMode = true
                         },
-                    )
-                    Text(
-                        text = stringResource(R.string.calendar_multi_hint),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
-                        modifier = Modifier.padding(start = 2.dp, top = 4.dp),
                     )
                 }
             }
@@ -486,8 +476,8 @@ fun CalendarScreen(
                 }
             }
 
-            // ---------- 多选实时统计条 ----------
-            if (selectionMode) {
+            // ---------- 多选实时统计条（竖屏在本列；横屏随右栏） ----------
+            if (selectionMode && !isWide) {
                 item(key = "sel_stat") {
                     AppCard(modifier = Modifier.padding(top = 8.dp)) {
                         Row(
@@ -545,62 +535,106 @@ fun CalendarScreen(
                 }
             }
 
-            // ---------- 账单列表 ----------
-            if (listEntries.isEmpty()) {
-                item(key = "empty") {
-                    Spacer(Modifier.height(8.dp))
-                    AppCard { EmptyState(stringResource(R.string.home_empty)) }
-                }
-            } else {
-                item(key = "bills_start") { Spacer(Modifier.height(8.dp)) }
-                items(
-                    items = listEntries,
-                    key = { entry ->
+            // ---------- 账单列表（竖屏在同一条 LazyColumn 内；横屏见右侧窄栏） ----------
+            if (!isWide) {
+                if (listEntries.isEmpty()) {
+                    item(key = "empty") {
+                        Spacer(Modifier.height(8.dp))
+                        AppCard { EmptyState(stringResource(R.string.home_empty)) }
+                    }
+                } else {
+                    item(key = "bills_start") { Spacer(Modifier.height(8.dp)) }
+                    items(
+                        items = listEntries,
+                        key = { entry ->
+                            when (entry) {
+                                is ListEntry.Header -> "h_${entry.day.toEpochDay()}"
+                                is ListEntry.Bill -> "b_${entry.item.tx.id}"
+                            }
+                        },
+                    ) { entry ->
+                        val isFirst = entry === listEntries.first()
+                        val isLast = entry === listEntries.last()
                         when (entry) {
-                            is ListEntry.Header -> "h_${entry.day.toEpochDay()}"
-                            is ListEntry.Bill -> "b_${entry.item.tx.id}"
-                        }
-                    },
-                ) { entry ->
-                    val isFirst = entry === listEntries.first()
-                    val isLast = entry === listEntries.last()
-                    when (entry) {
-                        is ListEntry.Header -> DaySummaryHeader(
-                            day = entry.day,
-                            expenseFen = entry.expenseFen,
-                            incomeFen = entry.incomeFen,
-                            isFirst = isFirst,
-                            isLast = isLast,
-                        )
+                            is ListEntry.Header -> DaySummaryHeader(
+                                day = entry.day,
+                                expenseFen = entry.expenseFen,
+                                incomeFen = entry.incomeFen,
+                                isFirst = isFirst,
+                                isLast = isLast,
+                            )
 
-                        is ListEntry.Bill -> CalendarBillRow(
-                            item = entry.item,
-                            selectionMode = selectionMode,
-                            selected = entry.item.tx.id in selectedIds,
-                            isFirst = isFirst,
-                            isLast = isLast,
-                            onOpenDetail = onOpenDetail,
-                            onToggleSelect = { id ->
-                                selectedIds = if (id in selectedIds) selectedIds - id
-                                else selectedIds + id
-                            },
-                            onEnterSelection = { id ->
-                                selectionMode = true
-                                selectedIds = setOf(id)
-                            },
-                            onPreviewImages = { images ->
-                                previewImages = images
-                                previewIndex = 0
-                            },
-                        )
+                            is ListEntry.Bill -> CalendarBillRow(
+                                item = entry.item,
+                                useZh = useZh,
+                                selectionMode = selectionMode,
+                                selected = entry.item.tx.id in selectedIds,
+                                isFirst = isFirst,
+                                isLast = isLast,
+                                onOpenDetail = onOpenDetail,
+                                onToggleSelect = { id ->
+                                    selectedIds = if (id in selectedIds) selectedIds - id
+                                    else selectedIds + id
+                                },
+                                onEnterSelection = { id ->
+                                    selectionMode = true
+                                    selectedIds = setOf(id)
+                                },
+                                onPreviewImages = { images ->
+                                    previewImages = images
+                                    previewIndex = 0
+                                },
+                            )
+                        }
                     }
                 }
-            }
 
-            // 多选模式底部操作栏的空间占位
-            if (selectionMode) {
-                item(key = "bottom_space") { Spacer(Modifier.height(96.dp)) }
+                // 竖屏顶部操作栏的空间占位
+                if (selectionMode) {
+                    item(key = "bottom_space") { Spacer(Modifier.height(96.dp)) }
+                }
             }
+        }
+
+
+        // ---------- 横屏右栏：本月账单（标题 + 统计条 + 列表，整体独立滚动） ----------
+        if (isWide) {
+            CalendarBillList(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .fillMaxHeight()
+                    .fillMaxWidth(0.44f)
+                    .padding(start = 8.dp, end = 16.dp),
+                selectedDay = selectedDay,
+                selectionMode = selectionMode,
+                onToggleSelectMode = {
+                    if (selectionMode) exitSelection() else selectionMode = true
+                },
+                selCount = selectedIds.size,
+                selExpense = selExpense,
+                selIncome = selIncome,
+                selNet = selNet,
+                allSelected = allSelected,
+                onToggleSelectAll = {
+                    selectedIds = if (allSelected) emptySet() else visibleIds.toSet()
+                },
+                listEntries = listEntries,
+                useZh = useZh,
+                selectedIds = selectedIds,
+                onOpenDetail = onOpenDetail,
+                onToggleSelect = { id ->
+                    selectedIds = if (id in selectedIds) selectedIds - id
+                    else selectedIds + id
+                },
+                onEnterSelection = { id ->
+                    selectionMode = true
+                    selectedIds = setOf(id)
+                },
+                onPreviewImages = { images ->
+                    previewImages = images
+                    previewIndex = 0
+                },
+            )
         }
 
         // ---------- 多选模式底部操作栏 ----------
@@ -623,13 +657,24 @@ fun CalendarScreen(
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
+                    // 三个动作都作用于「已勾选的账单」，同排展示保证语义对等；
+                    // 改归属夹在中间，避免紧邻危险的删除。
+                    // 不做「取消」按钮：退出多选走系统返回键或标题行的「退出多选」，
+                    // 省下的这一行还给列表可见高度。
                     SelectionAction(
                         text = if (exportingImage) stringResource(R.string.action_exporting)
                         else stringResource(R.string.action_export_image),
                         filled = true,
                         enabled = selectedIds.isNotEmpty() && !exportingImage,
-                        modifier = Modifier.weight(1.2f),
+                        modifier = Modifier.weight(1f),
                         onClick = { showExportMaskChoice = true },
+                    )
+                    SelectionAction(
+                        text = stringResource(R.string.action_batch_owner),
+                        filled = false,
+                        enabled = selectedIds.isNotEmpty(),
+                        modifier = Modifier.weight(1f),
+                        onClick = { showBatchOwner = true },
                     )
                     SelectionAction(
                         text = stringResource(R.string.action_batch_delete),
@@ -638,13 +683,6 @@ fun CalendarScreen(
                         enabled = selectedIds.isNotEmpty(),
                         modifier = Modifier.weight(1f),
                         onClick = { confirmDeleteBills = true },
-                    )
-                    SelectionAction(
-                        text = stringResource(R.string.cancel),
-                        filled = false,
-                        enabled = true,
-                        modifier = Modifier.weight(0.8f),
-                        onClick = { exitSelection() },
                     )
                 }
             }
@@ -668,6 +706,26 @@ fun CalendarScreen(
                 exitSelection()
             },
             onDismiss = { confirmDeleteBills = false },
+        )
+    }
+
+    // ---------- 批量改归属：作用于已勾选的账单 ----------
+    if (showBatchOwner) {
+        BatchOwnerDialog(
+            billIds = selectedIds.toList(),
+            bookId = appViewModel.currentBookId.value,
+            onDismiss = { showBatchOwner = false },
+            onDone = { n ->
+                showBatchOwner = false
+                if (n > 0) {
+                    Toast.makeText(
+                        context,
+                        context.getString(R.string.batch_owner_done, n),
+                        Toast.LENGTH_SHORT,
+                    ).show()
+                    exitSelection()
+                }
+            },
         )
     }
 
@@ -724,6 +782,292 @@ fun CalendarScreen(
     }
 }
 
+/**
+ * 账单列表标题：当前筛选范围（整月 / 某日）+「选择」入口。
+ * 竖屏由主列表承载，横屏由右栏承载。
+ *
+ * 布局要点：标题改用 [Modifier.weight] 占据剩余宽度并允许两行，避免「2026年10月6日的账单」
+ * 这类长文案被右侧按钮挤成多段折行；右侧入口用固定宽度、不参与收缩。
+ * 多选提示仅在进入多选后显示——平时常驻是一行噪音，用户也不需要这句解释。
+ */
+@Composable
+private fun CalendarListHeader(
+    selectedDay: LocalDate?,
+    selectionMode: Boolean,
+    onToggleSelectMode: () -> Unit,
+) {
+    Column {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = selectedDay?.let {
+                    stringResource(R.string.calendar_bills_of_day, DateUtils.formatGroupDate(it))
+                } ?: stringResource(R.string.calendar_bills_month),
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onBackground,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f),
+            )
+            Text(
+                text = if (selectionMode) stringResource(R.string.home_exit_select)
+                else stringResource(R.string.calendar_select),
+                style = MaterialTheme.typography.labelLarge,
+                color = if (selectionMode) {
+                    SemanticTheme.colors.expense
+                } else {
+                    MaterialTheme.colorScheme.primary
+                },
+                maxLines = 1,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(50))
+                    .clickable { onToggleSelectMode() }
+                    .padding(horizontal = 10.dp, vertical = 4.dp),
+            )
+        }
+        if (selectionMode) {
+            Text(
+                text = stringResource(R.string.calendar_multi_hint),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.85f),
+                modifier = Modifier.padding(start = 2.dp, top = 4.dp),
+            )
+        }
+    }
+}
+
+/** 多选实时统计条：笔数 / 支出 / 收入 / 净额 + 全选/清空。 */
+@Composable
+private fun CalendarSelectionStat(
+    count: Int,
+    expense: Long,
+    income: Long,
+    net: Long,
+    allSelected: Boolean,
+    onToggleSelectAll: () -> Unit,
+) {
+    AppCard(modifier = Modifier.padding(top = 8.dp)) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 14.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column {
+                SelectionStat(
+                    stringResource(R.string.sel_count),
+                    stringResource(R.string.home_bills_n, count),
+                    MaterialTheme.colorScheme.onSurface,
+                )
+                Spacer(Modifier.height(4.dp))
+                SelectionStat(
+                    stringResource(R.string.sel_expense),
+                    "¥${MoneyFormat.fenToString(expense)}",
+                    SemanticTheme.colors.expense,
+                )
+            }
+            Spacer(Modifier.width(16.dp))
+            Column {
+                SelectionStat(
+                    stringResource(R.string.sel_income),
+                    "¥${MoneyFormat.fenToString(income)}",
+                    SemanticTheme.colors.income,
+                )
+                Spacer(Modifier.height(4.dp))
+                SelectionStat(
+                    stringResource(R.string.sel_net),
+                    "¥${MoneyFormat.fenToString(net)}",
+                    MaterialTheme.colorScheme.onSurface,
+                )
+            }
+            Spacer(Modifier.weight(1f))
+            Text(
+                text = if (allSelected) stringResource(R.string.home_clear_all)
+                else stringResource(R.string.home_select_all),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(50))
+                    .clickable { onToggleSelectAll() }
+                    .padding(horizontal = 8.dp, vertical = 6.dp),
+            )
+        }
+    }
+}
+
+/**
+ * 月历卡片：按周排布的日期网格，每格标注当日收支。竖屏与横屏左栏共用。
+ * onSelectDay 决定点击日期是「选中/取消选中」。
+ */
+@Composable
+private fun CalendarMonthCard(
+    yearMonth: YearMonth,
+    rows: Int,
+    leadingBlanks: Int,
+    dayTotals: Map<LocalDate, LongArray>,
+    selectedDay: LocalDate?,
+    today: LocalDate,
+    onSelectDay: (LocalDate) -> Unit,
+) {
+    // 表头单字文案（"周一" -> "一"），避免每帧 substring
+    val weekLabels = listOf(
+        java.time.DayOfWeek.MONDAY, java.time.DayOfWeek.TUESDAY,
+        java.time.DayOfWeek.WEDNESDAY, java.time.DayOfWeek.THURSDAY,
+        java.time.DayOfWeek.FRIDAY, java.time.DayOfWeek.SATURDAY,
+        java.time.DayOfWeek.SUNDAY,
+    ).map { DateUtils.dowSingle(it) }
+    AppCard {
+        Column(Modifier.padding(horizontal = 10.dp, vertical = 12.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                weekLabels.forEach { label ->
+                    Text(
+                        text = label,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+            }
+            Spacer(Modifier.height(6.dp))
+            repeat(rows) { row ->
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    repeat(7) { col ->
+                        val dayNum = row * 7 + col - leadingBlanks + 1
+                        if (dayNum in 1..yearMonth.lengthOfMonth()) {
+                            val date = yearMonth.atDay(dayNum)
+                            // 查预计算结果，不再逐格遍历账单
+                            val totals = dayTotals[date]
+                            DayCell(
+                                date = date,
+                                expenseFen = totals?.get(0) ?: 0L,
+                                incomeFen = totals?.get(1) ?: 0L,
+                                isToday = date == today,
+                                isSelected = date == selectedDay,
+                                onClick = { onSelectDay(date) },
+                                modifier = Modifier.weight(1f),
+                            )
+                        } else {
+                            Spacer(Modifier.weight(1f))
+                        }
+                    }
+                }
+            }
+            Spacer(Modifier.height(2.dp))
+            Text(
+                text = stringResource(R.string.calendar_tap_hint),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
+                modifier = Modifier.padding(start = 4.dp),
+            )
+        }
+    }
+}
+
+/**
+ * 账单列表区块（标题 + 多选入口 + 分日账单）。
+ * 竖屏时由主 LazyColumn 承载；横屏时独占右栏，自成一条可滚动列表。
+ */
+@Composable
+private fun CalendarBillList(
+    modifier: Modifier = Modifier,
+    selectedDay: LocalDate?,
+    selectionMode: Boolean,
+    onToggleSelectMode: () -> Unit,
+    selCount: Int,
+    selExpense: Long,
+    selIncome: Long,
+    selNet: Long,
+    allSelected: Boolean,
+    onToggleSelectAll: () -> Unit,
+    listEntries: List<ListEntry>,
+    useZh: Boolean,
+    selectedIds: Set<Long>,
+    onOpenDetail: (Long) -> Unit,
+    onToggleSelect: (Long) -> Unit,
+    onEnterSelection: (Long) -> Unit,
+    onPreviewImages: (List<String>) -> Unit,
+) {
+    LazyColumn(
+        modifier = modifier,
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(
+            top = 12.dp,
+            // 操作栏收敛为一行后，底部留白同步收窄，避免列表末尾出现大片空白
+            bottom = if (selectionMode) 72.dp else 16.dp,
+        ),
+    ) {
+        // 标题 + 多选入口
+        item(key = "list_title") {
+            CalendarListHeader(
+                selectedDay = selectedDay,
+                selectionMode = selectionMode,
+                onToggleSelectMode = onToggleSelectMode,
+            )
+        }
+
+        // 多选实时统计条
+        if (selectionMode) {
+            item(key = "sel_stat") {
+                CalendarSelectionStat(
+                    count = selCount,
+                    expense = selExpense,
+                    income = selIncome,
+                    net = selNet,
+                    allSelected = allSelected,
+                    onToggleSelectAll = onToggleSelectAll,
+                )
+            }
+        }
+
+        if (listEntries.isEmpty()) {
+            item(key = "empty") {
+                Spacer(Modifier.height(8.dp))
+                AppCard { EmptyState(stringResource(R.string.home_empty)) }
+            }
+        } else {
+            item(key = "bills_start") { Spacer(Modifier.height(8.dp)) }
+            items(
+                items = listEntries,
+                key = { entry ->
+                    when (entry) {
+                        is ListEntry.Header -> "h_${entry.day.toEpochDay()}"
+                        is ListEntry.Bill -> "b_${entry.item.tx.id}"
+                    }
+                },
+            ) { entry ->
+                val isFirst = entry === listEntries.first()
+                val isLast = entry === listEntries.last()
+                when (entry) {
+                    is ListEntry.Header -> DaySummaryHeader(
+                        day = entry.day,
+                        expenseFen = entry.expenseFen,
+                        incomeFen = entry.incomeFen,
+                        isFirst = isFirst,
+                        isLast = isLast,
+                    )
+
+                    is ListEntry.Bill -> CalendarBillRow(
+                        item = entry.item,
+                        useZh = useZh,
+                        selectionMode = selectionMode,
+                        selected = entry.item.tx.id in selectedIds,
+                        isFirst = isFirst,
+                        isLast = isLast,
+                        onOpenDetail = onOpenDetail,
+                        onToggleSelect = onToggleSelect,
+                        onEnterSelection = onEnterSelection,
+                        onPreviewImages = onPreviewImages,
+                    )
+                }
+            }
+        }
+    }
+}
+
 /** 日历列表行：账单 + 分类（供行渲染取图标/名称） */
 private data class CalendarBillItem(
     val tx: TransactionEntity,
@@ -772,6 +1116,7 @@ private fun Modifier.cardRowShape(isFirst: Boolean, isLast: Boolean): Modifier {
 @Composable
 private fun CalendarBillRow(
     item: CalendarBillItem,
+    useZh: Boolean,
     selectionMode: Boolean,
     selected: Boolean,
     isFirst: Boolean,
@@ -783,7 +1128,9 @@ private fun CalendarBillRow(
 ) {
     val category = item.category
     BillRow(
-        categoryName = category?.name ?: stringResource(R.string.uncategorized),
+        // 临时图标生效时标题同步为图标名
+        categoryName = item.tx.iconOverride?.let { IconLibrary.displayName(it, useZh) }
+            ?: category?.name ?: stringResource(R.string.uncategorized),
         categoryIcon = item.tx.iconOverride ?: category?.icon ?: "star",
         categoryColor = category?.color?.argb() ?: MaterialTheme.colorScheme.onSurfaceVariant,
         amountFen = item.tx.amount,
@@ -844,9 +1191,9 @@ private fun SelectionAction(
                 .background(
                     brush = Brush.horizontalGradient(
                         listOf(
-                            if (enabled) MaterialTheme.colorScheme.primary
+                            if (enabled) BrandGradientStart
                             else MaterialTheme.colorScheme.surfaceVariant,
-                            if (enabled) MaterialTheme.colorScheme.secondary
+                            if (enabled) BrandGradientEnd
                             else MaterialTheme.colorScheme.surfaceVariant,
                         )
                     )
@@ -857,7 +1204,7 @@ private fun SelectionAction(
             Text(
                 text = text,
                 style = MaterialTheme.typography.labelLarge,
-                color = if (enabled) MaterialTheme.colorScheme.onPrimary
+                color = if (enabled) Color.White
                 else MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
             )

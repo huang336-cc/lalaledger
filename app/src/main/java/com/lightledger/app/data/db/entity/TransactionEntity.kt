@@ -56,8 +56,22 @@ data class TransactionEntity(
     val note: String? = null,
     /** 小票图片本地绝对路径列表 */
     val images: List<String> = emptyList(),
-    /** v3：归属成员 id（谁消费）；null = 本人；删除成员后 Room 自动置空，账单保留 */
+    /**
+     * v3：归属成员 id（谁消费）；null = 本人；删除成员后 Room 自动置空，账单保留。
+     *
+     * v9 起**不再作为读取来源**，保留该列仅为继续享受 `ON DELETE SET NULL` 外键的
+     * 数据库级自动清理（删成员时 SQLite 会帮我们置空）。归属的读取一律走 [memberIds]。
+     */
     val memberId: Long? = null,
+    /**
+     * v9：归属成员 id 列表（多选，金额自动均摊）。
+     * - 空列表 = 本人（与旧的 memberId == null 语义一致）
+     * - 含公共成员 id = 全员参与均摊（「公共」现为全选快捷方式）
+     *
+     * 注意：JSON 列没有外键，删除成员后残留 id 由 MemberRepository 清理，
+     * 读取侧也会按当前成员列表过滤，双重兜底。
+     */
+    val memberIds: List<Long> = emptyList(),
     /** v4：付款成员 id（谁垫付）；null = 本人 */
     val payerMemberId: Long? = null,
     /** v6：心情 emoji（如 "😀"）；null = 未标记 */

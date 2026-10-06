@@ -89,12 +89,16 @@ import com.lightledger.app.R
 import com.lightledger.app.data.db.entity.CategoryEntity
 import com.lightledger.app.data.db.entity.MemberEntity
 import com.lightledger.app.domain.model.IconLibrary
+import com.lightledger.app.domain.model.SELF_ID
 import com.lightledger.app.domain.model.TransactionType
 import com.lightledger.app.ui.components.CategoryIcon
 import com.lightledger.app.ui.components.MemberChip
+import com.lightledger.app.ui.theme.BrandGradientEnd
+import com.lightledger.app.ui.theme.BrandGradientStart
 import com.lightledger.app.ui.theme.ChartPalette
 import com.lightledger.app.ui.theme.SemanticTheme
 import com.lightledger.app.ui.theme.argb
+import com.lightledger.app.ui.theme.onTint
 
 import com.lightledger.app.util.MoneyFormat
 
@@ -598,9 +602,10 @@ fun CategorySection(
                         modifier = Modifier.widthIn(max = 120.dp),
                     )
                     Spacer(Modifier.width(2.dp))
+                    // 28dp 触摸热区（原 22dp 太小，实际点不中 → 表现为"取消不了/换不了图标"）
                     Box(
                         modifier = Modifier
-                            .size(22.dp)
+                            .size(28.dp)
                             .clip(CircleShape)
                             .clickable(onClick = onClearOneOff),
                         contentAlignment = Alignment.Center,
@@ -631,16 +636,15 @@ fun CategorySection(
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
             ) {
                 rowItems.forEach { item ->
-                    // v7：仅本次使用的图标只作用于「当前选中的分类格子」——
-                    // 格子图标换成临时图标，但格子下方文字仍显示分类原名。
-                    val effectiveIcon = if (oneOffIcon != null && item.id == selectedId) {
-                        oneOffIcon
-                    } else {
-                        item.icon
-                    }
+                    // 仅本次使用的图标只作用于「当前选中的分类格子」：
+                    // 图标、下方标题一起同步为临时图标，且不再套用原分类的选中高亮
+                    // （否则会出现"加油图标 + 餐饮绿框绿字"这种图标与原分类高亮打架的观感）。
+                    val overrideActive = oneOffIcon != null && item.id == selectedId
+                    val effectiveIcon = if (overrideActive) oneOffIcon!! else item.icon
                     CategoryCell(
                         category = item,
                         iconOverrideKey = effectiveIcon,
+                        overrideName = if (overrideActive && oneOffName.isNotEmpty()) oneOffName else null,
                         selected = item.id == selectedId,
                         onClick = { onSelect(item.id) },
                         onLongClick = { onLongPress(item) },
@@ -992,10 +996,11 @@ fun OwnerPayerRow(
     payerTitle: String,
     selfLabel: String,
     members: List<MemberEntity>,
-    selectedOwnerId: Long?,
+    selectedOwnerIds: Set<Long>,
     selectedPayerId: Long?,
     publicLabel: String?,
     addLabel: String,
+    /** 多选：点击 toggle 该成员；传 null 表示本人 */
     onSelectOwner: (Long?) -> Unit,
     onSelectPayer: (Long?) -> Unit,
     onAddMember: () -> Unit,
@@ -1029,12 +1034,12 @@ fun OwnerPayerRow(
                 AddMemberChip(label = addLabel, onClick = onAddMember)
             }
             Spacer(Modifier.height(6.dp))
-            MemberChipsRow(
+            OwnerChipsRow(
                 selfLabel = selfLabel,
                 members = members,
-                selectedId = selectedOwnerId,
+                selectedIds = selectedOwnerIds,
                 publicLabel = publicLabel,
-                onSelect = onSelectOwner,
+                onToggle = onSelectOwner,
             )
         }
         // 右卡片：谁垫付
@@ -1130,6 +1135,69 @@ private fun MemberChipsRow(
     }
 }
 
+/**
+ * 「这笔归谁」多选成员行（v9）。
+ *
+ * 与 [MemberChipsRow] 的差异：
+ *  - selectedIds 是集合，命中逻辑为 `member.id in selectedIds`
+ *  - 「本人」用 [SELF_ID] 显式表示，可与真实成员同时选中（如「本人 + 张三」两人均摊）
+ *  - 「公共」= 全员 AA，作为全选快捷方式
+ *  - 多选时在卡片下方追加一行提示，说明金额将按人数均摊
+ *
+ * 垫付卡片仍走 [MemberChipsRow]（单选），互不影响。
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun OwnerChipsRow(
+    selfLabel: String,
+    members: List<MemberEntity>,
+    selectedIds: Set<Long>,
+    publicLabel: String?,
+    onToggle: (Long?) -> Unit,
+) {
+    val publicId = members.firstOrNull { it.isPublic }?.id
+    val selfPicked = SELF_ID in selectedIds || selectedIds.isEmpty()
+    // 参与均摊人数：公共 = 本人 + 全部真实成员；否则 = 勾中的真实成员数 + 本人是否勾选。
+    // 兜底至少 1 人，避免出现「0 人」的无意义提示。
+    val sharedCount = when {
+        publicId != null && publicId in selectedIds -> members.count { !it.isPublic } + 1
+        else -> selectedIds.count { it != SELF_ID } + (if (selfPicked) 1 else 0)
+    }.coerceAtLeast(1)
+    FlowRow(
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        MemberChip(
+            name = selfLabel,
+            color = MaterialTheme.colorScheme.primary,
+            selected = selfPicked,
+            onClick = { onToggle(null) },
+            compact = true,
+        )
+        members.forEach { member ->
+            val isPublic = member.isPublic && publicLabel != null
+            if (!member.isPublic || publicLabel != null) {
+                MemberChip(
+                    name = if (isPublic) publicLabel!! else member.name,
+                    color = Color(member.color),
+                    selected = member.id in selectedIds,
+                    onClick = { onToggle(member.id) },
+                    compact = true,
+                )
+            }
+        }
+    }
+    // 仅在真正分摊（2 人及以上）时提示，避免单人时出现无意义的「1 人均摊」
+    if (sharedCount >= 2) {
+        Spacer(Modifier.height(4.dp))
+        Text(
+            text = stringResource(R.string.record_owner_split, sharedCount),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
 @Composable
 private fun CategoryCell(
     category: CategoryEntity,
@@ -1139,24 +1207,33 @@ private fun CategoryCell(
     modifier: Modifier = Modifier,
     /**
      * 实际渲染用的图标 key。默认等于分类自身图标；
-     * 「仅本次使用」生效且本格是选中分类时，由调用方传入临时图标 key，
-     * 此时只换图标、保留下方分类原名不变。
+     * 「仅本次使用」生效且本格是选中分类时，由调用方传入临时图标 key。
      */
     iconOverrideKey: String = category.icon,
+    /**
+     * 非空 = 本格正在使用「仅本次」临时图标，值为临时图标的显示名。
+     * 此时：
+     *  - 下方标题同步改为该临时图标名（不再显示原分类名，避免"加油图标 + 餐饮标题"矛盾）
+     *  - 不再套用原分类的选中高亮（原分类色描边 / 浅色底 / 原色字），
+     *    改用主题主色表达"这是临时覆盖"，选中态由顶部「仅本次」胶囊体现
+     */
+    overrideName: String? = null,
 ) {
+    val isOnce = overrideName != null
+    val highlightSelected = selected && !isOnce
     val borderColor by animateColorAsState(
-        if (selected) category.color.argb() else Color.Transparent,
+        if (highlightSelected) category.color.argb() else Color.Transparent,
         label = "catBorder",
     )
     Column(
         modifier = modifier
             .clip(MaterialTheme.shapes.small)
             .background(
-                if (selected) category.color.argb().copy(alpha = 0.10f)
+                if (highlightSelected) category.color.argb().copy(alpha = 0.10f)
                 else Color.Transparent
             )
             .border(
-                width = if (selected) 1.5.dp else 0.dp,
+                width = if (highlightSelected) 1.5.dp else 0.dp,
                 color = borderColor,
                 shape = MaterialTheme.shapes.small,
             )
@@ -1164,14 +1241,45 @@ private fun CategoryCell(
             .padding(vertical = 4.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        CategoryIcon(iconKey = iconOverrideKey, color = category.color.argb(), size = 34)
+        Box {
+            CategoryIcon(
+                iconKey = iconOverrideKey,
+                // 临时图标用主题主色圆底，不再沿用原分类色（不"高亮"原分类）
+                color = if (isOnce) MaterialTheme.colorScheme.primary else category.color.argb(),
+                size = 34,
+            )
+            if (isOnce) {
+                // 「仅本次」角标：明确标示该图标为临时覆盖
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .size(16.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.primary),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        text = stringResource(R.string.icon_once_badge),
+                        fontSize = 9.sp,
+                        lineHeight = 9.sp,
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        maxLines = 1,
+                    )
+                }
+            }
+        }
         Spacer(Modifier.height(4.dp))
         Text(
-            // 注意：这里始终显示分类原名，不用临时图标的名字——
-            // 「仅本次使用」只改图标外观，不改这个格子代表的分类
-            text = category.name,
+            // 临时图标生效时标题同步为图标名，其余情况显示分类原名
+            text = overrideName ?: category.name,
             style = MaterialTheme.typography.labelSmall,
-            color = if (selected) category.color.argb() else MaterialTheme.colorScheme.onSurface,
+            color = when {
+                isOnce -> MaterialTheme.colorScheme.primary
+                // 选中态底是分类色的 10% 淡化色，文字若也用原色，用户选到浅色分类时
+                // 会糊成一片看不清；交给 onTint() 按明度挑深/浅前景
+                selected -> category.color.argb().onTint()
+                else -> MaterialTheme.colorScheme.onSurface
+            },
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
@@ -1190,17 +1298,24 @@ fun AmountKeyboard(
     onClear: () -> Unit,
     onDone: () -> Unit,
     modifier: Modifier = Modifier,
+    // 横屏：键盘作为右侧常驻面板参与布局（撑满高度、圆角改在左侧），
+    // 竖屏仍是底部浮层（固定 232dp 高、圆角在上方）
+    asSidePanel: Boolean = false,
 ) {
     Surface(
         modifier = modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.surface,
-        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+        shape = if (asSidePanel) {
+            RoundedCornerShape(topStart = 24.dp, bottomStart = 24.dp)
+        } else {
+            RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+        },
         shadowElevation = 8.dp,
     ) {
         Row(
             modifier = Modifier
                 .padding(12.dp)
-                .height(232.dp),
+                .then(if (asSidePanel) Modifier.fillMaxHeight() else Modifier.height(232.dp)),
         ) {
             // 数字区 3 列 x 4 行
             Column(Modifier.weight(3f)) {
@@ -1352,8 +1467,8 @@ fun SaveButton(
                     brush = Brush.horizontalGradient(
                         if (enabled) {
                             listOf(
-                                MaterialTheme.colorScheme.primary,
-                                MaterialTheme.colorScheme.secondary,
+                                BrandGradientStart,
+                                BrandGradientEnd,
                             )
                         } else {
                             listOf(
@@ -1368,7 +1483,7 @@ fun SaveButton(
             Text(
                 text = stringResource(if (isEdit) R.string.record_save_edit else R.string.record_save),
                 style = MaterialTheme.typography.titleLarge,
-                color = if (enabled) MaterialTheme.colorScheme.onPrimary
+                color = if (enabled) Color.White
                 else MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }

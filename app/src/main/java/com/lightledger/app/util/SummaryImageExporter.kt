@@ -38,8 +38,11 @@ object SummaryImageExporter {
         val isExpense: Boolean,
         val timeText: String,
         val thumbnailPath: String?,
-        /** 旅行账本成员归属；null = 本人（不显示胶囊） */
-        val memberName: String? = null,
+        /**
+         * 旅行账本成员归属（v2.3.9 起可能多人）；空列表 = 本人（不显示胶囊）。
+         * 多人时会在时间右侧并排画多颗胶囊，超出可用宽度自动省略。
+         */
+        val memberNames: List<String> = emptyList(),
         val memberColor: Int = 0xFF5BB3A2.toInt(),
         /** 垫付成员；与归属同名或为 null 时不重复显示 */
         val payerName: String? = null,
@@ -53,8 +56,11 @@ object SummaryImageExporter {
         val categoryColor: Int,
         val amountText: String,
         val isExpense: Boolean,
+        /** 归属成员展示名（多人已用「、」连接；null = 本人） */
         val memberName: String?,
         val memberColor: Int,
+        /** 归属人数，>1 时在归属值后追加人均摊提示 */
+        val memberCount: Int = 1,
         val payerName: String? = null,
         val payerColor: Int = 0xFF5BB3A2.toInt(),
         val timeText: String,
@@ -283,17 +289,32 @@ object SummaryImageExporter {
         paint.color = p.sub
         paint.textSize = 32f
         canvas.drawText(row.timeText, textLeft, top + 112f, paint)
-        // 成员胶囊（时间右侧）；垫付人与归属不同时并排再画一颗
-        var chipLeft = -1f
-        row.memberName?.takeIf { it.isNotBlank() }?.let { name ->
-            val timeW = paint.measureText(row.timeText)
-            chipLeft = textLeft + timeW + 26f
-            drawMemberChip(canvas, paint, p, name, row.memberColor, chipLeft, top + 112f)
+        // 成员胶囊（时间右侧）；多人归属并排画多颗，垫付人与归属不同名时再补一颗。
+        // 右侧需给金额/缩略图留位，超出可用宽度就停止绘制，避免压到金额文字。
+        val chipNames = row.memberNames.filter { it.isNotBlank() }
+        val chipLimit = if (hasThumb) amountRight - thumbSize - 210f else amountRight - 210f
+        var cursor = textLeft + paint.measureText(row.timeText) + 26f
+        var drewOwner = false
+        chipNames.forEachIndexed { index, name ->
+            val w = chipWidth(paint, name)
+            if (cursor + w > chipLimit) return@forEachIndexed
+            drawMemberChip(canvas, paint, p, name, row.memberColor, cursor, top + 112f)
+            cursor += w + 10f
+            drewOwner = true
+            // 归属最多画三颗，避免长名挤掉金额；多余用计数胶囊概括
+            if (index == 2 && chipNames.size > 3) {
+                val more = "+${chipNames.size - 3}"
+                val mw = chipWidth(paint, more)
+                if (cursor + mw <= chipLimit) drawMemberChip(canvas, paint, p, more, row.memberColor, cursor, top + 112f)
+                cursor += mw + 10f
+                return@forEachIndexed
+            }
         }
-        row.payerName?.takeIf { it.isNotBlank() && it != row.memberName }?.let { name ->
-            val base = if (chipLeft >= 0f) chipLeft + chipWidth(paint, row.memberName!!) + 10f
-            else textLeft
-            drawMemberChip(canvas, paint, p, name, row.payerColor, base, top + 112f)
+        row.payerName?.takeIf { it.isNotBlank() && it !in chipNames }?.let { name ->
+            val base = if (drewOwner) cursor else textLeft
+            if (base + chipWidth(paint, name) <= chipLimit) {
+                drawMemberChip(canvas, paint, p, name, row.payerColor, base, top + 112f)
+            }
         }
 
         // 缩略图（圆角）
@@ -384,7 +405,11 @@ object SummaryImageExporter {
         // 信息行
         val infoRows = mutableListOf<Triple<String, String, Int?>>()
         infoRows.add(Triple("分类", bill.categoryName, bill.categoryColor))
-        bill.memberName?.takeIf { it.isNotBlank() }?.let { infoRows.add(Triple("成员", it, bill.memberColor)) }
+        bill.memberName?.takeIf { it.isNotBlank() }?.let {
+            // 多人归属时补一句人均摊说明，避免只看到一串名字不知道金额怎么算
+            val label = if (bill.memberCount > 1) "$it（${bill.memberCount} 人均摊）" else it
+            infoRows.add(Triple("成员", label, bill.memberColor))
+        }
         bill.payerName?.takeIf { it.isNotBlank() && it != bill.memberName }
             ?.let { infoRows.add(Triple("垫付", it, bill.payerColor)) }
         infoRows.add(Triple("时间", bill.timeText, null))

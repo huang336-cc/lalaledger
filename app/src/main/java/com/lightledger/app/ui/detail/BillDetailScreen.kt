@@ -1,5 +1,6 @@
 package com.lightledger.app.ui.detail
 
+import android.content.res.Configuration
 import android.Manifest
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
@@ -54,6 +55,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -81,6 +83,8 @@ import com.lightledger.app.util.DateUtils
 import com.lightledger.app.util.MoneyFormat
 import com.lightledger.app.util.SummaryImageExporter
 import kotlinx.coroutines.launch
+import com.lightledger.app.domain.model.IconLibrary
+import com.lightledger.app.util.LocaleHelper
 
 /**
  * 账单详情：分层卡片展示金额/成员/分类/地点/备注/时间/图片；
@@ -93,6 +97,9 @@ fun BillDetailScreen(
     onBack: () -> Unit,
     onEdit: () -> Unit = {},
 ) {
+    // 临时图标名的显示语言（跟随界面语言）
+    val useZh = LocaleHelper.normalize(appViewModel.language.value) == LocaleHelper.ZH
+
     val container = (LocalContext.current.applicationContext as LightLedgerApp).container
     val viewModel: BillDetailViewModel = viewModel(
         factory = viewModelFactory {
@@ -122,6 +129,11 @@ fun BillDetailScreen(
     }
 
     val tx = state.tx
+
+    // 横屏 / 平板：内容限制宽度（竖屏不受影响）
+    val isWide = with(LocalConfiguration.current) {
+        orientation == Configuration.ORIENTATION_LANDSCAPE || screenWidthDp >= 600
+    }
 
     Column(
         modifier = Modifier
@@ -154,13 +166,23 @@ fun BillDetailScreen(
                             context,
                             SummaryImageExporter.SingleBill(
                                 bookName = container.bookRepository.getById(t.bookId)?.name ?: appName,
-                                categoryName = state.category?.name ?: uncategorizedLabel,
+                                // 临时图标生效时导出图标题同步为图标名
+                                categoryName = t.iconOverride?.let { IconLibrary.displayName(it, useZh) }
+                                    ?: state.category?.name ?: uncategorizedLabel,
                                 categoryColor = state.category?.color ?: 0xFF9A968D.toInt(),
                                 amountText = (if (TransactionType.from(t.type) == TransactionType.EXPENSE) "-" else "+") +
                                     MoneyFormat.fenToPlain(t.amount),
                                 isExpense = TransactionType.from(t.type) == TransactionType.EXPENSE,
-                                memberName = state.member?.let { if (it.isPublic) publicLabel else it.name } ?: selfLabel,
-                                memberColor = state.member?.color ?: 0xFF6C7A9C.toInt(),
+                                // 导出图同详情页：本人在前 + 成员，多人时标注均摊人数
+                                memberName = run {
+                                    val names = buildList {
+                                        if (state.includeSelf) add(selfLabel)
+                                        addAll(state.members.map { if (it.isPublic) publicLabel else it.name })
+                                    }
+                                    names.ifEmpty { listOf(selfLabel) }.joinToString("、")
+                                },
+                                memberColor = state.members.firstOrNull()?.color ?: 0xFF6C7A9C.toInt(),
+                                memberCount = (state.members.size + if (state.includeSelf) 1 else 0).coerceAtLeast(1),
                                 payerName = state.payer?.let { if (it.isPublic) publicLabel else it.name } ?: selfLabel,
                                 payerColor = state.payer?.color ?: 0xFF6C7A9C.toInt(),
                                 timeText = DateUtils.formatFullTime(t.createdAt),
@@ -212,7 +234,9 @@ fun BillDetailScreen(
             modifier = Modifier
                 .weight(1f)
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp),
+                .padding(horizontal = 16.dp)
+                // 横屏 / 平板：内容限制在易读宽度内，避免被拉满整屏（竖屏不受影响）
+                .fillMaxWidth(if (isWide) 0.66f else 1f),
         ) {
             Spacer(Modifier.height(6.dp))
 
@@ -234,6 +258,15 @@ fun BillDetailScreen(
                         )
                         Spacer(Modifier.height(10.dp))
                         Text(it.name, style = MaterialTheme.typography.titleMedium)
+                        if (tx.iconOverride != null) {
+                            // 「仅本次」图标提示：说明大图标是这一笔的临时图标，分类本身没变
+                            Spacer(Modifier.height(4.dp))
+                            Text(
+                                stringResource(R.string.detail_icon_once_hint),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
                         Spacer(Modifier.height(6.dp))
                     }
                     Text(
@@ -269,12 +302,28 @@ fun BillDetailScreen(
                     val selfLabel = stringResource(R.string.record_self)
                     val selfColor = MaterialTheme.colorScheme.primary
                     val fallback = Color(0xFF6C7A9C)
-                    if (state.member != null || state.payer != null) {
-                        val ownerName = state.member?.let { if (it.isPublic) publicLabel else it.name } ?: selfLabel
-                        val ownerColor = state.member?.color?.argb() ?: selfColor
+                    if (state.members.isNotEmpty() || state.includeSelf || state.payer != null) {
+                        // 本人在归属里时放在最前，与记账页「本人 + 成员」的勾选顺序一致
+                        val ownerNames = buildList {
+                            if (state.includeSelf) add(selfLabel)
+                            addAll(state.members.map { if (it.isPublic) publicLabel else it.name })
+                        }
+                        val ownerName = ownerNames.joinToString("、")
+                        val ownerCount = ownerNames.size
+                        // 多人归属颜色取第一位真实成员；胶囊底色是淡色，视觉上以成员色为准
+                        val ownerColor = state.members.firstOrNull()?.color?.argb() ?: selfColor
                         val payerName = state.payer?.let { if (it.isPublic) publicLabel else it.name } ?: selfLabel
                         val payerColor = state.payer?.color?.argb() ?: selfColor
-                        MemberDetailRow(label = stringResource(R.string.detail_owner), name = ownerName, color = ownerColor)
+                        MemberDetailRow(
+                            label = stringResource(R.string.detail_owner),
+                            name = ownerName,
+                            color = ownerColor,
+                            // 多人时标注人均摊，和记账页提示保持一致
+                            suffix = if (ownerCount > 1) {
+                                stringResource(R.string.record_owner_split, ownerCount)
+                            } else null,
+                        )
+                        // 垫付人与归属完全重合（含单人同名）时才省略，避免重复一行
                         if (payerName != ownerName) {
                             MemberDetailRow(label = stringResource(R.string.detail_payer), name = payerName, color = payerColor)
                         }
@@ -399,7 +448,7 @@ fun BillDetailScreen(
 
 /** 详情页成员行：图标 + 标签（归属/垫付）+ 成员胶囊 */
 @Composable
-private fun MemberDetailRow(label: String, name: String, color: Color) {
+private fun MemberDetailRow(label: String, name: String, color: Color, suffix: String? = null) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -420,7 +469,18 @@ private fun MemberDetailRow(label: String, name: String, color: Color) {
             modifier = Modifier.width(48.dp),
         )
         Spacer(Modifier.width(8.dp))
-        MemberChip(name = name, color = color)
+        // 归属多选后名字可能很长，用 weight 占满剩余宽度并省略号收尾
+        MemberChip(name = name, color = color, modifier = Modifier.weight(1f, fill = false))
+        // 多人归属时在胶囊右侧补「N 人均摊」，说明金额是怎么摊的
+        suffix?.let {
+            Spacer(Modifier.width(8.dp))
+            Text(
+                it,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+            )
+        }
     }
 }
 

@@ -45,7 +45,7 @@
     <string name="recent_range_empty">No bills in this range</string>
     <!-- Calendar page multi-select -->
     <string name="calendar_select">Select</string>
-    <string name="calendar_multi_hint">Pick one or more bills to export them as a single summary image</string>
+    <string name="calendar_multi_hint">Select bills to reassign their owner, export a summary image or delete them; press back to exit</string>
     <string name="guide_calendar_multi_title">Multi-select works here too</string>
     <string name="guide_calendar_multi_body">Tap "Select" or long-press any bill to enter multi-select: once checked, you can export a summary image (with an option to hide amounts) or delete in bulk. Check only one member\'s bills to total and settle up for them alone.</string>
     <string name="home_empty">No bills yet — tap "Add a bill" above to start</string>
@@ -58,6 +58,7 @@
     <string name="action_export_image">Export summary</string>
     <string name="action_exporting">Exporting…</string>
     <string name="action_batch_delete">Delete</string>
+    <string name="action_batch_owner">Owner</string>
     <string name="home_delete_bills_title">Delete %1$d selected bills?</string>
     <string name="home_delete_bills_msg">This cannot be undone. Linked receipt photos will be removed too.</string>
     <string name="home_deleted_n">%1$d bills deleted</string>
@@ -91,6 +92,7 @@
     <string name="record_owner_title">Who consumed</string>
     <string name="record_payer_title">Who paid</string>
     <string name="record_owner_hint">Consumer, default: me</string>
+    <string name="record_owner_split">Split evenly by %1$d</string>
     <string name="record_payer_hint">Who paid first, default: me</string>
     <string name="record_self">Me</string>
     <string name="record_add_member">+ Member</string>
@@ -113,6 +115,8 @@
     <string name="icon_search_clear">Clear search</string>
     <string name="icon_once_chip">Once · %1$s</string>
     <string name="icon_once_clear">Clear temporary icon</string>
+    <string name="icon_once_badge">1x</string>
+    <string name="detail_icon_once_hint">One-off icon (category unchanged) · change or clear in edit</string>
     <string name="record_location">Location</string>
     <string name="record_current_location">Current place</string>
     <string name="record_add_location">Add place</string>
@@ -184,6 +188,7 @@
     <string name="stats_by_note">Subtotals by note</string>
     <string name="stats_no_note">(no note)</string>
     <string name="stats_sheet_bills">Records</string>
+    <string name="stats_sheet_bill_pics">📎 %1$d</string>
 
     <!-- Detail -->
     <string name="detail_time">Time</string>
@@ -226,6 +231,22 @@
     <string name="members_delete_all_none">No members to delete</string>
     <string name="members_delete_all_hint">Delete every member in this book</string>
     <string name="members_add">Add</string>
+    <string name="batch_owner_title">Batch reassign owner</string>
+    <string name="batch_owner_range">Date range</string>
+    <string name="batch_owner_range_all">All bills</string>
+    <string name="batch_owner_range_7d">Last 7 days</string>
+    <string name="batch_owner_range_30d">Last 30 days</string>
+    <string name="batch_owner_new_label">Reassign to</string>
+    <string name="batch_owner_self">Me only</string>
+    <string name="batch_owner_public">Public (split by everyone)</string>
+    <string name="batch_owner_preview">%1$d bill(s) will be affected</string>
+    <string name="batch_owner_preview_none">No bills in this range</string>
+    <string name="batch_owner_split">Split between %1$d</string>
+    <string name="batch_owner_apply">Apply</string>
+    <string name="batch_owner_confirm_title">Reassign these bills?</string>
+    <string name="batch_owner_confirm_msg">Owner of %1$d bill(s) will be set to "%2$s". Only the owner changes - amounts and categories stay untouched. You can revert the same way, but no version history is kept.</string>
+    <string name="batch_owner_done">Reassigned %1$d bill(s)</string>
+    <string name="batch_owner_done_none">Nothing to reassign</string>
     <string name="members_empty">No members yet\nTap "Add" above to invite your travel mates</string>
     <string name="members_item_hint">Bills can belong to this member · kept after removal</string>
     <string name="members_edit">Edit member</string>
@@ -337,7 +358,60 @@
     <!-- v1.8.1 fixes -->
     <string name="chlog_181_1">Fixed the big backspace key: tap deletes one digit, long-press clears all (a single tap used to wipe the whole amount)</string>
     <string name="chlog_181_2">Bill subtitle now starts with the time: long notes get truncated first, so the time always stays visible</string>
+    <!-- v2.3.7 portrait home recent-bills header spacing -->
+    <!-- v2.4.0 multi-select exit + back key fix -->
+    <string name="chlog_240_1">Fixed the calendar\u0027s multi-select jumping straight back to the home tab when you pressed the system back key; back now simply leaves selection mode and keeps you on the calendar</string>
+    <string name="chlog_240_2">Removed the \'Cancel\' button from the multi-select action bar: exit selection with the system back key or the \'Exit selection\' action in the title row, leaving a leaner bar</string>
+    <string name="chlog_240_3">The multi-select action bar is now a single row, and the list\u0027s bottom padding was tightened to match, so more bills fit on screen</string>
+    <!-- v2.4.1 category ranking drill-down -->
+    <string name="chlog_241_1">The category ranking on the stats page is now tappable: tap any row to see its bills, with subtotals by note plus every single expense in that category; tap a bill to open its detail</string>
+    <string name="chlog_241_2">The category detail sheet now shows the selected time range along with the category\u0027s bill count and share, so the scope stays clear when you open it from the ranking</string>
+    <string name="chlog_241_3">Each ranking row gained a chevron on the right to signal that it opens a detail view; tapping a pie slice still works exactly as before</string>
+    <!-- v2.4.2 richer bill rows in the category sheet -->
+    <string name="chlog_242_1">Bill rows in the stats sheet are now more specific: in a trip book each row shows who the bill belongs to, and multiple owners are listed as \'John, Mary\'</string>
+    <string name="chlog_242_2">Each bill row also shows its mood emoji and receipt image count (\ud83d\udcce n), so bills with a saved receipt stand out at a glance</string>
+    <string name="chlog_242_3">Regular books no longer show an owner chip (without members it would just say \'Me\', which is noise); tapping a bill still opens its detail</string>
+    <!-- v2.3.11 trip default owner + batch reassign -->
+    <string name="chlog_2311_1">New bills in a trip book now default to "Public (split by everyone)" instead of "Me", so you no longer tick every member by hand; regular books still default to "Me"</string>
+    <string name="chlog_2311_2">Calendar multi-select gains an "Owner" action: reassign every selected bill to Public or any set of members at once, no more editing them one by one</string>
+    <string name="chlog_2311_3">Cleaned up the "This month" title row: long date labels no longer wrap awkwardly against the button on the right, and the multi-select hint only appears once you are in selection mode</string>
+    <!-- v2.3.10 self + members can be picked together -->
+    <string name="chlog_2310_1">"Who is this for" now lets you pick yourself together with members: choose "Me + John" and the two of you split it evenly — matching the real case where you bought it and you both use it</string>
+    <string name="chlog_2310_2">"Me" is now a real, toggleable chip so its state is visible at a glance; clearing every chip falls back to "Me only", so you can never end up with nobody selected</string>
+    <string name="chlog_2310_3">Bill details, share images and CSV export all show the full "Me + members" ownership, and a re-imported CSV restores it exactly</string>
+    <!-- v2.3.9 multi-member ownership in trip books -->
+    <string name="chlog_239_1">"Who is this for" in trip books now accepts multiple members: pick as many as you like, the amount splits evenly with no cent lost</string>
+    <string name="chlog_239_2">"Public" is now a select-all shortcut: tap once to include everyone (plus yourself), giving exactly the same split as the old group-wide AA</string>
+    <string name="chlog_239_3">Bill details, share images and CSV export all show multi-member ownership; exports round-trip cleanly with the owner column joined by "、"</string>
+    <string name="chlog_239_4">Deleting a member keeps the bills and drops that member from their ownership, so AA settlement never shows ghost entries pointing at a deleted member</string>
+    <!-- v2.3.8 dark/light text legibility -->
+    <string name="chlog_238_1">Fixed invisible page titles and dates in landscape dark mode: the landscape shell now supplies its content text color, so the calendar heading, month and day headers show up again</string>
+    <string name="chlog_238_2">Darkened secondary text in light mode (hints, timestamps, captions), lifting legibility app-wide back above the accessibility threshold</string>
+    <string name="chlog_238_3">Gradient primary buttons (add bill / save / export) now use deeper brand gradient stops, so their white labels are much easier to read</string>
+    <string name="chlog_238_4">Category, member and book chips now pick a dark or light label automatically based on luminance, so light custom colors stay readable</string>
+    <string name="chlog_237_1">The "Recent bills" header and its range filter are no longer cramped on the portrait home screen: extra spacing is added both below the stats row and below the header</string>
+    <string name="chlog_237_2">The range chip ("Today" etc.) now keeps a safe gap from the right screen edge instead of hugging it</string>
     <!-- v2.2.1 add-bill icon tint fix -->
+    <string name="chlog_236_1">Fixed the missing "Recent bills" title and range filter on the portrait home screen: the header bar is restored, so the stats row and the empty card no longer crowd together</string>
+    <string name="chlog_236_2">Restored the 20dp gap between the stats row and the card below, so their rounded corners are no longer clipped by the neighbour</string>
+    <string name="chlog_236_3">The landscape right column now reuses the same recent-bills header, keeping portrait and landscape consistent</string>
+    <string name="chlog_235_1">With a one-off icon active, the category title in Home, Calendar, Search and bill detail now uses the icon name too, so lists and buttons stay consistent</string>
+    <string name="chlog_235_2">Fixed overlapping layout on the portrait home screen: the overview and the recent-bill list no longer cover each other</string>
+    <string name="chlog_235_3">Calendar now splits into calendar + bill list columns in landscape, each with its own scrolling</string>
+    <string name="chlog_235_4">Stats splits into filters/summary and charts/ranking columns in landscape; Search, Me, Books and Members cap their content width and center it instead of stretching full width</string>
+    <string name="chlog_234_1">Landscape rework: the navigation rail moves aside for the camera cutout, with tighter icon and label spacing</string>
+    <string name="chlog_234_2">Fixed the washed-out background in dark landscape mode: every screen now paints the theme background</string>
+    <string name="chlog_234_3">Fixed unreadable status-bar time and battery in landscape: system bar icons now follow the resolved theme</string>
+    <string name="chlog_234_4">Home splits into overview and bill list columns in landscape; the record page into form and keypad columns</string>
+    <string name="chlog_233_1">Landscape layout: the bottom bar moves to a side rail, giving all that vertical space back to content</string>
+    <string name="chlog_233_2">In landscape, the record page splits into form + keypad columns, so the keypad no longer covers category and note fields</string>
+    <string name="chlog_233_3">The custom-range calendar in stats now sizes to the screen, so it no longer overflows in landscape</string>
+    <string name="chlog_233_4">The "Import CSV" setting no longer shows the current book name (the target is already stated in the preview dialog)</string>
+    <string name="chlog_232_1">When a one-off icon is active, the category cell no longer shows the original category\'s highlight; icon and label switch to the theme accent</string>
+    <string name="chlog_232_2">The cell label now matches the one-off icon name, so icon and label are always consistent</string>
+    <string name="chlog_231_1">Fixed the one-off icon sticking to other categories after switching income/expense or when categories change</string>
+    <string name="chlog_231_2">Cells using a one-off icon now show a badge, and bill details label it as a one-off icon</string>
+    <string name="chlog_231_3">Enlarged the × touch area on the one-off chip, so clearing or replacing the temporary icon is easier to tap</string>
     <string name="chlog_230_1">Bill lists now load on demand: the home and calendar pages no longer render every bill up front, so switching pages and scrolling feel noticeably smoother</string>
     <string name="chlog_230_2">Optimized date and amount formatting and added a composite index for bill queries, so long lists open faster</string>
     <string name="chlog_230_3">Fixed the calendar recomputing each day\'s totals on every redraw, making month switching smoother</string>

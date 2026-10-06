@@ -10,7 +10,9 @@
 
 `Android 10+` · `Kotlin 2.0` · `Jetpack Compose` · `Material 3` · `MIT License`
 
-当前版本 **v2.3.0** · 中文 | [English](README_EN.md)
+当前版本 **v2.4.2** · 中文 | [English](README_EN.md)
+
+> ✅ **已经过本人旅游实测，账本功能完美**
 
 </div>
 

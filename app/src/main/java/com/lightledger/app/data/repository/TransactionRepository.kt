@@ -54,6 +54,13 @@ class TransactionRepository(private val dao: TransactionDao) {
         note: String?,
         images: List<String>,
         memberId: Long? = null,
+        /**
+         * v9：归属成员 id 列表（多选均摊）；空 = 本人，含公共 id = 全员。
+         *
+         * [memberId] 仍会同步写入，仅用于维持 `ON DELETE SET NULL` 外键的
+         * 自动清理能力；归属读取一律走 memberIds。
+         */
+        memberIds: List<Long> = emptyList(),
         payerMemberId: Long? = null,
         mood: String? = null,
         createdAt: Long = System.currentTimeMillis(),
@@ -69,6 +76,7 @@ class TransactionRepository(private val dao: TransactionDao) {
             note = note?.takeIf { it.isNotBlank() },
             images = images,
             memberId = memberId,
+            memberIds = memberIds,
             payerMemberId = payerMemberId,
             mood = mood?.takeIf { it.isNotBlank() },
             createdAt = createdAt,
@@ -80,6 +88,39 @@ class TransactionRepository(private val dao: TransactionDao) {
     suspend fun addAll(txs: List<TransactionEntity>): List<Long> = dao.insertAll(txs)
 
     suspend fun update(tx: TransactionEntity) = dao.update(tx)
+
+    /**
+     * 批量改归属：把一批账单的归属统一改成 [ownerIds]（含本人哨兵 SELF_ID 与公共成员 id）。
+     *
+     * 只改归属相关列，其余字段（金额/分类/备注/图片/时间）原样保留，
+     * 避免全量回写时新旧对象字段不一致造成误伤。
+     *
+     * [memberId] 镜像列按 v9 约定过滤掉本人哨兵与公共成员：
+     * 该列有 `ON DELETE SET NULL` 外键，写入 -1 会违反约束；公共成员也不应作为
+     * 「单个归属成员」落进这一列。真实归属统一以 [TransactionEntity.memberIds] 为准。
+     *
+     * @param publicMemberId 当前账本的公共成员 id（用于从镜像列排除；传 null 表示无公共成员）
+     * @return 实际改动的账单条数
+     */
+    suspend fun updateOwnershipBatch(
+        ids: List<Long>,
+        ownerIds: Set<Long>,
+        publicMemberId: Long? = null,
+    ): Int {
+        if (ids.isEmpty()) return 0
+        val sanitized = ownerIds.toList()
+        // 镜像列只落「真实成员」：排除本人哨兵（外键约束）与公共成员（语义上非单一归属人）
+        val mirror = sanitized.firstOrNull { it != com.lightledger.app.domain.model.SELF_ID && it != publicMemberId }
+        val changed = dao.getByIds(ids).map { tx ->
+            tx.copy(
+                memberIds = sanitized,
+                memberId = mirror,
+                updatedAt = System.currentTimeMillis(),
+            )
+        }
+        if (changed.isNotEmpty()) dao.updateAll(changed)
+        return changed.size
+    }
 
     suspend fun delete(id: Long) = dao.deleteById(id)
 

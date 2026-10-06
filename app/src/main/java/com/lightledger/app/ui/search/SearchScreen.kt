@@ -1,5 +1,6 @@
 package com.lightledger.app.ui.search
 
+import android.content.res.Configuration
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -39,6 +40,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
@@ -56,6 +58,8 @@ import com.lightledger.app.ui.components.BillRow
 import com.lightledger.app.ui.components.EmptyState
 import com.lightledger.app.ui.components.ImagePreviewDialog
 import com.lightledger.app.ui.theme.argb
+import com.lightledger.app.domain.model.IconLibrary
+import com.lightledger.app.util.LocaleHelper
 
 /**
  * 账单搜索页：顶部输入框（进入自动聚焦）+ 实时结果列表。
@@ -68,6 +72,9 @@ fun SearchScreen(
     onBack: () -> Unit,
     onOpenDetail: (Long) -> Unit,
 ) {
+    // 临时图标名的显示语言（跟随界面语言）
+    val useZh = LocaleHelper.normalize(appViewModel.language.value) == LocaleHelper.ZH
+
     val container = (LocalContext.current.applicationContext as LightLedgerApp).container
     val viewModel: SearchViewModel = viewModel(
         factory = viewModelFactory {
@@ -159,6 +166,10 @@ fun SearchScreen(
 
         // ---------- 结果区 ----------
         val results = state.results
+        // 横屏 / 平板：结果卡片限制在易读宽度内并居中，避免被拉成一条长带（竖屏不受影响）
+        val isWide = with(LocalConfiguration.current) {
+            orientation == Configuration.ORIENTATION_LANDSCAPE || screenWidthDp >= 600
+        }
         when {
             !state.searching -> Box(
                 modifier = Modifier
@@ -184,7 +195,8 @@ fun SearchScreen(
             else -> Column(
                 modifier = Modifier
                     .weight(1f)
-                    .fillMaxWidth(),
+                    .fillMaxWidth(if (isWide) 0.72f else 1f)
+                    .align(Alignment.CenterHorizontally),
             ) {
                 // 结果数提示；触顶时提示换更精确的关键词
                 Text(
@@ -210,7 +222,10 @@ fun SearchScreen(
                     ) {
                         items(results, key = { it.tx.id }) { item ->
                             BillRow(
-                                categoryName = item.category?.name
+                                // 临时图标生效时标题同步为图标名
+                                categoryName = item.tx.iconOverride?.let {
+                                    IconLibrary.displayName(it, useZh)
+                                } ?: item.category?.name
                                     ?: stringResource(R.string.uncategorized),
                                 categoryIcon = item.tx.iconOverride ?: item.category?.icon ?: "star",
                                 categoryColor = item.category?.color?.argb()

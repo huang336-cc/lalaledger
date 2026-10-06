@@ -1,5 +1,7 @@
 package com.lightledger.app.ui.home
 
+import android.content.res.Configuration
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -9,6 +11,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -16,10 +20,16 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
+
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
+
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ArrowDropDown
 import androidx.compose.material.icons.outlined.DarkMode
@@ -42,6 +52,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -49,6 +61,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
+
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -61,6 +75,8 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.lightledger.app.LightLedgerApp
 import com.lightledger.app.R
+import com.lightledger.app.data.db.entity.AccountBookEntity
+
 import com.lightledger.app.data.prefs.SettingsDataStore
 import com.lightledger.app.domain.model.IconLibrary
 import com.lightledger.app.domain.model.ThemeMode
@@ -71,6 +87,8 @@ import com.lightledger.app.ui.components.BillRow
 import com.lightledger.app.ui.components.EmptyState
 import com.lightledger.app.ui.components.ImagePreviewDialog
 import com.lightledger.app.ui.components.SectionTitle
+import com.lightledger.app.ui.theme.BrandGradientEnd
+import com.lightledger.app.ui.theme.BrandGradientStart
 import com.lightledger.app.ui.theme.SemanticTheme
 import com.lightledger.app.ui.theme.argb
 import com.lightledger.app.util.DateUtils
@@ -78,6 +96,8 @@ import com.lightledger.app.util.MoneyFormat
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
+import com.lightledger.app.util.LocaleHelper
+
 
 /**
  * 首页：账本切换 + 主题快捷入口 + 记一笔按钮 + 三张支出统计卡 + 最近账单。
@@ -105,6 +125,8 @@ fun HomeScreen(
 
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val guideTripDone by viewModel.guideTripDone.collectAsStateWithLifecycle()
+    // 临时图标名的显示语言（跟随界面语言）
+    val useZh = LocaleHelper.normalize(appViewModel.language.value) == LocaleHelper.ZH
     val books by appViewModel.books.collectAsStateWithLifecycle()
     val currentBook by appViewModel.currentBook.collectAsStateWithLifecycle()
     val themeMode by appViewModel.themeMode.collectAsStateWithLifecycle()
@@ -167,422 +189,170 @@ fun HomeScreen(
 
     val listState = rememberLazyListState()
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        LazyColumn(
-            state = listState,
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 16.dp),
-        ) {
-            // ---------- 顶部：账本切换 + 主题切换 ----------
-            item(key = "top_bar") {
-                Column {
-                    Spacer(Modifier.height(12.dp))
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Box {
-                            Surface(
-                                onClick = { bookMenuOpen = true },
-                                shape = RoundedCornerShape(50),
-                                color = MaterialTheme.colorScheme.surface,
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(
-                                        start = 14.dp, end = 8.dp, top = 8.dp, bottom = 8.dp
-                                    ),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                ) {
-                                    Icon(
-                                        imageVector = IconLibrary.of(currentBook?.icon ?: "book"),
-                                        contentDescription = null,
-                                        tint = currentBook?.color?.argb()
-                                            ?: MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.size(18.dp),
-                                    )
-                                    Spacer(Modifier.width(6.dp))
-                                    Text(
-                                        text = currentBook?.name
-                                            ?: stringResource(R.string.select_book),
-                                        style = MaterialTheme.typography.titleMedium,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
-                                    )
-                                    Icon(
-                                        imageVector = Icons.Outlined.ArrowDropDown,
-                                        contentDescription = stringResource(R.string.stats_switch_book),
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    )
-                                }
-                            }
-                            DropdownMenu(
-                                expanded = bookMenuOpen,
-                                onDismissRequest = { bookMenuOpen = false },
-                                shape = MaterialTheme.shapes.medium,
-                            ) {
-                                books.forEach { book ->
-                                    DropdownMenuItem(
-                                        text = {
-                                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                                Icon(
-                                                    imageVector = IconLibrary.of(book.icon),
-                                                    contentDescription = null,
-                                                    tint = book.color.argb(),
-                                                    modifier = Modifier.size(18.dp),
-                                                )
-                                                Spacer(Modifier.width(8.dp))
-                                                Text(book.name)
-                                            }
-                                        },
-                                        trailingIcon = {
-                                            if (book.id == currentBook?.id) {
-                                                Text("✓", color = MaterialTheme.colorScheme.primary)
-                                            }
-                                        },
-                                        onClick = {
-                                            appViewModel.switchBook(book.id)
-                                            bookMenuOpen = false
-                                        },
-                                    )
-                                }
-                                HorizontalDivider(color = MaterialTheme.colorScheme.outline)
-                                // 旅行账本：进入成员管理
-                                if (currentBook?.isTrip == true) {
-                                    DropdownMenuItem(
-                                        text = { Text(stringResource(R.string.home_manage_members)) },
-                                        leadingIcon = {
-                                            Icon(
-                                                Icons.Outlined.Group,
-                                                contentDescription = null,
-                                                modifier = Modifier.size(18.dp),
-                                            )
-                                        },
-                                        onClick = {
-                                            bookMenuOpen = false
-                                            currentBook?.let { onOpenMembers(it.id) }
-                                        },
-                                    )
-                                }
-                                DropdownMenuItem(
-                                    text = { Text(stringResource(R.string.home_manage_books)) },
-                                    leadingIcon = {
-                                        Icon(
-                                            Icons.Outlined.SettingsBackupRestore,
-                                            contentDescription = null,
-                                            modifier = Modifier.size(18.dp),
-                                        )
-                                    },
-                                    onClick = {
-                                        bookMenuOpen = false
-                                        onOpenBooks()
-                                    },
-                                )
-                            }
-                        }
+    // 横屏/平板：左右分栏 —— 左栏放概览，右栏放账单列表，一屏能看到更多账单
+    val isWide = with(LocalConfiguration.current) {
+        orientation == Configuration.ORIENTATION_LANDSCAPE || screenWidthDp >= 600
+    }
 
-                        Spacer(Modifier.weight(1f))
-
-                        // 主题切换：浅/深一键切换；跟随系统模式在"我的"页选择
-                        IconButton(onClick = {
-                            appViewModel.setThemeMode(if (isDark) ThemeMode.LIGHT else ThemeMode.DARK)
-                        }) {
-                            Icon(
-                                imageVector = if (isDark) Icons.Outlined.LightMode
-                                else Icons.Outlined.DarkMode,
-                                contentDescription = stringResource(R.string.settings_theme),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
-                    }
-
-                    Spacer(Modifier.height(12.dp))
-
-                    // ---------- 账单搜索入口（点击进搜索页，自动聚焦） ----------
-                    Surface(
-                        onClick = onOpenSearch,
-                        shape = RoundedCornerShape(50),
-                        color = MaterialTheme.colorScheme.surface,
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 14.dp, vertical = 10.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Icon(
-                                imageVector = Icons.Outlined.Search,
-                                contentDescription = stringResource(R.string.search_hint),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(18.dp),
-                            )
-                            Spacer(Modifier.width(8.dp))
-                            Text(
-                                text = stringResource(R.string.search_hint),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
-                    }
-
-                    Spacer(Modifier.height(18.dp))
-
-                    // ---------- 记一笔 ----------
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(104.dp)
-                            .clip(MaterialTheme.shapes.medium)
-                            .background(
-                                brush = Brush.horizontalGradient(
-                                    listOf(
-                                        MaterialTheme.colorScheme.primary,
-                                        if (isDark) Color(0xFF5D8FB5)
-                                        else MaterialTheme.colorScheme.secondary,
-                                    )
-                                )
-                            )
-                            .clickable(onClick = onGoRecord),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            // 应用图标：PNG 自带浅色圆底，必须关闭 Icon 默认 tint，否则整图被染成单色
-                            Icon(
-                                painter = painterResource(R.drawable.ic_app_logo),
-                                contentDescription = stringResource(R.string.home_add_bill),
-                                tint = Color.Unspecified,
-                                modifier = Modifier
-                                    .size(54.dp)
-                                    .clip(CircleShape),
-                            )
-                            Spacer(Modifier.width(14.dp))
-                            Column {
-                                Text(
-                                    text = stringResource(R.string.home_add_bill),
-                                    style = MaterialTheme.typography.headlineMedium,
-                                    color = MaterialTheme.colorScheme.onPrimary,
-                                )
-                                Text(
-                                    text = stringResource(R.string.home_add_bill_sub),
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f),
-                                )
-                            }
-                            Spacer(Modifier.width(16.dp))
-                            Icon(
-                                imageVector = Icons.Outlined.EditNote,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onPrimary,
-                                modifier = Modifier.size(40.dp),
-                            )
-                        }
-                    }
-
-                    // ---------- 旅行账本引导卡（一次性，可跳成员管理） ----------
-                    if (state.isTrip && !guideTripDone) {
-                        Spacer(Modifier.height(14.dp))
-                        AppCard {
-                            Column(Modifier.padding(16.dp)) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text(
-                                        stringResource(R.string.guide_trip_title),
-                                        style = MaterialTheme.typography.titleMedium,
-                                        modifier = Modifier.weight(1f),
-                                    )
-                                    Text(
-                                        stringResource(R.string.got_it),
-                                        style = MaterialTheme.typography.labelLarge,
-                                        color = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier
-                                            .clip(RoundedCornerShape(50))
-                                            .clickable { viewModel.markGuideTripDone() }
-                                            .padding(horizontal = 10.dp, vertical = 4.dp),
-                                    )
-                                }
-                                Spacer(Modifier.height(6.dp))
-                                Text(
-                                    stringResource(R.string.guide_trip_body),
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                                Spacer(Modifier.height(10.dp))
-                                Text(
-                                    stringResource(R.string.guide_trip_action),
-                                    style = MaterialTheme.typography.labelLarge,
-                                    color = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier
-                                        .clip(RoundedCornerShape(50))
-                                        .clickable {
-                                            viewModel.markGuideTripDone()
-                                            currentBook?.let { onOpenMembers(it.id) }
-                                        }
-                                        .padding(horizontal = 10.dp, vertical = 4.dp),
-                                )
-                            }
-                        }
-                    }
-
-                    Spacer(Modifier.height(16.dp))
-
-                    // ---------- 三张统计卡片 ----------
-                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        StatCard(
-                            stringResource(R.string.home_today),
-                            state.todayExpense,
-                            Modifier.weight(1f)
-                        )
-                        StatCard(
-                            stringResource(R.string.home_week),
-                            state.weekExpense,
-                            Modifier.weight(1f)
-                        )
-                        StatCard(
-                            stringResource(R.string.home_month),
-                            state.monthExpense,
-                            Modifier.weight(1f)
-                        )
-                    }
-
-                    Spacer(Modifier.height(20.dp))
-
-                    // ---------- 最近账单标题 + 时间范围筛选 ----------
-                    SectionTitle(
-                        stringResource(R.string.home_recent),
-                        trailing = {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                // 时间范围下拉：当天 / 本周 / 本月 / 全部（选择后记忆，下次进入仍生效）
-                                Box {
-                                    Row(
-                                        modifier = Modifier
-                                            .clip(RoundedCornerShape(50))
-                                            .background(
-                                                MaterialTheme.colorScheme.surfaceVariant
-                                                    .copy(alpha = 0.6f)
-                                            )
-                                            .clickable { rangeMenuOpen = true }
-                                            .padding(
-                                                start = 12.dp, end = 4.dp, top = 4.dp, bottom = 4.dp
-                                            ),
-                                        verticalAlignment = Alignment.CenterVertically,
-                                    ) {
-                                        Text(
-                                            text = recentRangeLabel(state.recentRange),
-                                            style = MaterialTheme.typography.labelLarge,
-                                            color = MaterialTheme.colorScheme.primary,
-                                        )
-                                        Icon(
-                                            imageVector = Icons.Outlined.ArrowDropDown,
-                                            contentDescription = stringResource(R.string.recent_range_all),
-                                            tint = MaterialTheme.colorScheme.primary,
-                                            modifier = Modifier.size(18.dp),
-                                        )
-                                    }
-                                    DropdownMenu(
-                                        expanded = rangeMenuOpen,
-                                        onDismissRequest = { rangeMenuOpen = false },
-                                        shape = MaterialTheme.shapes.medium,
-                                    ) {
-                                        RecentRangeOption(
-                                            label = stringResource(R.string.recent_range_today),
-                                            selected = state.recentRange == SettingsDataStore.RECENT_RANGE_TODAY,
-                                        ) {
-                                            viewModel.setRecentRange(SettingsDataStore.RECENT_RANGE_TODAY)
-                                            rangeMenuOpen = false
-                                        }
-                                        RecentRangeOption(
-                                            label = stringResource(R.string.recent_range_week),
-                                            selected = state.recentRange == SettingsDataStore.RECENT_RANGE_WEEK,
-                                        ) {
-                                            viewModel.setRecentRange(SettingsDataStore.RECENT_RANGE_WEEK)
-                                            rangeMenuOpen = false
-                                        }
-                                        RecentRangeOption(
-                                            label = stringResource(R.string.recent_range_month),
-                                            selected = state.recentRange == SettingsDataStore.RECENT_RANGE_MONTH,
-                                        ) {
-                                            viewModel.setRecentRange(SettingsDataStore.RECENT_RANGE_MONTH)
-                                            rangeMenuOpen = false
-                                        }
-                                        RecentRangeOption(
-                                            label = stringResource(R.string.recent_range_all),
-                                            selected = state.recentRange == SettingsDataStore.RECENT_RANGE_ALL,
-                                        ) {
-                                            viewModel.setRecentRange(SettingsDataStore.RECENT_RANGE_ALL)
-                                            rangeMenuOpen = false
-                                        }
-                                    }
-                                }
-                            }
+    // 铺主题背景：横屏外壳没有 Scaffold 兜底，不铺会透出窗口浅米色（深色模式下花屏）
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background),
+    ) {
+        if (isWide) {
+            Row(modifier = Modifier.fillMaxSize()) {
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .verticalScroll(rememberScrollState())
+                        .padding(start = 16.dp, end = 8.dp, bottom = 16.dp),
+                ) {
+                    HomeOverview(
+                        appViewModel = appViewModel,
+                        currentBook = currentBook,
+                        books = books,
+                        todayExpense = state.todayExpense,
+                        weekExpense = state.weekExpense,
+                        monthExpense = state.monthExpense,
+                        isTrip = state.isTrip,
+                        guideTripDone = guideTripDone,
+                        onOpenBooks = onOpenBooks,
+                        onOpenMembers = onOpenMembers,
+                        onOpenSearch = onOpenSearch,
+                        onGoRecord = onGoRecord,
+                        onMarkGuideTripDone = { viewModel.markGuideTripDone() },
+                    )
+                }
+                Column(
+                    modifier = Modifier
+                        .weight(1.15f)
+                        .fillMaxHeight()
+                        .padding(start = 8.dp, end = 16.dp),
+                ) {
+                    HomeRecentSection(
+                        viewModel = viewModel,
+                        listEntries = listEntries,
+                        listState = listState,
+                        recentEmpty = state.recent.isEmpty(),
+                        recentRange = state.recentRange,
+                        recentRangeLabel = recentRangeLabel,
+                        useZh = useZh,
+                        onOpenDetail = onOpenDetail,
+                        onPreviewImages = { images ->
+                            previewImages = images
+                            previewIndex = 0
                         },
                     )
-
-                    Spacer(Modifier.height(8.dp))
                 }
             }
-
-            // ---------- 账单列表（按日期分组，组头显示当日收支合计，可折叠） ----------
-            if (state.recent.isEmpty()) {
-                // 有筛选范围且范围内为空时，提示切换范围而非「还没有账单」
-                val isFiltered = state.recentRange != SettingsDataStore.RECENT_RANGE_ALL
-                item(key = "empty") {
-                    AppCard {
-                        EmptyState(
-                            stringResource(
-                                if (isFiltered) R.string.recent_range_empty else R.string.home_empty
-                            )
+        } else {
+            LazyColumn(
+                state = listState,
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 16.dp),
+            ) {
+                // ---------- 概览区（账本切换 / 搜索 / 记一笔 / 统计卡片） ----------
+                item(key = "top_bar") {
+                    Column {
+                        HomeOverview(
+                            appViewModel = appViewModel,
+                            currentBook = currentBook,
+                            books = books,
+                            todayExpense = state.todayExpense,
+                            weekExpense = state.weekExpense,
+                            monthExpense = state.monthExpense,
+                            isTrip = state.isTrip,
+                            guideTripDone = guideTripDone,
+                            onOpenBooks = onOpenBooks,
+                            onOpenMembers = onOpenMembers,
+                            onOpenSearch = onOpenSearch,
+                            onGoRecord = onGoRecord,
+                            onMarkGuideTripDone = { viewModel.markGuideTripDone() },
                         )
                     }
                 }
-            } else {
-                items(
-                    items = listEntries,
-                    key = { entry ->
-                        when (entry) {
-                            is HomeListEntry.Header -> "h_${entry.day.toEpochDay()}"
-                            is HomeListEntry.Bill -> "b_${entry.item.tx.id}"
-                        }
-                    },
-                ) { entry ->
-                    val isFirst = entry === listEntries.first()
-                    val isLast = entry === listEntries.last()
-                    when (entry) {
-                        is HomeListEntry.Header -> DayGroupHeader(
-                            day = entry.day,
-                            expenseFen = entry.expenseFen,
-                            incomeFen = entry.incomeFen,
-                            collapsed = entry.collapsed,
-                            isFirst = isFirst,
-                            isLast = isLast,
-                            onToggle = {
-                                collapsedDays = if (entry.collapsed) {
-                                    collapsedDays - entry.day
-                                } else {
-                                    collapsedDays + entry.day
-                                }
-                            },
-                        )
 
-                        is HomeListEntry.Bill -> {
-                            val item = entry.item
-                            val category = item.category
-                            BillRow(
-                                categoryName = category?.name
-                                    ?: stringResource(R.string.uncategorized),
-                                categoryIcon = item.tx.iconOverride ?: category?.icon ?: "star",
-                                categoryColor = category?.color?.argb()
-                                    ?: MaterialTheme.colorScheme.onSurfaceVariant,
-                                amountFen = item.tx.amount,
-                                type = TransactionType.from(item.tx.type),
-                                time = item.tx.createdAt,
-                                note = item.tx.note,
-                                mood = item.tx.mood,
-                                thumbnailPath = item.tx.images.firstOrNull(),
-                                onThumbnailClick = {
-                                    previewImages = item.tx.images
-                                    previewIndex = 0
-                                },
-                                onClick = { onOpenDetail(item.tx.id) },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .cardRowShape(isFirst = isFirst, isLast = isLast)
-                                    .padding(horizontal = 10.dp),
+                // ---------- 「最近账单」标题 + 时间范围筛选（竖屏在此列） ----------
+                item(key = "recent_title") {
+                    HomeRecentHeader(
+                        viewModel = viewModel,
+                        recentRange = state.recentRange,
+                        recentRangeLabel = recentRangeLabel,
+                    )
+                }
+
+                // ---------- 账单列表（按日期分组，组头显示当日收支合计，可折叠） ----------
+                if (state.recent.isEmpty()) {
+                    val isFiltered = state.recentRange != SettingsDataStore.RECENT_RANGE_ALL
+                    item(key = "empty") {
+                        AppCard {
+                            EmptyState(
+                                stringResource(
+                                    if (isFiltered) R.string.recent_range_empty else R.string.home_empty
+                                )
                             )
+                        }
+                    }
+                } else {
+                    items(
+                        items = listEntries,
+                        key = { entry ->
+                            when (entry) {
+                                is HomeListEntry.Header -> "h_${entry.day.toEpochDay()}"
+                                is HomeListEntry.Bill -> "b_${entry.item.tx.id}"
+                            }
+                        },
+                    ) { entry ->
+                        val isFirst = entry === listEntries.first()
+                        val isLast = entry === listEntries.last()
+                        when (entry) {
+                            is HomeListEntry.Header -> DayGroupHeader(
+                                day = entry.day,
+                                expenseFen = entry.expenseFen,
+                                incomeFen = entry.incomeFen,
+                                collapsed = entry.collapsed,
+                                isFirst = isFirst,
+                                isLast = isLast,
+                                onToggle = {
+                                    collapsedDays = if (entry.collapsed) {
+                                        collapsedDays - entry.day
+                                    } else {
+                                        collapsedDays + entry.day
+                                    }
+                                },
+                            )
+
+                            is HomeListEntry.Bill -> {
+                                val item = entry.item
+                                val category = item.category
+                                BillRow(
+                                    // 临时图标生效时，标题同步为图标名（与记账页格子保持一致）
+                                    categoryName = item.tx.iconOverride?.let {
+                                        IconLibrary.displayName(it, useZh)
+                                    } ?: category?.name
+                                        ?: stringResource(R.string.uncategorized),
+                                    categoryIcon = item.tx.iconOverride ?: category?.icon ?: "star",
+                                    categoryColor = category?.color?.argb()
+                                        ?: MaterialTheme.colorScheme.onSurfaceVariant,
+                                    amountFen = item.tx.amount,
+                                    type = TransactionType.from(item.tx.type),
+                                    time = item.tx.createdAt,
+                                    note = item.tx.note,
+                                    mood = item.tx.mood,
+                                    thumbnailPath = item.tx.images.firstOrNull(),
+                                    onThumbnailClick = {
+                                        previewImages = item.tx.images
+                                        previewIndex = 0
+                                    },
+                                    onClick = { onOpenDetail(item.tx.id) },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .cardRowShape(isFirst = isFirst, isLast = isLast)
+                                        .padding(horizontal = 10.dp),
+                                )
+                            }
                         }
                     }
                 }
@@ -748,6 +518,484 @@ private fun StatCard(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
+        }
+    }
+}
+
+
+/**
+ * 首页概览区：账本切换 + 主题切换 + 搜索入口 + 记一笔 + 旅行账本引导 + 三张统计卡。
+ * 竖屏时作为 LazyColumn 的首个 item，横屏时独占左栏，两种版式复用同一份实现。
+ */
+@Composable
+private fun HomeOverview(
+    appViewModel: AppViewModel,
+    currentBook: AccountBookEntity?,
+    books: List<AccountBookEntity>,
+    todayExpense: Long,
+    weekExpense: Long,
+    monthExpense: Long,
+    isTrip: Boolean,
+    guideTripDone: Boolean,
+    onOpenBooks: () -> Unit,
+    onOpenMembers: (Long) -> Unit,
+    onOpenSearch: () -> Unit,
+    onGoRecord: () -> Unit,
+    onMarkGuideTripDone: () -> Unit,
+) {
+    val themeMode by appViewModel.themeMode.collectAsStateWithLifecycle()
+    val isDark = themeMode == ThemeMode.DARK
+    var bookMenuOpen by remember { mutableStateOf(false) }
+
+                Column {
+                    Spacer(Modifier.height(12.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box {
+                            Surface(
+                                onClick = { bookMenuOpen = true },
+                                shape = RoundedCornerShape(50),
+                                color = MaterialTheme.colorScheme.surface,
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(
+                                        start = 14.dp, end = 8.dp, top = 8.dp, bottom = 8.dp
+                                    ),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    Icon(
+                                        imageVector = IconLibrary.of(currentBook?.icon ?: "book"),
+                                        contentDescription = null,
+                                        tint = currentBook?.color?.argb()
+                                            ?: MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(18.dp),
+                                    )
+                                    Spacer(Modifier.width(6.dp))
+                                    Text(
+                                        text = currentBook?.name
+                                            ?: stringResource(R.string.select_book),
+                                        style = MaterialTheme.typography.titleMedium,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                    )
+                                    Icon(
+                                        imageVector = Icons.Outlined.ArrowDropDown,
+                                        contentDescription = stringResource(R.string.stats_switch_book),
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
+                            }
+                            DropdownMenu(
+                                expanded = bookMenuOpen,
+                                onDismissRequest = { bookMenuOpen = false },
+                                shape = MaterialTheme.shapes.medium,
+                            ) {
+                                books.forEach { book ->
+                                    DropdownMenuItem(
+                                        text = {
+                                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                                Icon(
+                                                    imageVector = IconLibrary.of(book.icon),
+                                                    contentDescription = null,
+                                                    tint = book.color.argb(),
+                                                    modifier = Modifier.size(18.dp),
+                                                )
+                                                Spacer(Modifier.width(8.dp))
+                                                Text(book.name)
+                                            }
+                                        },
+                                        trailingIcon = {
+                                            if (book.id == currentBook?.id) {
+                                                Text("✓", color = MaterialTheme.colorScheme.primary)
+                                            }
+                                        },
+                                        onClick = {
+                                            appViewModel.switchBook(book.id)
+                                            bookMenuOpen = false
+                                        },
+                                    )
+                                }
+                                HorizontalDivider(color = MaterialTheme.colorScheme.outline)
+                                // 旅行账本：进入成员管理
+                                if (currentBook?.isTrip == true) {
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(R.string.home_manage_members)) },
+                                        leadingIcon = {
+                                            Icon(
+                                                Icons.Outlined.Group,
+                                                contentDescription = null,
+                                                modifier = Modifier.size(18.dp),
+                                            )
+                                        },
+                                        onClick = {
+                                            bookMenuOpen = false
+                                            currentBook?.let { onOpenMembers(it.id) }
+                                        },
+                                    )
+                                }
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(R.string.home_manage_books)) },
+                                    leadingIcon = {
+                                        Icon(
+                                            Icons.Outlined.SettingsBackupRestore,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(18.dp),
+                                        )
+                                    },
+                                    onClick = {
+                                        bookMenuOpen = false
+                                        onOpenBooks()
+                                    },
+                                )
+                            }
+                        }
+
+                        Spacer(Modifier.weight(1f))
+
+                        // 主题切换：浅/深一键切换；跟随系统模式在"我的"页选择
+                        IconButton(onClick = {
+                            appViewModel.setThemeMode(if (isDark) ThemeMode.LIGHT else ThemeMode.DARK)
+                        }) {
+                            Icon(
+                                imageVector = if (isDark) Icons.Outlined.LightMode
+                                else Icons.Outlined.DarkMode,
+                                contentDescription = stringResource(R.string.settings_theme),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+
+                    Spacer(Modifier.height(12.dp))
+
+                    // ---------- 账单搜索入口（点击进搜索页，自动聚焦） ----------
+                    Surface(
+                        onClick = onOpenSearch,
+                        shape = RoundedCornerShape(50),
+                        color = MaterialTheme.colorScheme.surface,
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 14.dp, vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.Search,
+                                contentDescription = stringResource(R.string.search_hint),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(18.dp),
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                text = stringResource(R.string.search_hint),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+
+                    Spacer(Modifier.height(18.dp))
+
+                    // ---------- 记一笔 ----------
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(104.dp)
+                            .clip(MaterialTheme.shapes.medium)
+                            .background(
+                                brush = Brush.horizontalGradient(
+                                    listOf(
+                                        BrandGradientStart,
+                                        BrandGradientEnd,
+                                    )
+                                )
+                            )
+                            .clickable(onClick = onGoRecord),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            // 应用图标：PNG 自带浅色圆底，必须关闭 Icon 默认 tint，否则整图被染成单色
+                            Icon(
+                                painter = painterResource(R.drawable.ic_app_logo),
+                                contentDescription = stringResource(R.string.home_add_bill),
+                                tint = Color.Unspecified,
+                                modifier = Modifier
+                                    .size(54.dp)
+                                    .clip(CircleShape),
+                            )
+                            Spacer(Modifier.width(14.dp))
+                            Column {
+                                Text(
+                                    text = stringResource(R.string.home_add_bill),
+                                    style = MaterialTheme.typography.headlineMedium,
+                                    color = Color.White,
+                                )
+                                Text(
+                                    text = stringResource(R.string.home_add_bill_sub),
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = Color.White.copy(alpha = 0.85f),
+                                )
+                            }
+                            Spacer(Modifier.width(16.dp))
+                            Icon(
+                                imageVector = Icons.Outlined.EditNote,
+                                contentDescription = null,
+                                tint = Color.White,
+                                modifier = Modifier.size(40.dp),
+                            )
+                        }
+                    }
+
+                    // ---------- 旅行账本引导卡（一次性，可跳成员管理） ----------
+                    if (isTrip && !guideTripDone) {
+                        Spacer(Modifier.height(14.dp))
+                        AppCard {
+                            Column(Modifier.padding(16.dp)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        stringResource(R.string.guide_trip_title),
+                                        style = MaterialTheme.typography.titleMedium,
+                                        modifier = Modifier.weight(1f),
+                                    )
+                                    Text(
+                                        stringResource(R.string.got_it),
+                                        style = MaterialTheme.typography.labelLarge,
+                                        color = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier
+                                            .clip(RoundedCornerShape(50))
+                                            .clickable { onMarkGuideTripDone() }
+                                            .padding(horizontal = 10.dp, vertical = 4.dp),
+                                    )
+                                }
+                                Spacer(Modifier.height(6.dp))
+                                Text(
+                                    stringResource(R.string.guide_trip_body),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                                Spacer(Modifier.height(10.dp))
+                                Text(
+                                    stringResource(R.string.guide_trip_action),
+                                    style = MaterialTheme.typography.labelLarge,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(50))
+                                        .clickable {
+                                            onMarkGuideTripDone()
+                                            currentBook?.let { onOpenMembers(it.id) }
+                                        }
+                                        .padding(horizontal = 10.dp, vertical = 4.dp),
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(Modifier.height(20.dp))
+
+                    // ---------- 三张统计卡片 ----------
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        StatCard(
+                            stringResource(R.string.home_today),
+                            todayExpense,
+                            Modifier.weight(1f)
+                        )
+                        StatCard(
+                            stringResource(R.string.home_week),
+                            weekExpense,
+                            Modifier.weight(1f)
+                        )
+                        StatCard(
+                            stringResource(R.string.home_month),
+                            monthExpense,
+                            Modifier.weight(1f)
+                        )
+                    }
+
+                    // 概览区收尾间距：与下方「最近账单」标题栏拉开，避免挤在一起
+                    Spacer(Modifier.height(18.dp))
+                }
+}
+
+/**
+ * 首页「最近账单」区块：标题 + 时间范围筛选 + 按日分组的账单列表。
+ * 竖屏下是本页 LazyColumn 的剩余条目，横屏下独占右栏（自成一条 LazyColumn）。
+ */
+@Composable
+private fun HomeRecentHeader(
+    viewModel: HomeViewModel,
+    recentRange: String,
+    recentRangeLabel: (String) -> String,
+) {
+    var rangeMenuOpen by remember { mutableStateOf(false) }
+    Column {
+        Spacer(Modifier.height(2.dp))
+        SectionTitle(
+            stringResource(R.string.home_recent),
+            trailing = {
+                // 时间范围下拉：当天 / 本周 / 本月 / 全部（选择后记忆）
+                Box {
+                    Row(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(50))
+                            .background(
+                                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
+                            )
+                            .clickable { rangeMenuOpen = true }
+                            .padding(start = 12.dp, end = 4.dp, top = 4.dp, bottom = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            text = recentRangeLabel(recentRange),
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.primary,
+                        )
+                        Icon(
+                            imageVector = Icons.Outlined.ArrowDropDown,
+                            contentDescription = stringResource(R.string.recent_range_all),
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(18.dp),
+                        )
+                    }
+                    DropdownMenu(
+                        expanded = rangeMenuOpen,
+                        onDismissRequest = { rangeMenuOpen = false },
+                        shape = MaterialTheme.shapes.medium,
+                    ) {
+                        RecentRangeOption(
+                            label = stringResource(R.string.recent_range_today),
+                            selected = recentRange == SettingsDataStore.RECENT_RANGE_TODAY,
+                        ) {
+                            viewModel.setRecentRange(SettingsDataStore.RECENT_RANGE_TODAY)
+                            rangeMenuOpen = false
+                        }
+                        RecentRangeOption(
+                            label = stringResource(R.string.recent_range_week),
+                            selected = recentRange == SettingsDataStore.RECENT_RANGE_WEEK,
+                        ) {
+                            viewModel.setRecentRange(SettingsDataStore.RECENT_RANGE_WEEK)
+                            rangeMenuOpen = false
+                        }
+                        RecentRangeOption(
+                            label = stringResource(R.string.recent_range_month),
+                            selected = recentRange == SettingsDataStore.RECENT_RANGE_MONTH,
+                        ) {
+                            viewModel.setRecentRange(SettingsDataStore.RECENT_RANGE_MONTH)
+                            rangeMenuOpen = false
+                        }
+                        RecentRangeOption(
+                            label = stringResource(R.string.recent_range_all),
+                            selected = recentRange == SettingsDataStore.RECENT_RANGE_ALL,
+                        ) {
+                            viewModel.setRecentRange(SettingsDataStore.RECENT_RANGE_ALL)
+                            rangeMenuOpen = false
+                        }
+                    }
+                }
+            },
+        )
+        Spacer(Modifier.height(10.dp))
+    }
+}
+
+/**
+ * 首页「最近账单」区块（横屏右栏专用）：标题 + 分日账单，自成一条 LazyColumn。
+ */
+@Composable
+private fun HomeRecentSection(
+    viewModel: HomeViewModel,
+    listEntries: List<HomeListEntry>,
+    listState: LazyListState,
+    recentEmpty: Boolean,
+    recentRange: String,
+    recentRangeLabel: (String) -> String,
+    useZh: Boolean,
+    onOpenDetail: (Long) -> Unit,
+    onPreviewImages: (List<String>) -> Unit,
+) {
+    var collapsedDays by remember { mutableStateOf<Set<LocalDate>>(emptySet()) }
+
+    LazyColumn(
+        state = listState,
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(bottom = 16.dp),
+    ) {
+        item(key = "recent_title") {
+            HomeRecentHeader(
+                viewModel = viewModel,
+                recentRange = recentRange,
+                recentRangeLabel = recentRangeLabel,
+            )
+        }
+
+        // ---------- 账单列表（按日期分组，组头显示当日收支合计，可折叠） ----------
+        if (recentEmpty) {
+            // 有筛选范围且范围内为空时，提示切换范围而非「还没有账单」
+            val isFiltered = recentRange != SettingsDataStore.RECENT_RANGE_ALL
+            item(key = "empty") {
+                AppCard {
+                    EmptyState(
+                        stringResource(
+                            if (isFiltered) R.string.recent_range_empty else R.string.home_empty
+                        )
+                    )
+                }
+            }
+        } else {
+            items(
+                items = listEntries,
+                key = { entry ->
+                    when (entry) {
+                        is HomeListEntry.Header -> "h_${entry.day.toEpochDay()}"
+                        is HomeListEntry.Bill -> "b_${entry.item.tx.id}"
+                    }
+                },
+            ) { entry ->
+                val isFirst = entry === listEntries.first()
+                val isLast = entry === listEntries.last()
+                when (entry) {
+                    is HomeListEntry.Header -> DayGroupHeader(
+                        day = entry.day,
+                        expenseFen = entry.expenseFen,
+                        incomeFen = entry.incomeFen,
+                        collapsed = entry.collapsed,
+                        isFirst = isFirst,
+                        isLast = isLast,
+                        onToggle = {
+                            collapsedDays = if (entry.collapsed) {
+                                collapsedDays - entry.day
+                            } else {
+                                collapsedDays + entry.day
+                            }
+                        },
+                    )
+
+                    is HomeListEntry.Bill -> {
+                        val item = entry.item
+                        val category = item.category
+                        BillRow(
+                            // 临时图标生效时，标题同步为图标名（与记账页格子保持一致）
+                            categoryName = item.tx.iconOverride?.let {
+                                IconLibrary.displayName(it, useZh)
+                            } ?: category?.name
+                                ?: stringResource(R.string.uncategorized),
+                            categoryIcon = item.tx.iconOverride ?: category?.icon ?: "star",
+                            categoryColor = category?.color?.argb()
+                                ?: MaterialTheme.colorScheme.onSurfaceVariant,
+                            amountFen = item.tx.amount,
+                            type = TransactionType.from(item.tx.type),
+                            time = item.tx.createdAt,
+                            note = item.tx.note,
+                            mood = item.tx.mood,
+                            thumbnailPath = item.tx.images.firstOrNull(),
+                            onThumbnailClick = { onPreviewImages(item.tx.images) },
+                            onClick = { onOpenDetail(item.tx.id) },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .cardRowShape(isFirst = isFirst, isLast = isLast)
+                                .padding(horizontal = 10.dp),
+                        )
+                    }
+                }
+            }
         }
     }
 }

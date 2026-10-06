@@ -1,5 +1,6 @@
 package com.lightledger.app.ui.books
 
+import android.content.res.Configuration
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -50,6 +51,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -62,6 +64,7 @@ import com.lightledger.app.ui.components.AppCard
 import com.lightledger.app.ui.components.ConfirmDialog
 import com.lightledger.app.ui.components.EmptyState
 import com.lightledger.app.ui.record.TextInputDialog
+import com.lightledger.app.ui.theme.onTint
 
 /**
  * 账本管理：卡片列表，当前账本高亮边框；支持新建 / 重命名 / 换图标颜色 / 删除。
@@ -75,6 +78,11 @@ fun BooksScreen(
 ) {
     val books by appViewModel.books.collectAsStateWithLifecycle()
     val currentId by appViewModel.currentBookId.collectAsStateWithLifecycle()
+
+    // 横屏 / 平板：内容限制宽度（竖屏不受影响）
+    val isWide = with(LocalConfiguration.current) {
+        orientation == Configuration.ORIENTATION_LANDSCAPE || screenWidthDp >= 600
+    }
 
     // 弹窗状态
     var showCreate by remember { mutableStateOf(false) }
@@ -109,7 +117,10 @@ fun BooksScreen(
             modifier = Modifier
                 .weight(1f)
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp),
+                .padding(horizontal = 16.dp)
+                // 横屏 / 平板：内容限制在易读宽度内，避免被拉满整屏（竖屏不受影响）
+                .fillMaxWidth(if (isWide) 0.66f else 1f)
+                .align(Alignment.CenterHorizontally),
         ) {
             if (books.isEmpty()) {
                 EmptyState(stringResource(R.string.books_empty))
@@ -147,7 +158,8 @@ fun BooksScreen(
                                     Text(
                                         stringResource(R.string.books_trip),
                                         style = MaterialTheme.typography.labelSmall,
-                                        color = Color(book.color),
+                                        // 底是账本色 14% 淡化，文字若用原色则浅色账本时看不清
+                                        color = Color(book.color).onTint(),
                                         modifier = Modifier
                                             .background(Color(book.color).copy(alpha = 0.14f), RoundedCornerShape(50))
                                             .padding(horizontal = 6.dp, vertical = 2.dp),

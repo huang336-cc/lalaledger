@@ -1,6 +1,7 @@
 package com.lightledger.app.ui.members
 
 import android.widget.Toast
+import android.content.res.Configuration
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -42,6 +43,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -85,6 +87,10 @@ fun MembersScreen(
     var showEditor by remember { mutableStateOf(false) }
     var deleteTarget by remember { mutableStateOf<MemberEntity?>(null) }
     var showDeleteAll by remember { mutableStateOf(false) }
+    // 横屏 / 平板：内容限制宽度（竖屏不受影响）
+    val isWide = with(LocalConfiguration.current) {
+        orientation == Configuration.ORIENTATION_LANDSCAPE || screenWidthDp >= 600
+    }
     val context = LocalContext.current
 
     Column(
@@ -115,7 +121,7 @@ fun MembersScreen(
                 stringResource(R.string.members_delete_all),
                 style = MaterialTheme.typography.labelLarge,
                 color = if (deletable > 0) MaterialTheme.colorScheme.error
-                else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
+                else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
                 modifier = Modifier
                     .padding(horizontal = 12.dp, vertical = 6.dp)
                     .clickable(enabled = deletable > 0) { showDeleteAll = true },
@@ -134,7 +140,10 @@ fun MembersScreen(
             modifier = Modifier
                 .weight(1f)
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp),
+                .padding(horizontal = 16.dp)
+                // 横屏 / 平板：内容限制在易读宽度内，避免被拉满整屏（竖屏不受影响）
+                .fillMaxWidth(if (isWide) 0.66f else 1f)
+                .align(Alignment.CenterHorizontally),
         ) {
             if (members.isEmpty()) {
                 EmptyState(

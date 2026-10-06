@@ -7,7 +7,9 @@ import com.lightledger.app.data.db.entity.CategoryEntity
 import com.lightledger.app.data.db.entity.MemberEntity
 import com.lightledger.app.data.db.entity.TransactionEntity
 import com.lightledger.app.data.prefs.SettingsDataStore
+import com.lightledger.app.domain.model.SELF_ID
 import com.lightledger.app.domain.model.TransactionType
+import com.lightledger.app.domain.model.normalizeOwnerIds
 import com.lightledger.app.util.DateUtils
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.SharingStarted
@@ -22,8 +24,13 @@ import kotlinx.coroutines.launch
 data class HomeBillItem(
     val tx: TransactionEntity,
     val category: CategoryEntity?,
-    /** 归属成员（谁消费）；null = 本人或非旅行账本 */
-    val member: MemberEntity? = null,
+    /**
+     * 归属成员（谁消费，v2.3.9 起可多人）；仅含真实成员。
+     * v2.3.10 起本人以 [includeSelf] 单独表示，可与成员并存（「本人 + 张三」）。
+     */
+    val members: List<MemberEntity> = emptyList(),
+    /** 归属中是否包含本人 */
+    val includeSelf: Boolean = false,
     /** 垫付成员（谁垫付）；null = 本人或非旅行账本 */
     val payer: MemberEntity? = null,
 )
@@ -147,9 +154,12 @@ class HomeViewModel(
         combine(stats, recentContext) { s, ctx ->
             s.copy(
                 recent = ctx.bills.map {
+                    // 归属读 memberIds（含本人哨兵 SELF_ID）；老账单 memberId 兜底
+                    val ownerIds = normalizeOwnerIds(it.memberIds, it.memberId)
                     HomeBillItem(
                         it, ctx.cats[it.categoryId],
-                        member = ctx.members[it.memberId],
+                        members = ownerIds.mapNotNull { id -> ctx.members[id] },
+                        includeSelf = SELF_ID in ownerIds,
                         payer = ctx.members[it.payerMemberId],
                     )
                 },

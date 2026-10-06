@@ -24,7 +24,7 @@ import com.lightledger.app.data.db.entity.TransactionEntity
         PlaceEntity::class,
         MemberEntity::class,
     ],
-    version = 8,
+    version = 9,
     exportSchema = true
 )
 @TypeConverters(Converters::class)

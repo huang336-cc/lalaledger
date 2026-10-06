@@ -56,6 +56,10 @@ interface TransactionDao {
     @Query("SELECT * FROM transactions WHERE id = :id")
     suspend fun getById(id: Long): TransactionEntity?
 
+    /** 按 id 批量取账单；批量改归属时一次性取回，避免逐条查询产生 N+1 */
+    @Query("SELECT * FROM transactions WHERE id IN (:ids)")
+    suspend fun getByIds(ids: List<Long>): List<TransactionEntity>
+
     /** 一次性读取账本全部账单（按时间升序） */
     @Query("SELECT * FROM transactions WHERE bookId = :bookId ORDER BY createdAt ASC")
     suspend fun getByBookOnce(bookId: Long): List<TransactionEntity>
@@ -92,6 +96,26 @@ interface TransactionDao {
 
     @Update
     suspend fun update(tx: TransactionEntity)
+
+    /** 批量更新（成员删除后清理 memberIds 用，单事务写入） */
+    @Update
+    suspend fun updateAll(txs: List<TransactionEntity>)
+
+    /**
+     * 归属 / 垫付引用了指定成员的账单。
+     * memberIds 是 JSON 文本列，无法用 SQL 精确匹配，这里先用 LIKE 粗筛
+     * （`"12"` 这类带引号的形态能避开 12 / 112 / 312 的误命中），
+     * 再由仓库层在内存里精确过滤后回写。
+     */
+    @Query(
+        """
+        SELECT * FROM transactions
+        WHERE payerMemberId = :memberId
+           OR memberId = :memberId
+           OR memberIds LIKE '%' || :jsonId || '%'
+        """
+    )
+    suspend fun getReferencingMember(memberId: Long, jsonId: String): List<TransactionEntity>
 
     @Query("DELETE FROM transactions WHERE id = :id")
     suspend fun deleteById(id: Long)

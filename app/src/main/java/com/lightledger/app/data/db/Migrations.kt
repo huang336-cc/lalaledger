@@ -137,8 +137,33 @@ object Migrations {
         }
     }
 
+    /**
+     * v8 -> v9：账单归属支持多成员（自动均摊）
+     * 新增 memberIds（JSON 文本，默认 "[]"）：
+     *  - 空数组 = 本人，与旧的 memberId IS NULL 语义一致
+     *  - 含成员 id = 这些成员均摊该笔金额
+     *  - 含公共成员 id = 全员均摊（「公共」= 全选快捷方式）
+     *
+     * 旧的 memberId 列保留不删：它带着 ON DELETE SET NULL 外键，
+     * 继续提供删成员时的数据库级自动清理；读取侧一律改用 memberIds。
+     *
+     * 回填：有 memberId 的写成单元素数组；NULL 的保持空数组。
+     * 历史公共账单回填为 [publicId]，读取时展开为全员，AA 结果与升级前逐分一致。
+     */
+    val MIGRATION_8_9 = object : Migration(8, 9) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                "ALTER TABLE transactions ADD COLUMN memberIds TEXT NOT NULL DEFAULT '[]'"
+            )
+            db.execSQL(
+                "UPDATE transactions SET memberIds = '[' || memberId || ']' " +
+                    "WHERE memberId IS NOT NULL"
+            )
+        }
+    }
+
     val ALL: Array<Migration> = arrayOf(
         MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6,
-        MIGRATION_6_7, MIGRATION_7_8,
+        MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9,
     )
 }

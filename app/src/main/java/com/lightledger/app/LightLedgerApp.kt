@@ -24,7 +24,8 @@ class AppContainer(val app: Application) {
     val transactionRepository = TransactionRepository(database.transactionDao())
     val categoryRepository = CategoryRepository(database.categoryDao())
     val placeRepository = PlaceRepository(database.placeDao())
-    val memberRepository = MemberRepository(database.memberDao())
+    // 成员仓库同时拿到账单 DAO：删除成员时要清掉账单 memberIds 里的残留 id
+    val memberRepository = MemberRepository(database.memberDao(), database.transactionDao())
     val settings = SettingsDataStore(app)
 }
 

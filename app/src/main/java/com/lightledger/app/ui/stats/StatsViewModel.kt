@@ -7,6 +7,7 @@ import com.lightledger.app.data.db.entity.AccountBookEntity
 import com.lightledger.app.data.db.entity.CategoryEntity
 import com.lightledger.app.data.db.entity.MemberEntity
 import com.lightledger.app.data.db.entity.TransactionEntity
+import com.lightledger.app.domain.model.SELF_ID
 import com.lightledger.app.domain.model.StatPeriod
 import com.lightledger.app.domain.model.TransactionType
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -261,11 +262,17 @@ class StatsViewModel(
 
         // 成员双维度筛选（影响汇总卡 / 饼图 / 排行）
         val byMember = byCategory.filter { tx ->
+            // 归属统一读 memberIds：把本人哨兵 SELF_ID 归一化成 null（本人的既有表示）；
+            // 老数据为空数组时兜底 memberId，与记账/详情/导出读法保持一致
+            val owners: List<Long?> = tx.memberIds.ifEmpty { listOfNotNull(tx.memberId) }
+                .map { if (it == SELF_ID) null else it }
             val ownerOk = when (mi.owner) {
                 null -> true
-                StatsUiState.FILTER_SELF -> tx.memberId == null
-                StatsUiState.FILTER_PUBLIC -> mi.publicId != null && tx.memberId == mi.publicId
-                else -> tx.memberId == mi.owner
+                // 本人 = 归属里含 null；命中改为「包含」语义，
+                // 同一笔账单可被多个成员筛到（属预期）
+                StatsUiState.FILTER_SELF -> owners.any { it == null }
+                StatsUiState.FILTER_PUBLIC -> mi.publicId != null && mi.publicId in owners
+                else -> mi.owner in owners
             }
             val payerOk = when (mi.payer) {
                 null -> true
@@ -318,33 +325,25 @@ class StatsViewModel(
         if (mi.isTrip) {
             val tripExpenses = byCategory.filter { it.type == TransactionType.EXPENSE.value }
             if (tripExpenses.isNotEmpty()) {
-            val publicId = mi.publicId
-            val publicTxs = if (publicId != null) tripExpenses.filter { it.memberId == publicId } else emptyList()
-            val publicTotal = publicTxs.sumOf { it.amount }
-            val realTxs = if (publicId != null) tripExpenses.filter { it.memberId != publicId } else tripExpenses
-
-            val consumeByMember = realTxs.groupBy { it.memberId }
-                .mapValues { (_, items) -> items.sumOf { it.amount } }
+            // 归属多选：逐笔按归属人数均摊（含「公共」= 全员）。
+            // 逐笔整除 + 余数前推，保证每笔自身收支守恒，故全局 Σconsume == Σamount。
+            val consumeByMember = consumeByOwner(tripExpenses, mi.members, mi.publicId)
             val paidByMember = tripExpenses.groupBy { it.payerMemberId }
                 .mapValues { (_, items) -> items.sumOf { it.amount } }
 
             // 参与人 = 本人 + 全部真实成员（公共成员自身不参与分摊；全员列出便于对账）
-            val realMembers = mi.members.filter { !it.isPublic }
-            val participantIds: List<Long?> = listOf<Long?>(null) + realMembers.map { it.id }
-            val n = participantIds.size
-            // 公共总额均摊：整除平摊，余数（分）由前几个人各多担 1 分，保证总额一致
-            val share = if (n > 0) publicTotal / n else 0L
-            val remainder = if (n > 0) publicTotal - share * n else 0L
+            val participantIds: List<Long?> =
+                listOf<Long?>(null) + mi.members.filter { !it.isPublic }.map { it.id }
 
             val colorOf: (Long?) -> Int = { id ->
                 if (id == null) 0xFF6C7A9C.toInt()
                 else mi.members.firstOrNull { it.id == id }?.color ?: 0xFF6C7A9C.toInt()
             }
-            memberDetails = participantIds.mapIndexed { index, id ->
+            memberDetails = participantIds.map { id ->
                 MemberDetailItem(
                     memberId = id,
                     color = colorOf(id),
-                    consume = (consumeByMember[id] ?: 0L) + share + (if (index < remainder) 1L else 0L),
+                    consume = consumeByMember[id] ?: 0L,
                     paid = paidByMember[id] ?: 0L,
                 )
             }.sortedByDescending { it.consume + it.paid }
@@ -376,6 +375,53 @@ class StatsViewModel(
             expenseTxs = expenses,
             detailTxs = byMember.sortedByDescending { it.createdAt },
         )
+    }
+
+    /**
+     * 按归属成员聚合消费额（多选均摊）。
+     *
+     * 每笔账单独立分摊：
+     *  - 含公共成员 id -> 全员参与（本人 + 全部真实成员），「公共」即全选快捷方式
+     *  - 未选任何有效成员 -> 本人独担
+     *  - 否则 -> 所选成员平摊
+     *
+     * 分摊用「整除 + 余数前推」：先算 base = amount / n，再把余下的 amount - base*n
+     * 分（最多 n-1 分）依次给前几个人各多 1 分。这样每笔自身收支严格守恒，
+     * 全局 Σconsume 必然等于 Σamount，不会凭空多出或少掉 1 分。
+     *
+     * 返回：成员 id（null = 本人）-> 该成员应承担的消费额（分）。
+     */
+    private fun consumeByOwner(
+        txs: List<TransactionEntity>,
+        members: List<MemberEntity>,
+        publicId: Long?,
+    ): Map<Long?, Long> {
+        val validIds = members.map { it.id }.toSet()
+        val realIds = members.filter { !it.isPublic }.map { it.id }
+        val out = HashMap<Long?, Long>()
+        for (tx in txs) {
+            // 归属读 memberIds，把本人哨兵 SELF_ID 归一化成 null（本人）；
+            // 老数据为空数组时兜底 memberId，避免这笔被误判成「本人独担」
+            val ids: List<Long?> = tx.memberIds.ifEmpty { listOfNotNull(tx.memberId) }
+                .map { if (it == SELF_ID) null else it }
+            // 只保留有效参与人：null（本人）恒有效；真实成员需仍存在且非公共
+            // （公共代表「全员」，不作为独立参与人重复计一次）
+            val picked: List<Long?> = ids
+                .filter { it == null || (it in validIds && it != publicId) }
+                .distinct()
+            val owners: List<Long?> = when {
+                publicId != null && publicId in ids -> listOf<Long?>(null) + realIds
+                picked.isEmpty() -> listOf(null)
+                else -> picked
+            }
+            val n = owners.size
+            val base = tx.amount / n
+            val remainder = tx.amount - base * n
+            owners.forEachIndexed { index, id ->
+                out[id] = (out[id] ?: 0L) + base + (if (index < remainder) 1L else 0L)
+            }
+        }
+        return out
     }
 
     /**

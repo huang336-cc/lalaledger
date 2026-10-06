@@ -1,6 +1,7 @@
 package com.lightledger.app.ui.settings
 
 import android.content.Intent
+import android.content.res.Configuration
 import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -57,6 +58,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -106,6 +108,11 @@ fun SettingsScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
+    // 横屏 / 平板：内容限制在易读宽度内并居中，避免被拉满整屏（竖屏不受影响）
+    val isWide = with(LocalConfiguration.current) {
+        orientation == Configuration.ORIENTATION_LANDSCAPE || screenWidthDp >= 600
+    }
+
     var showThemeDialog by remember { mutableStateOf(false) }
     var showLanguageDialog by remember { mutableStateOf(false) }
     var showAboutDialog by remember { mutableStateOf(false) }
@@ -147,8 +154,11 @@ fun SettingsScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            // 铺主题背景：横屏外壳没有 Scaffold 兜底，不铺会透出窗口浅米色（深色模式下花屏）
+            .background(MaterialTheme.colorScheme.background)
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 16.dp),
+            .padding(horizontal = 16.dp)
+            .fillMaxWidth(if (isWide) 0.66f else 1f),
     ) {
         Spacer(Modifier.height(12.dp))
         Text(stringResource(R.string.settings_title), style = MaterialTheme.typography.headlineLarge)
@@ -209,7 +219,8 @@ fun SettingsScreen(
             SettingRow(
                 icon = Icons.Outlined.FileUpload,
                 title = stringResource(R.string.settings_import_csv),
-                value = currentBook?.name ?: "",
+                // 不再显示当前账本：导入目标已在预览弹窗「导入到：X」里说明，此处重复且易误导
+                value = null,
                 onClick = { csvPicker.launch("*/*") },
             )
             HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
@@ -812,7 +823,8 @@ private fun ProgressDialog(text: String) {
 private fun SettingRow(
     icon: ImageVector,
     title: String,
-    value: String,
+    /** 右侧副标题；为 null 或空串时不显示（如「导入 CSV」不再显示当前账本名） */
+    value: String?,
     onClick: () -> Unit,
     valueTint: androidx.compose.ui.graphics.Color = MaterialTheme.colorScheme.onSurfaceVariant,
 ) {
@@ -835,13 +847,15 @@ private fun SettingRow(
             style = MaterialTheme.typography.bodyLarge,
             modifier = Modifier.weight(1f),
         )
-        Text(
-            value,
-            style = MaterialTheme.typography.labelMedium,
-            color = valueTint,
-            maxLines = 1,
-        )
-        Spacer(Modifier.width(4.dp))
+        if (!value.isNullOrEmpty()) {
+            Text(
+                value,
+                style = MaterialTheme.typography.labelMedium,
+                color = valueTint,
+                maxLines = 1,
+            )
+            Spacer(Modifier.width(4.dp))
+        }
         Icon(
             Icons.AutoMirrored.Outlined.KeyboardArrowRight,
             contentDescription = null,
@@ -901,6 +915,129 @@ private fun DisclaimerBlock(title: String?, body: String) {
 
 /** 版本变更履历（最新在前），条目走字符串资源支持中英文 */
 private enum class ChangeLog(val version: String, val date: String, val items: List<Int>) {
+    V2_4_2(
+        "2.4.2", "2026-10-07",
+        listOf(
+            R.string.chlog_242_1,
+            R.string.chlog_242_2,
+            R.string.chlog_242_3,
+        ),
+    ),
+    V2_4_1(
+        "2.4.1", "2026-10-06",
+        listOf(
+            R.string.chlog_241_1,
+            R.string.chlog_241_2,
+            R.string.chlog_241_3,
+        ),
+    ),
+    V2_4_0(
+        "2.4.0", "2026-10-06",
+        listOf(
+            R.string.chlog_240_1,
+            R.string.chlog_240_2,
+            R.string.chlog_240_3,
+        ),
+    ),
+    V2_3_12(
+        "2.3.12", "2026-10-06",
+        listOf(
+            R.string.chlog_2311_1,
+            R.string.chlog_2311_2,
+            R.string.chlog_2311_3,
+        ),
+    ),
+    V2_3_11(
+        "2.3.11", "2026-10-06",
+        listOf(
+            R.string.chlog_2311_1,
+            R.string.chlog_2311_2,
+            R.string.chlog_2311_3,
+        ),
+    ),
+    V2_3_10(
+        "2.3.10", "2026-10-05",
+        listOf(
+            R.string.chlog_2310_1,
+            R.string.chlog_2310_2,
+            R.string.chlog_2310_3,
+        ),
+    ),
+    V2_3_9(
+        "2.3.9", "2026-10-05",
+        listOf(
+            R.string.chlog_239_1,
+            R.string.chlog_239_2,
+            R.string.chlog_239_3,
+            R.string.chlog_239_4,
+        ),
+    ),
+    V2_3_8(
+        "2.3.8", "2026-10-05",
+        listOf(
+            R.string.chlog_238_1,
+            R.string.chlog_238_2,
+            R.string.chlog_238_3,
+            R.string.chlog_238_4,
+        ),
+    ),
+    V2_3_7(
+        "2.3.7", "2026-10-03",
+        listOf(
+            R.string.chlog_237_1,
+            R.string.chlog_237_2,
+        ),
+    ),
+    V2_3_6(
+        "2.3.6", "2026-10-03",
+        listOf(
+            R.string.chlog_236_1,
+            R.string.chlog_236_2,
+            R.string.chlog_236_3,
+        ),
+    ),
+    V2_3_5(
+        "2.3.5", "2026-10-03",
+        listOf(
+            R.string.chlog_235_1,
+            R.string.chlog_235_2,
+            R.string.chlog_235_3,
+            R.string.chlog_235_4,
+        ),
+    ),
+    V2_3_4(
+        "2.3.4", "2026-10-03",
+        listOf(
+            R.string.chlog_234_1,
+            R.string.chlog_234_2,
+            R.string.chlog_234_3,
+            R.string.chlog_234_4,
+        ),
+    ),
+    V2_3_3(
+        "2.3.3", "2026-10-03",
+        listOf(
+            R.string.chlog_233_1,
+            R.string.chlog_233_2,
+            R.string.chlog_233_3,
+            R.string.chlog_233_4,
+        ),
+    ),
+    V2_3_2(
+        "2.3.2", "2026-10-03",
+        listOf(
+            R.string.chlog_232_1,
+            R.string.chlog_232_2,
+        ),
+    ),
+    V2_3_1(
+        "2.3.1", "2026-10-03",
+        listOf(
+            R.string.chlog_231_1,
+            R.string.chlog_231_2,
+            R.string.chlog_231_3,
+        ),
+    ),
     V2_3_0(
         "2.3.0", "2026-09-23",
         listOf(

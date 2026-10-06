@@ -8,7 +8,9 @@ import androidx.room.PrimaryKey
 /**
  * 旅行账本的同行成员。
  * - 挂在账本下（bookId 外键级联删除），普通个人账本没有成员
- * - 账单通过 transactions.memberId 引用成员；成员删除时账单保留（SET NULL 置空归属）
+ * - 归属引用 transactions.memberIds（v9 起支持多人，金额自动均摊）
+ * - 成员删除时账单保留：memberId 列由外键 SET NULL 置空，
+ *   memberIds 列由 [com.lightledger.app.data.repository.MemberRepository] 手动摘除
  */
 @Entity(
     tableName = "members",

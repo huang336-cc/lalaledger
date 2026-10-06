@@ -10,7 +10,9 @@ No login · No ads · No cloud · No tracking — all data stays on your phone
 
 `Android 10+` · `Kotlin 2.0` · `Jetpack Compose` · `Material 3` · `MIT License`
 
-Current version **v2.3.0** · [中文](README.md) | English
+Current version **v2.4.2** · [中文](README.md) | English
+
+> ✅ **Personally field-tested on a real trip — the bookkeeping features work perfectly**
 
 </div>
 

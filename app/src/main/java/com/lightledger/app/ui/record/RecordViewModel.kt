@@ -7,6 +7,7 @@ import com.lightledger.app.data.db.entity.AccountBookEntity
 import com.lightledger.app.data.db.entity.CategoryEntity
 import com.lightledger.app.data.db.entity.MemberEntity
 import com.lightledger.app.data.db.entity.PlaceEntity
+import com.lightledger.app.domain.model.SELF_ID
 import com.lightledger.app.domain.model.TransactionType
 import com.lightledger.app.util.MoneyFormat
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -37,8 +38,15 @@ data class RecordUiState(
     val isTripBook: Boolean = false,
     /** 旅行账本成员列表 */
     val members: List<MemberEntity> = emptyList(),
-    /** 归属成员（谁消费）；null = 本人（默认） */
-    val selectedMemberId: Long? = null,
+    /** 本账本「公共」成员的 id；null = 未创建。用于镜像列写入时排除公共成员 */
+    val publicMemberId: Long? = null,
+    /**
+     * 归属成员（谁消费）。集合里**显式出现 [SELF_ID] 即代表勾选了本人**，
+     * 因此「本人 + 张三」= `setOf(SELF_ID, 张三id)`，两人均摊。
+     * 空集为默认值，语义等价于「仅本人」，首次渲染不会显示成未选中。
+     * 含公共成员 id = 全员均摊（公共即全选快捷方式）。
+     */
+    val selectedMemberIds: Set<Long> = emptySet(),
     /** 付款成员（谁垫付）；null = 本人（默认） */
     val selectedPayerId: Long? = null,
     /** 心情 emoji（如 "😀"）；null = 未标记 */
@@ -78,8 +86,12 @@ class RecordViewModel(
     /** v7：仅本次使用的图标 key（null = 用分类自身图标） */
     private val iconOverride = MutableStateFlow<String?>(null)
 
-    /** 归属成员（谁消费）：null = 本人；仅旅行账本可修改 */
-    private val selectedMemberId = MutableStateFlow<Long?>(null)
+    /**
+     * 归属成员（谁消费）。
+     * v9 起支持多选，选中多人时该笔金额自动均摊；含公共成员 id 表示全员均摊。
+     * v2.3.10 起本人以 [SELF_ID] 显式存在，可与真实成员同时选中。
+     */
+    private val selectedMemberIds = MutableStateFlow<Set<Long>>(emptySet())
 
     /** 付款成员（谁垫付）：null = 本人；仅旅行账本可修改 */
     private val selectedPayerId = MutableStateFlow<Long?>(null)
@@ -123,15 +135,21 @@ class RecordViewModel(
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
-    /** 账本切换到非旅行账本时，归属与垫付自动回落本人 */
+    /** 账本切换时同步归属默认值：旅行账本默认「公共」（全员 AA），非旅行账本回落本人 */
     init {
         viewModelScope.launch {
             isTripBook.collect { trip ->
                 if (trip) {
-                    // 旅行账本：确保"公共消费"（全员 AA）成员存在，归属行可选
-                    container.memberRepository.ensurePublicMember(currentBookId.value)
+                    // 旅行账本：确保"公共消费"（全员 AA）成员存在，并把新账单默认归属设为
+                    // 「本人 + 公共」= 全员 AA。selectedMemberIds 初值是 emptySet()，不显式
+                    // 赋值的话会一路以空集落库（仅本人），与界面预期不符。
+                    val pub = container.memberRepository.ensurePublicMember(currentBookId.value)
+                    if (pub != null) {
+                        selectedMemberIds.value = setOf(SELF_ID, pub.id)
+                    }
                 } else {
-                    selectedMemberId.value = null
+                    // 非旅行账本没有成员概念，归属与垫付都回落本人
+                    selectedMemberIds.value = setOf(SELF_ID)
                     selectedPayerId.value = null
                 }
             }
@@ -156,6 +174,9 @@ class RecordViewModel(
                         }
                     } else if (selected == null || list.none { it.id == selected }) {
                         selectedCategoryId.value = list.firstOrNull()?.id
+                        // 分类被自动切换（类型切换 / 原分类被删）时，"仅本次"图标随之作废：
+                        // 与 selectCategory 的语义保持一致，避免临时图标粘到别的分类上
+                        iconOverride.value = null
                     }
                 }
         }
@@ -187,15 +208,15 @@ class RecordViewModel(
     private data class MemberInputs(
         val isTripBook: Boolean,
         val members: List<MemberEntity>,
-        val selectedMemberId: Long?,
+        val selectedMemberIds: Set<Long>,
         val selectedPayerId: Long?,
         val billTime: Long?,
     )
 
     private val memberInputs = combine(
-        isTripBook, members, selectedMemberId, selectedPayerId, billTime,
-    ) { trip, m, owner, payer, time ->
-        MemberInputs(trip, m, owner, payer, time)
+        isTripBook, members, selectedMemberIds, selectedPayerId, billTime,
+    ) { trip, m, owners, payer, time ->
+        MemberInputs(trip, m, owners, payer, time)
     }
 
     val uiState: StateFlow<RecordUiState> = combine(
@@ -219,7 +240,8 @@ class RecordViewModel(
             editTxId = kb.editTxId,
             isTripBook = mi.isTripBook,
             members = mi.members,
-            selectedMemberId = mi.selectedMemberId,
+            publicMemberId = mi.members.firstOrNull { it.isPublic }?.id,
+            selectedMemberIds = mi.selectedMemberIds,
             selectedPayerId = mi.selectedPayerId,
             billTime = mi.billTime,
             iconOverride = values[7] as String?,
@@ -334,9 +356,25 @@ class RecordViewModel(
 
     // ---------- 成员归属（旅行账本） ----------
 
-    /** 选择归属成员（谁消费）；memberId=null 表示本人 */
+    /**
+     * 切换归属成员（谁消费）。多选语义（v2.3.10 起本人可与成员并存）：
+     *  - `null` 表示本人，以 [SELF_ID] 存进集合，与真实成员彼此独立、可同时选中
+     *  - 选中「公共」= 全员 AA，收敛为 `{本人, 公共}`，不必再罗列每个成员
+     *  - 其余成员逐个 toggle
+     *  - 任何一步操作后集合为空都回落到「仅本人」，避免出现"一个人都没选"的空状态
+     */
     fun selectMember(memberId: Long?) {
-        selectedMemberId.value = memberId
+        val current = selectedMemberIds.value
+        val publicId = members.value.firstOrNull { it.isPublic }?.id
+        val key = memberId ?: SELF_ID
+        selectedMemberIds.value = when {
+            // 公共：选中即全选（本人 + 全员），取消则回到仅本人
+            memberId != null && memberId == publicId ->
+                if (memberId in current) setOf(SELF_ID) else setOf(SELF_ID, publicId)
+            // 普通 toggle
+            key in current -> (current - key).ifEmpty { setOf(SELF_ID) }
+            else -> current + key
+        }
     }
 
     /** 选择付款成员（谁垫付）；memberId=null 表示本人 */
@@ -371,7 +409,8 @@ class RecordViewModel(
                 members.value.size % com.lightledger.app.data.repository.SeedData.memberColors.size
             ]
             val id = container.memberRepository.add(bookId, trimmed, color)
-            selectedMemberId.value = id
+            // 新建成员后直接加入归属选择（多选语义下追加）
+            selectedMemberIds.value = selectedMemberIds.value + id
         }
     }
 
@@ -403,10 +442,13 @@ class RecordViewModel(
             location.value = tx.location
             note.value = tx.note.orEmpty()
             images.value = tx.images
-            selectedMemberId.value = tx.memberId.takeIf { id ->
-                // 原归属成员可能已被删除，仅回填仍存在的成员
-                id != null && container.memberRepository.getById(id) != null
-            }
+            // 回填归属：[SELF_ID] 是本人哨兵，直接保留；真实 id 需校验是否还存在
+            // （原成员可能已被删除）。空数组 = 本人，与新建时的默认语义一致。
+            val rawOwners = tx.memberIds.ifEmpty { listOfNotNull(tx.memberId) }
+            val restored = rawOwners
+                .filter { it == SELF_ID || container.memberRepository.getById(it) != null }
+                .toSet()
+            selectedMemberIds.value = restored.ifEmpty { setOf(SELF_ID) }
             selectedPayerId.value = tx.payerMemberId.takeIf { id ->
                 id != null && container.memberRepository.getById(id) != null
             }
@@ -463,7 +505,15 @@ class RecordViewModel(
                     location = loc,
                     note = note.value,
                     images = images.value,
-                    memberId = selectedMemberId.value,
+                    // 镜像单值：只取「真实成员」——需同时排除本人哨兵 SELF_ID（无对应成员行，
+                    // 写进外键列会违约）与公共成员（公共语义是"全员"，不代表某一个归属人；
+                    // 写进去会让删公共成员时外键误清该列）。仅用于维持外键自动清理，
+                    // 归属读取一律走 memberIds
+                    memberId = selectedMemberIds.value.firstOrNull { id ->
+                        id != SELF_ID && id != members.value.firstOrNull { it.isPublic }?.id
+                    },
+                    // memberIds 保留 SELF_ID：用它区分「本人 + 张三」与「只有张三」
+                    memberIds = selectedMemberIds.value.toList(),
                     payerMemberId = selectedPayerId.value,
                     mood = mood.value,
                     createdAt = billTime.value ?: System.currentTimeMillis(),
@@ -507,7 +557,11 @@ class RecordViewModel(
                         location = loc?.takeIf { it.isNotBlank() },
                         note = note.value.trim().takeIf { it.isNotEmpty() },
                         images = images.value,
-                        memberId = selectedMemberId.value,
+                        // 同新建：外键列只写真实成员，哨兵 SELF_ID 与公共成员都排除
+                        memberId = selectedMemberIds.value.firstOrNull { id ->
+                            id != SELF_ID && id != members.value.firstOrNull { it.isPublic }?.id
+                        },
+                        memberIds = selectedMemberIds.value.toList(),
                         payerMemberId = selectedPayerId.value,
                         mood = mood.value?.takeIf { it.isNotBlank() },
                         createdAt = billTime.value ?: base.createdAt,

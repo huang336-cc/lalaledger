@@ -54,6 +54,7 @@ import coil.compose.AsyncImage
 import com.lightledger.app.domain.model.IconLibrary
 import com.lightledger.app.domain.model.TransactionType
 import com.lightledger.app.ui.theme.SemanticTheme
+import com.lightledger.app.ui.theme.onTint
 import com.lightledger.app.util.DateUtils
 import com.lightledger.app.util.MoneyFormat
 
@@ -146,7 +147,9 @@ fun MemberChip(
 ) {
     val bg = if (selected) color
     else color.copy(alpha = if (MaterialTheme.colorScheme.surface.luminance() > 0.5f) 0.13f else 0.22f)
-    val contentColor = if (selected) Color.White else color
+    // 非选中态底是成员色的淡色叠加，文字若直接用原色，成员色偏浅时会看不清；
+    // 选中态是实心底，用白色即达标
+    val contentColor = if (selected) Color.White else color.onTint()
     Row(
         modifier = modifier
             .clip(RoundedCornerShape(50))
@@ -173,7 +176,10 @@ fun MemberChip(
             text = name,
             style = if (compact) MaterialTheme.typography.labelSmall else MaterialTheme.typography.labelMedium,
             color = contentColor,
+            // 归属支持多选后名字可能很长（「张三、李四、王五」），
+            // 统一省略号收尾，宽度由调用方按需约束，避免胶囊撑破卡片。
             maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
         )
     }
 }
@@ -230,7 +236,7 @@ fun BillRow(
             val dimColor = MaterialTheme.colorScheme.onSurfaceVariant
             Text(
                 text = buildAnnotatedString {
-                    withStyle(SpanStyle(color = dimColor.copy(alpha = 0.66f))) {
+                    withStyle(SpanStyle(color = dimColor.copy(alpha = 0.75f))) {
                         append(timeText)
                         if (moodText != null) {
                             append(" · ")

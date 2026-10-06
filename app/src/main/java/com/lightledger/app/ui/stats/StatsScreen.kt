@@ -3,6 +3,7 @@ package com.lightledger.app.ui.stats
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
+import android.content.res.Configuration
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -25,6 +26,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.ArrowDropDown
 import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.Description
@@ -58,6 +60,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -68,9 +71,11 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.lightledger.app.LightLedgerApp
 import com.lightledger.app.R
+import com.lightledger.app.domain.model.SELF_ID
 import com.lightledger.app.domain.model.StatPeriod
 import com.lightledger.app.domain.model.ThemeMode
 import com.lightledger.app.domain.model.TransactionType
+import com.lightledger.app.domain.model.normalizeOwnerIds
 import com.lightledger.app.ui.app.AppViewModel
 import com.lightledger.app.ui.components.AppCard
 import com.lightledger.app.ui.components.CategoryIcon
@@ -87,6 +92,7 @@ import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
 /** StatPeriod → 文案资源 */
 private fun StatPeriod.labelRes(): Int = when (this) {
@@ -262,18 +268,35 @@ fun StatsScreen(
             categoryName = categoryMap[tx.categoryId]?.name.orEmpty(),
             note = tx.note.orEmpty(),
             location = tx.location.orEmpty(),
-            memberName = if (tx.memberId == null) "" else nameOf(tx.memberId),
+            // 归属多选：多人用「、」连接导出。含本人时导出「本人」标签，
+            // 导入端会把它还原成「无归属成员」（见 CsvImportViewModel.isSelfLabel）。
+            memberName = normalizeOwnerIds(tx.memberIds, tx.memberId)
+                .joinToString("、") { if (it == SELF_ID) selfLabel else nameOf(it) },
             payerName = if (tx.payerMemberId == null) "" else nameOf(tx.payerMemberId),
             mood = tx.mood.orEmpty(),
         )
     }
 
+    // 横屏 / 平板：筛选与汇总在左、图表与排行在右（竖屏布局保持原样）
+    val isWide = with(LocalConfiguration.current) {
+        orientation == Configuration.ORIENTATION_LANDSCAPE || screenWidthDp >= 600
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
+            // 铺主题背景：横屏外壳没有 Scaffold 兜底，不铺会透出窗口浅米色（深色模式下花屏）
+            .background(MaterialTheme.colorScheme.background)
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 16.dp),
+            .padding(horizontal = if (isWide) 0.dp else 16.dp),
     ) {
+        Row(modifier = Modifier.fillMaxWidth()) {
+            // ---------- 左栏：标题 / 汇总 / 筛选 ----------
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(start = if (isWide) 16.dp else 0.dp, end = if (isWide) 8.dp else 0.dp),
+            ) {
         Spacer(Modifier.height(12.dp))
 
         // ---------- 标题 + 导出 + 切换账本 ----------
@@ -505,6 +528,267 @@ fun StatsScreen(
 
         Spacer(Modifier.height(14.dp))
 
+            }  // 左栏结束
+
+            // ---------- 右栏：饼图 / 排行 / 成员 / AA（横屏独立成栏） ----------
+            if (isWide) {
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(start = 8.dp, end = 16.dp),
+                ) {
+                    Spacer(Modifier.height(12.dp))
+    // ---------- 分类占比饼图 ----------
+    AppCard {
+        Column(Modifier.padding(16.dp)) {
+            SectionTitle(stringResource(R.string.stats_pie_title))
+            Spacer(Modifier.height(12.dp))
+            // 缓存 slices：仅在分类数据变化时重建，避免普通重组重放进场动画
+            val pieSlices = remember(state.categories) {
+                state.categories.take(8).map {
+                    PieSlice(
+                        label = it.name,
+                        ratio = it.ratio,
+                        color = Color(it.color),
+                    )
+                }
+            }
+            // 选中分类（可能已被筛选清掉，取不到时按未选中渲染）
+            val selectedCat = state.categories.firstOrNull { it.categoryId == selectedSliceId }
+            val selectedPieIndex = selectedCat?.let { sel ->
+                state.categories.take(8).indexOfFirst { it.categoryId == sel.categoryId }
+                    .takeIf { it in 0 until 6 } // 第 7、8 类在图上并入"其他"，无独立扇区
+            }
+            Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                CategoryPieChart(
+                    slices = pieSlices,
+                    otherLabel = stringResource(R.string.stats_pie_other),
+                    selectedSlice = selectedPieIndex,
+                    centerTitle = selectedCat?.let {
+                        it.name + " · " + String.format(java.util.Locale.US, "%.1f%%", it.ratio * 100)
+                    } ?: stringResource(R.string.stats_pie_center, stringResource(state.period.labelRes())),
+                    centerValue = selectedCat?.let {
+                        "¥${MoneyFormat.fenToString(it.total)}"
+                    } ?: "¥${MoneyFormat.fenToString(state.totalExpense)}",
+                    onSliceClick = { index ->
+                        // 点扇区：选中/取消（"其他"合并段点击视为清除选中）
+                        val catId = state.categories.getOrNull(index)?.categoryId
+                        selectedSliceId = if (catId != null && selectedSliceId == catId) null else catId
+                    },
+                    onCenterClick = { selectedSliceId = null },
+                )
+            }
+            Spacer(Modifier.height(2.dp))
+            Text(
+                stringResource(R.string.stats_pie_tap_hint),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
+                modifier = Modifier.padding(start = 4.dp),
+            )
+            // 图例（前 6 类；点击选中并联动高亮扇形，再次点击打开下钻明细）
+            if (state.categories.isNotEmpty()) {
+                Spacer(Modifier.height(12.dp))
+                state.categories.take(6).forEach { item ->
+                    val isSelected = selectedSliceId == item.categoryId
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(
+                                if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)
+                                else Color.Transparent
+                            )
+                            .clickable {
+                                if (selectedSliceId == item.categoryId) {
+                                    drilldownId = item.categoryId
+                                } else {
+                                    selectedSliceId = item.categoryId
+                                }
+                            }
+                            .padding(horizontal = 4.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(10.dp)
+                                .background(Color(item.color), CircleShape),
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            item.name,
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.weight(1f),
+                        )
+                        Text(
+                            "${(item.ratio * 100).toInt()}%",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    Spacer(Modifier.height(14.dp))
+
+    // ---------- 分类排行 ----------
+    SectionTitle(stringResource(R.string.stats_rank_title))
+    Spacer(Modifier.height(8.dp))
+    AppCard {
+        if (state.categories.isEmpty()) {
+            EmptyState(stringResource(R.string.stats_rank_empty))
+        } else {
+            Column(Modifier.padding(vertical = 6.dp)) {
+                state.categories.forEachIndexed { index, item ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(10.dp))
+                            .clickable { drilldownId = item.categoryId }
+                            .padding(horizontal = 16.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            text = "${index + 1}",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = if (index < 3) MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.width(24.dp),
+                        )
+                        CategoryIcon(iconKey = item.icon, color = item.color.argb(), size = 38)
+                        Spacer(Modifier.width(12.dp))
+                        Column(Modifier.weight(1f)) {
+                            Text(item.name, style = MaterialTheme.typography.bodyLarge)
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    stringResource(
+                                        R.string.stats_bills_count, item.count, (item.ratio * 100).toInt()
+                                    ),
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                                Spacer(Modifier.width(6.dp))
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.55f),
+                                    modifier = Modifier.size(14.dp),
+                                )
+                            }
+                        }
+                        Text(
+                            "¥${MoneyFormat.fenToString(item.total)}",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = SemanticTheme.colors.expense,
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    // ---------- 成员明细（仅旅行账本） ----------
+    if (state.isTrip && state.memberDetails.isNotEmpty()) {
+        Spacer(Modifier.height(14.dp))
+        SectionTitle(stringResource(R.string.stats_personal_title))
+        Text(
+            stringResource(R.string.stats_personal_note),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
+            modifier = Modifier.padding(start = 4.dp),
+        )
+        Spacer(Modifier.height(8.dp))
+        AppCard {
+            Column(Modifier.padding(vertical = 6.dp)) {
+                state.memberDetails.forEach { detail ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        MemberChip(
+                            name = nameOf(detail.memberId),
+                            color = if (detail.memberId == null) MaterialTheme.colorScheme.primary
+                            else Color(detail.color),
+                        )
+                        Spacer(Modifier.width(12.dp))
+                        Column(Modifier.weight(1f)) {
+                            Text(
+                                stringResource(R.string.stats_personal_consume),
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            Text(
+                                "¥${MoneyFormat.fenToString(detail.consume)}",
+                                style = MaterialTheme.typography.titleSmall,
+                            )
+                        }
+                        Column(horizontalAlignment = Alignment.End) {
+                            Text(
+                                stringResource(R.string.stats_personal_paid),
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            Text(
+                                "¥${MoneyFormat.fenToString(detail.paid)}",
+                                style = MaterialTheme.typography.titleSmall,
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // ---------- AA 结算卡（仅旅行账本） ----------
+    if (state.isTrip && state.aaBalances.isEmpty()) {
+        Spacer(Modifier.height(14.dp))
+        AppCard {
+            Box(Modifier.fillMaxWidth().padding(vertical = 24.dp), contentAlignment = Alignment.Center) {
+                Text(
+                    stringResource(R.string.stats_aa_empty),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+    }
+    if (state.isTrip && state.aaBalances.isNotEmpty()) {
+        Spacer(Modifier.height(14.dp))
+        AaSettleCard(
+            state = state,
+            nameOf = nameOf,
+            colorOf = colorOf,
+            onCopy = {
+                val text = buildSettleText(
+                    state = state,
+                    nameOf = nameOf,
+                    consumeLabel = context.getString(R.string.stats_personal_consume),
+                    paidLabel = context.getString(R.string.stats_personal_paid),
+                    settledLabel = context.getString(R.string.stats_aa_settled),
+                    receiveLabel = context.getString(R.string.stats_aa_receive),
+                    payLabel = context.getString(R.string.stats_aa_pay),
+                )
+                val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                cm.setPrimaryClip(ClipData.newPlainText("AA", text))
+                Toast.makeText(
+                    context, context.getString(R.string.stats_aa_copied), Toast.LENGTH_SHORT
+                ).show()
+            },
+        )
+    }
+
+
+                    Spacer(Modifier.height(16.dp))
+                }
+            }
+        }
+
+        // 竖屏：图表区续在同一条滚动列里
+        if (!isWide) {
+            Spacer(Modifier.height(14.dp))
         // ---------- 分类占比饼图 ----------
         AppCard {
             Column(Modifier.padding(16.dp)) {
@@ -549,7 +833,7 @@ fun StatsScreen(
                 Text(
                     stringResource(R.string.stats_pie_tap_hint),
                     style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
                     modifier = Modifier.padding(start = 4.dp),
                 )
                 // 图例（前 6 类；点击选中并联动高亮扇形，再次点击打开下钻明细）
@@ -611,6 +895,8 @@ fun StatsScreen(
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
+                                .clip(RoundedCornerShape(10.dp))
+                                .clickable { drilldownId = item.categoryId }
                                 .padding(horizontal = 16.dp, vertical = 10.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
@@ -625,13 +911,22 @@ fun StatsScreen(
                             Spacer(Modifier.width(12.dp))
                             Column(Modifier.weight(1f)) {
                                 Text(item.name, style = MaterialTheme.typography.bodyLarge)
-                                Text(
-                                    stringResource(
-                                        R.string.stats_bills_count, item.count, (item.ratio * 100).toInt()
-                                    ),
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        stringResource(
+                                            R.string.stats_bills_count, item.count, (item.ratio * 100).toInt()
+                                        ),
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                    Spacer(Modifier.width(6.dp))
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.55f),
+                                        modifier = Modifier.size(14.dp),
+                                    )
+                                }
                             }
                             Text(
                                 "¥${MoneyFormat.fenToString(item.total)}",
@@ -651,7 +946,7 @@ fun StatsScreen(
             Text(
                 stringResource(R.string.stats_personal_note),
                 style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
                 modifier = Modifier.padding(start = 4.dp),
             )
             Spacer(Modifier.height(8.dp))
@@ -736,7 +1031,7 @@ fun StatsScreen(
             )
         }
 
-        Spacer(Modifier.height(16.dp))
+        }
     }
 
     // ---------- 导出方式弹窗：统计图片 / CSV 账单 ----------
@@ -834,13 +1129,24 @@ fun StatsScreen(
         )
     }
 
-    // ---------- 饼图下钻：分类明细底部面板（备注小计 + 账单明细） ----------
+    // ---------- 分类下钻：分类明细底部面板（备注小计 + 账单明细） ----------
+    // 饼图扇区/图例点击与分类排行行点击共用本面板。
+    // 从分类排行进来时用户已离开图表上下文，补一行时间段，避免「这是哪个区间的明细」的困惑。
+    // 精确到「日」而非下钻前的平均日期，避免用户误以为只统计了单天。
     val drilldownCat = state.categories.firstOrNull { it.categoryId == drilldownId }
     if (drilldownCat != null) {
         val cat = drilldownCat
         val catTxs = state.expenseTxs
             .filter { it.categoryId == cat.categoryId }
             .sortedByDescending { it.createdAt }
+        val ddTimeRange = state.expenseTxs.minOfOrNull { it.createdAt }?.let { minTs ->
+            val maxTs = state.expenseTxs.maxOf { it.createdAt }
+            val z = ZoneId.systemDefault()
+            val fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+            val s = java.time.Instant.ofEpochMilli(minTs).atZone(z).toLocalDate().format(fmt)
+            val e = java.time.Instant.ofEpochMilli(maxTs).atZone(z).toLocalDate().format(fmt)
+            if (s == e) s else "$s ~ $e"
+        }
         // "二级分类统计"：按备注聚合小计（无备注合并为一行），无需数据模型支持
         val noteGroups = catTxs
             .groupBy { it.note?.trim()?.takeIf { n -> n.isNotEmpty() } }
@@ -866,6 +1172,13 @@ fun StatsScreen(
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
+                        if (ddTimeRange != null) {
+                            Text(
+                                ddTimeRange,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.85f),
+                            )
+                        }
                     }
                     Text(
                         text = "¥${MoneyFormat.fenToString(cat.total)}",
@@ -939,11 +1252,51 @@ fun StatsScreen(
                                 maxLines = 1,
                                 overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                             )
-                            Text(
-                                text = DateUtils.formatBillTime(tx.createdAt),
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
+                            // 副行：时间（扫读锚点）+ 归属成员 + 心情 + 票据数
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.padding(top = 2.dp),
+                            ) {
+                                Text(
+                                    text = DateUtils.formatBillTime(tx.createdAt),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.75f),
+                                    maxLines = 1,
+                                )
+                                // 归属（谁消费）：仅旅行账本有意义。
+                                // 非旅行账本没有成员概念，恒显示「本人」纯属噪声，故整块不渲染。
+                                if (state.isTrip) {
+                                    val owners = normalizeOwnerIds(tx.memberIds, tx.memberId)
+                                    if (owners.isNotEmpty()) {
+                                        Spacer(Modifier.width(6.dp))
+                                        // 纯本人时走 selfColor：colorOf 只认真实成员 id，
+                                        // 传 SELF_ID 会落到 fallback 灰蓝，与本人在其他页面的主色不一致
+                                        val chipColor =
+                                            if (owners.singleOrNull() == SELF_ID) selfColor
+                                            else colorOf(owners.firstOrNull { it != SELF_ID })
+                                        MemberChip(
+                                            name = owners.joinToString("、") {
+                                                if (it == SELF_ID) selfLabel else nameOf(it)
+                                            },
+                                            color = chipColor,
+                                            compact = true,
+                                        )
+                                    }
+                                }
+                                tx.mood?.trim()?.takeIf { it.isNotEmpty() }?.let { mood ->
+                                    Spacer(Modifier.width(6.dp))
+                                    Text(mood, style = MaterialTheme.typography.labelSmall)
+                                }
+                                if (tx.images.isNotEmpty()) {
+                                    Spacer(Modifier.width(6.dp))
+                                    Text(
+                                        text = stringResource(R.string.stats_sheet_bill_pics, tx.images.size),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.85f),
+                                        maxLines = 1,
+                                    )
+                                }
+                            }
                         }
                         Text(
                             text = "¥${MoneyFormat.fenToString(tx.amount)}",

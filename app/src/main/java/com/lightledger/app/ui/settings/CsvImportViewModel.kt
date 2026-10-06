@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.lightledger.app.AppContainer
 import com.lightledger.app.R
 import com.lightledger.app.data.repository.SeedData
+import com.lightledger.app.domain.model.SELF_ID
 import com.lightledger.app.domain.model.TransactionType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -186,7 +187,15 @@ class CsvImportViewModel(
         val bookId = currentBookId.value
         val existingMembers = if (bookId > 0) container.memberRepository.getByBook(bookId) else emptyList()
         val existingMemberNames = existingMembers.map { it.name }.toSet()
-        val newMembers = rows.flatMap { listOfNotNull(it.memberName, it.payerName) }
+        val newMembers = rows.flatMap { row ->
+            // 归属列可能含多人（「张三、李四」），逐个拆出来再判断是否要新建；
+            // 「本人」不会新建成员，从名单里剔除，避免预览页报出虚假的新建项
+            val owners = row.memberName.orEmpty()
+                .split('、', ',', '，', '|')
+                .map { it.trim() }
+                .filter { it.isNotBlank() && !isSelfLabel(it) }
+            owners + listOfNotNull(row.payerName)
+        }
             .distinct()
             // 公共消费走账本已有的公共成员，不会「新建」，因此不列入新建名单
             .filter { it !in existingMemberNames && !isPublicLabel(it) }
@@ -247,6 +256,25 @@ class CsvImportViewModel(
             return id
         }
 
+        /**
+         * 归属成员列表：导出用「、」连接多人，这里按同规则拆回。
+         * 兼容半角逗号与竖线（用户手工编辑 CSV 时的常见分隔方式）。
+         *
+         * 「本人」→ 保留哨兵 [SELF_ID]，这样「本人、张三」能还原成两人均摊，
+         * 与「只有张三」区分开。整个字段为空时返回空列表（读取侧视作仅本人）。
+         */
+        suspend fun memberIds(raw: String?): List<Long> {
+            val text = raw?.trim().orEmpty()
+            if (text.isBlank()) return emptyList()
+            return text.split('、', ',', '，', '|')
+                .map { it.trim() }
+                .filter { it.isNotBlank() }
+                .mapNotNull { token ->
+                    if (isSelfLabel(token)) SELF_ID else memberId(token)
+                }
+                .distinct()
+        }
+
         // 先构建全部账单实体（必要时创建分类/成员），再一次性批量写入：
         // Room 的批量 insert 在单个事务内执行，中途失败整体回滚，不会留下半批脏数据
         val entities = ArrayList<com.lightledger.app.data.db.entity.TransactionEntity>(preview.rows.size)
@@ -259,7 +287,10 @@ class CsvImportViewModel(
                 location = row.location?.takeIf { it.isNotBlank() },
                 note = row.note?.takeIf { it.isNotBlank() },
                 images = emptyList(),
-                memberId = memberId(row.memberName),
+                // memberId 是外键列，只能放真实成员 id（SELF_ID 写入会违约）；
+                // 归属读取一律走 memberIds，它保留本人哨兵。
+                memberId = memberIds(row.memberName).firstOrNull { it != SELF_ID },
+                memberIds = memberIds(row.memberName),
                 payerMemberId = memberId(row.payerName),
                 mood = row.mood?.takeIf { it.isNotBlank() },
                 createdAt = row.createdAt,
@@ -299,6 +330,17 @@ class CsvImportViewModel(
     private fun isPublicLabel(raw: String): Boolean {
         val v = raw.trim()
         return v == "公共" || v.equals("public", ignoreCase = true)
+    }
+
+    /**
+     * 归属列里「本人」的导出标签（各语言）。
+     * 导出时本人会被写成「本人 / Self」，导入必须识别为"没有归属成员"，
+     * 否则会凭空建出一个叫「本人」的成员，AA 结算里多出一个不存在的参与人。
+     */
+    private fun isSelfLabel(raw: String): Boolean {
+        val v = raw.trim()
+        return v == "本人" || v == "自己" || v.equals("self", ignoreCase = true) ||
+            v.equals("me", ignoreCase = true)
     }
 
     /** 支持引号与换行的 CSV 行解析 */

@@ -30,6 +30,7 @@ object CsvExporter {
         val categoryName: String,
         val note: String = "",
         val location: String = "",
+        /** 归属成员；v2.3.9 起多人用「、」连接（如「张三、李四」），导入端按同规则拆分 */
         val memberName: String = "",
         val payerName: String = "",
         val mood: String = "",

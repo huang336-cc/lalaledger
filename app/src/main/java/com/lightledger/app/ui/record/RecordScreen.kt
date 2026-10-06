@@ -1,6 +1,7 @@
 package com.lightledger.app.ui.record
 
 import android.Manifest
+import android.content.res.Configuration
 import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
@@ -21,13 +22,21 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.displayCutout
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -50,6 +59,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
@@ -253,15 +263,33 @@ fun RecordScreen(
         }
     }
 
+    // 横屏：可用高度只剩 360~410dp，底部浮层键盘会盖住大半张表单。
+    // 改为「左表单 + 右键盘」双栏：键盘作为独立一列参与布局，不再遮挡内容。
+    val isLandscape =
+        LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
+
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background),
     ) {
+        // 横屏下左右分栏，竖屏下 Row 里只有表单这一列（weight(1f) 撑满，等价于原 Column）
+        Row(modifier = Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
-                .fillMaxSize()
-                .statusBarsPadding(),
+                .weight(1f)
+                .fillMaxHeight()
+                .windowInsetsPadding(
+                    if (isLandscape) {
+                        // 横屏由外层侧边栏外壳负责上/下/右 inset，这里再叠加会让内容缩水；
+                        // 只让开左缘（状态栏图标区 / 挖孔），避免金额、类型被挡住
+                        WindowInsets.systemBars
+                            .union(WindowInsets.displayCutout)
+                            .only(WindowInsetsSides.Start)
+                    } else {
+                        WindowInsets.statusBars
+                    }
+                ),
         ) {
         // ---------- 编辑模式顶栏 ----------
         if (isEditMode) {
@@ -445,7 +473,7 @@ fun RecordScreen(
                     payerTitle = stringResource(R.string.record_payer_title),
                     selfLabel = stringResource(R.string.record_self),
                     members = state.members,
-                    selectedOwnerId = state.selectedMemberId,
+                    selectedOwnerIds = state.selectedMemberIds,
                     selectedPayerId = state.selectedPayerId,
                     publicLabel = stringResource(R.string.member_public),
                     addLabel = stringResource(R.string.record_add_member),
@@ -458,7 +486,7 @@ fun RecordScreen(
             Spacer(Modifier.height(16.dp))
         }
 
-        // ---------- 底部保存按钮（常驻；键盘展开时被浮层覆盖，布局不跳动） ----------
+        // ---------- 底部保存按钮（常驻；竖屏键盘展开时被浮层覆盖，布局不跳动） ----------
         SaveButton(
             enabled = state.canSave,
             isEdit = isEditMode,
@@ -466,8 +494,29 @@ fun RecordScreen(
         )
         }
 
-        // ---------- 数字键盘：绘制层滑入滑出（无布局重排，丝滑不卡顿） ----------
-        if (keyboardShown.value) {
+        // ---------- 横屏：数字键盘作为右侧独立一列 ----------
+        if (isLandscape && keyboardShown.value) {
+            AmountKeyboard(
+                enabled = !state.saving,
+                onKey = viewModel::onAmountKey,
+                onClear = viewModel::clearAmount,
+                // 键盘上的大键 = 完成：只收起键盘，保存交给保存按钮
+                onDone = { viewModel.closeKeyboard() },
+                asSidePanel = true,
+                modifier = Modifier
+                    .weight(0.62f)
+                    .fillMaxHeight()
+                    .windowInsetsPadding(
+                        WindowInsets.systemBars
+                            .union(WindowInsets.displayCutout)
+                            .only(WindowInsetsSides.End),
+                    ),
+            )
+        }
+        }
+
+        // ---------- 竖屏：数字键盘为底部浮层，绘制层滑入滑出（无布局重排，丝滑不卡顿） ----------
+        if (!isLandscape && keyboardShown.value) {
             Box(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)

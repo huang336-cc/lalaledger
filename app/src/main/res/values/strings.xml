@@ -45,7 +45,7 @@
     <string name="recent_range_empty">所选范围内没有账单</string>
     <!-- 日历页多选 -->
     <string name="calendar_select">多选</string>
-    <string name="calendar_multi_hint">可勾选一笔或多笔账单，一键导出为汇总图片</string>
+    <string name="calendar_multi_hint">勾选账单后可批量改归属、生成汇总图片或删除；按返回键退出多选</string>
     <string name="guide_calendar_multi_title">本月账单也能多选</string>
     <string name="guide_calendar_multi_body">点「多选」或长按任意一笔账单进入多选：勾选后可生成汇总长图（可选择是否隐藏金额）或批量删除。只勾选某位成员的账单，即可单独统计与结算。</string>
     <string name="home_empty">还没有账单，点上方"记一笔"开始吧</string>
@@ -58,6 +58,7 @@
     <string name="action_export_image">生成汇总图片</string>
     <string name="action_exporting">生成中…</string>
     <string name="action_batch_delete">批量删除</string>
+    <string name="action_batch_owner">改归属</string>
     <string name="home_delete_bills_title">删除选中的 %1$d 笔账单？</string>
     <string name="home_delete_bills_msg">删除后无法恢复，关联的小票图片也会一并清理。</string>
     <string name="home_deleted_n">已删除 %1$d 笔账单</string>
@@ -91,6 +92,7 @@
     <string name="record_owner_title">这笔归谁</string>
     <string name="record_payer_title">谁垫付</string>
     <string name="record_owner_hint">谁消费，默认本人</string>
+    <string name="record_owner_split">%1$d 人均摊</string>
     <string name="record_payer_hint">谁先付的钱，默认本人</string>
     <string name="record_self">本人</string>
     <string name="record_add_member">+ 成员</string>
@@ -113,6 +115,8 @@
     <string name="icon_search_clear">清空搜索</string>
     <string name="icon_once_chip">仅本次 · %1$s</string>
     <string name="icon_once_clear">取消临时图标</string>
+    <string name="icon_once_badge">仅</string>
+    <string name="detail_icon_once_hint">仅本次图标（分类未变）· 编辑中可更换或取消</string>
     <string name="record_location">地点</string>
     <string name="record_current_location">当前地点</string>
     <string name="record_add_location">添加地点</string>
@@ -184,6 +188,7 @@
     <string name="stats_by_note">按备注小计</string>
     <string name="stats_no_note">（无备注）</string>
     <string name="stats_sheet_bills">账单明细</string>
+    <string name="stats_sheet_bill_pics">📎 %1$d</string>
 
     <!-- 账单详情 -->
     <string name="detail_time">时间</string>
@@ -226,6 +231,22 @@
     <string name="members_delete_all_none">没有可删除的成员</string>
     <string name="members_delete_all_hint">一键删除本账本全部成员</string>
     <string name="members_add">添加成员</string>
+    <string name="batch_owner_title">批量修改归属</string>
+    <string name="batch_owner_range">时间范围</string>
+    <string name="batch_owner_range_all">全部账单</string>
+    <string name="batch_owner_range_7d">最近 7 天</string>
+    <string name="batch_owner_range_30d">最近 30 天</string>
+    <string name="batch_owner_new_label">改为归属</string>
+    <string name="batch_owner_self">仅本人</string>
+    <string name="batch_owner_public">公共（全员 AA）</string>
+    <string name="batch_owner_preview">将影响 %1$d 笔账单</string>
+    <string name="batch_owner_preview_none">当前范围内没有账单</string>
+    <string name="batch_owner_split">按 %1$d 人均摊</string>
+    <string name="batch_owner_apply">确认修改</string>
+    <string name="batch_owner_confirm_title">确认批量修改归属？</string>
+    <string name="batch_owner_confirm_msg">将把 %1$d 笔账单的归属统一改为「%2$s」，只改归属、不动金额与分类。此操作可用同样的方式改回，但不会自动记录历史版本。</string>
+    <string name="batch_owner_done">已修改 %1$d 笔账单的归属</string>
+    <string name="batch_owner_done_none">没有需要修改的账单</string>
     <string name="members_empty">还没有同行成员\n点右上角"添加成员"，一起旅行分账吧</string>
     <string name="members_item_hint">消费归属该成员 · 删除后账单保留</string>
     <string name="members_edit">编辑成员</string>
@@ -337,7 +358,60 @@
     <!-- v1.8.1 修复 -->
     <string name="chlog_181_1">修复退格大键：点击逐位删除一个数字，长按才清空全部（此前点击直接清空）</string>
     <string name="chlog_181_2">账单副行时间前置：时间固定显示在最左，长备注被截断也不再隐藏时间</string>
+    <!-- v2.3.7 首页竖屏「最近账单」标题栏间距 -->
+    <!-- v2.4.0 多选退出方式与返回键修复 -->
+    <string name="chlog_240_1">修复日历页多选时按系统返回键会直接跳回首页的问题：现在按返回键只退出多选，保留在日历页</string>
+    <string name="chlog_240_2">移除多选操作栏的「取消」按钮：退出多选改用系统返回键，或点标题行的「退出多选」，操作栏更精简</string>
+    <string name="chlog_240_3">多选操作栏收敛为一行，列表底部留白同步收窄，一屏能看到更多账单</string>
+    <!-- v2.4.1 分类排行点击下钻 -->
+    <string name="chlog_241_1">统计页的分类排行现在可以点击：点任意一行弹出账单明细，按备注小计 + 逐笔列出该分类的每一笔支出，点某笔可直接进账单详情</string>
+    <string name="chlog_241_2">分类明细弹窗顶部补上所选时间段，并标注该分类的笔数与占比，若从分类排行进入也不会搞不清统计区间</string>
+    <string name="chlog_241_3">排行每行右侧加了进入箭头，明确提示可以点开看明细；饼图扇区点击查看明细的方式保持不变</string>
+    <!-- v2.4.2 弹窗账单明细更具体 -->
+    <string name="chlog_242_1">统计弹窗的账单明细每笔更具体：旅行账本会显示这笔的归属成员（谁消费），多人归属直接列出「张三、李四」</string>
+    <string name="chlog_242_2">账单明细每笔补上心情 emoji 与票据图片张数（📎 n），有留小票的账一眼就能看出</string>
+    <string name="chlog_242_3">非旅行账本不显示归属标签（没有成员概念，显示「本人」只是噪声）；点某一笔仍可直接进账单详情</string>
+    <!-- v2.3.11 旅行账本默认归属 + 批量改归属 -->
+    <string name="chlog_2311_1">旅行账本记账时「这笔归谁」默认改为「公共（全员 AA）」，不用每次手动勾全员；非旅行账本仍默认「本人」</string>
+    <string name="chlog_2311_2">日历页多选账单后新增「改归属」按钮：把勾选中的账单一次性改成公共或指定成员组合，不必逐笔编辑</string>
+    <string name="chlog_2311_3">优化日历页「本月账单」标题布局：长日期不再被右侧按钮挤成折行；多选提示只在进入多选后显示</string>
+    <!-- v2.3.10 归属支持「本人 + 成员」并存 -->
+    <string name="chlog_2310_1">修复「这笔归谁」中本人无法与成员同时勾选：现在「本人 + 张三」可以一起选，两人均摊，算账更贴近实际（自己买的、大家一起用）</string>
+    <string name="chlog_2310_2">「本人」变为可勾选项目，勾选状态一眼可见；取消所有勾选会自动回到「仅本人」，不会出现一个人都没选的情况</string>
+    <string name="chlog_2310_3">账单详情、分享图与 CSV 导出同步显示「本人 + 成员」的完整归属，导出的 CSV 再导入也能原样还原</string>
+    <!-- v2.3.9 旅行账本「这笔归谁」支持多选成员 -->
+    <string name="chlog_239_1">旅行账本「这笔归谁」支持多选成员：点选几人就是几人，金额自动均摊，分到分不会算丢</string>
+    <string name="chlog_239_2">「公共」变成全选快捷方式：一键把所有成员（含自己）勾上，和以前的全员 AA 结果完全一致</string>
+    <string name="chlog_239_3">账单详情、分享图与 CSV 导出同步显示多人归属，导出再导入可完整还原，归属列用「、」分隔</string>
+    <string name="chlog_239_4">删除成员时账单保留并自动从归属中移除，AA 结算不会出现指向已删成员的幽灵账目</string>
+    <!-- v2.3.8 深浅色模式文字可读性 -->
+    <string name="chlog_238_1">修复深色模式横屏页面标题与日期文字不可见：横屏外壳补齐内容文字色，日历页大标题、月份、日期组头恢复显示</string>
+    <string name="chlog_238_2">浅色模式次级文字加深（说明文字、时间、提示语），全 app 可读性提升，对比度回到无障碍标准以上</string>
+    <string name="chlog_238_3">渐变主按钮（记一笔 / 保存 / 导出）改用更深的品牌渐变端色，白字对比度明显提升</string>
+    <string name="chlog_238_4">分类、成员、账本胶囊等用户自选颜色改为按明度自动选深/浅文字，选浅色也不再看不清</string>
+    <string name="chlog_237_1">首页竖屏「最近账单」标题栏与时间筛选不再拥挤：统计卡收尾间距加大，标题栏与下方卡片之间也拉开，整体呼吸感更自然</string>
+    <string name="chlog_237_2">「当天」等时间范围筛选胶囊与右侧屏幕边缘保留安全间距，不再贴边</string>
     <!-- v2.2.1 记一笔图标染色修复 -->
+    <string name="chlog_236_1">修复首页竖屏「最近账单」标题与时间范围筛选丢失：概览区下方恢复该标题栏，统计卡与空态卡片之间不再挤在一起</string>
+    <string name="chlog_236_2">首页竖屏统计卡与下方卡片间距恢复为 20dp，圆角不再被相邻卡片压住</string>
+    <string name="chlog_236_3">横屏右栏同样复用统一的「最近账单」标题组件，竖屏横屏表现一致</string>
+    <string name="chlog_235_1">「仅本次」临时图标生效时，首页 / 日历 / 搜索 / 账单详情里的分类标题也同步改为图标名，列表与按钮彻底一致</string>
+    <string name="chlog_235_2">修复首页竖屏布局重叠：概览区与最近账单列表不再互相压盖</string>
+    <string name="chlog_235_3">日历页横屏改为「左月历 / 右账单」双栏，日历与账单列表各自独立滚动</string>
+    <string name="chlog_235_4">统计页横屏改为「左筛选与汇总 / 右图表与排行」双栏；搜索、我的、账本、成员等页在横屏下限制内容宽度并居中，不再被拉满整屏</string>
+    <string name="chlog_234_1">横屏适配重做：底部导航移到左侧并让开摄像头挖孔区，图标文字收紧，不再被刘海挡住</string>
+    <string name="chlog_234_2">修复深色模式横屏「卡片是深色、背景却发白」的花屏：所有页面补齐主题背景色</string>
+    <string name="chlog_234_3">修复横屏状态栏时间/电量看不清：系统栏图标颜色改为按实际生效的明暗主题取反</string>
+    <string name="chlog_234_4">首页横屏改为左右分栏（左概览 / 右账单列表），记账页改为左表单 / 右键盘，一屏能看到更多内容</string>
+    <string name="chlog_233_1">横屏适配：底部导航栏移到左侧竖排，省下的纵向空间全部留给内容</string>
+    <string name="chlog_233_2">横屏记一笔改为「左表单 + 右数字键盘」双栏，键盘不再遮挡分类、备注等填写项</string>
+    <string name="chlog_233_3">统计页「自定义时间段」日历高度按屏幕高度自适应，横屏下不再超出屏幕</string>
+    <string name="chlog_233_4">设置页「导入 CSV 账单」不再显示当前账本名（导入目标已在预览弹窗中说明）</string>
+    <string name="chlog_232_1">「仅本次」临时图标生效时，分类格子不再套用原分类的选中高亮，图标与标题统一改用主色表达</string>
+    <string name="chlog_232_2">格子下方标题同步改为临时图标名，不再出现「图标是新的、标题还是原分类」的矛盾</string>
+    <string name="chlog_231_1">修复切换收入/支出或分类变动后，「仅本次」图标残留在其他分类上的问题</string>
+    <string name="chlog_231_2">「仅本次」临时图标的分类格子新增「仅」角标，临时图标一眼可辨；账单详情页也会标注"仅本次图标"</string>
+    <string name="chlog_231_3">「仅本次」胶囊的 × 触摸区扩大，取消或更换临时图标更容易点中</string>
     <string name="chlog_230_1">账单列表改为按需加载：首页与日历页的账单不再一次性全部渲染，切页和滚动明显更跟手</string>
     <string name="chlog_230_2">优化日期与金额的显示计算，并给账单查询加上复合索引，账单较多时打开列表更快</string>
     <string name="chlog_230_3">修复日历页月历每次重绘都重复统计当天收支的问题，月份切换更流畅</string>
