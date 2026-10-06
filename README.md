@@ -14,6 +14,8 @@
 
 > ✅ **已经过本人旅游实测，账本功能完美**
 
+👉 **[前往 Releases 下载最新版 APK](https://github.com/huang336-cc/lalaledger/releases)**
+
 </div>
 
 ---

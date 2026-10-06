@@ -14,6 +14,8 @@ Current version **v2.4.2** · [中文](README.md) | English
 
 > ✅ **Personally field-tested on a real trip — the bookkeeping features work perfectly**
 
+👉 **[Go to Releases to download the latest APK](https://github.com/huang336-cc/lalaledger/releases)**
+
 </div>
 
 ---
